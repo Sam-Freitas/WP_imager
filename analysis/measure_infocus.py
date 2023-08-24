@@ -18,11 +18,12 @@ def del_dir_contents(path_to_dir):
         os.remove(f)
 
 img_file_type = 'jpg'
-imgs_dir = os.path.join(os.getcwd(),'captured_images')
+imgs_dir = r"C:\Users\LabPC2\Documents\GitHub\WP_imager\camera\captured_images" #os.path.join(os.getcwd(),'captured_images')
 imgs = natsorted(glob.glob(os.path.join(imgs_dir,'*.' + img_file_type)))
 
-os.makedirs('captured_transformed_images', exist_ok=True)
-del_dir_contents('captured_trasformed_images')
+output_dir = r"C:\Users\LabPC2\Documents\GitHub\WP_imager\analysis\captured_transformed_images"
+os.makedirs(output_dir, exist_ok=True)
+del_dir_contents(output_dir)
 
 first_img = cv2.imread(imgs[0],-1)
 
@@ -34,7 +35,7 @@ t3 = []
 t4 = []
 t5 = []
 
-posx1y1x2y2 = [500,800,800,1000] # x down y across
+posx1y1x2y2 = [300,800,800,1000] # x down y across
 
 for i,file in enumerate(tqdm.tqdm(imgs)):
     
@@ -55,7 +56,7 @@ for i,img in enumerate(tqdm.tqdm(transformed_imgs)):
 
     norm = (transformed_imgs[i]/t_max)*255
 
-    cv2.imwrite(os.path.join('captured_transformed_images',str(i) + '.jpg'), norm)
+    cv2.imwrite(os.path.join(output_dir,str(i) + '.jpg'), norm)
 
 plt.figure(1)
 

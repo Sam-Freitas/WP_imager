@@ -33,7 +33,7 @@ def stream_gcode(port):
 
         time.sleep(0.5)
 
-        ser.write(str.encode("CSSASN050BSN050CSN050DSN050\r\n")) ### CSS (all) A (channel) S (selected) N (on) 050 (50 intensity)
+        ser.write(str.encode("CSSASN050BSN050CSN050DSN050\r\n")) ### CSS (all) A (orBCD channel) S (orX selected) N (orF on) 050 (50 intensity)
         time.sleep(0.5)   # Wait for Printrbot to initialize
         out = ser.readline() 
         response = out.strip().decode('utf-8')
