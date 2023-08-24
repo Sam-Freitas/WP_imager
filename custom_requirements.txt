@@ -1,0 +1,4 @@
+labjack driver: https://labjack.com/pages/support?doc=/software-driver/installer-downloads/ud-software-installers-u3-u6-ue9/
+labjack python: https://github.com/labjack/LabJackPython
+gige cam: https://www.theimagingsource.com/en-us/support/download/icwdmgigetis-3.8.0.4597/
+ic capture: https://www.theimagingsource.com/en-us/support/download/iccapture-2.5.1557.4007/

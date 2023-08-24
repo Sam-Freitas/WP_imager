@@ -80,6 +80,57 @@ def stream_gcode(GRBL_port_path,gcode_path):
         
         print('End of gcode')
 
+def send_single_line(GRBL_port_path,gcode_line):
+
+    with serial.Serial(GRBL_port_path, BAUD_RATE) as ser:
+        send_wake_up(ser)
+        
+        line = gcode_line
+
+        # cleaning up gcode from file
+        cleaned_line = remove_eol_chars(remove_comment(line))
+        if cleaned_line:  # checks if string is empty
+            print("Sending gcode:" + str(cleaned_line))
+            # converts string to byte encoded string and append newline
+            command = str.encode(line + '\n')
+            ser.write(command)  # Send g-code
+
+            wait_for_movement_completion(ser,cleaned_line)
+
+            grbl_out = ser.readline()  # Wait for response with carriage return
+            print(" : " , grbl_out.strip().decode('utf-8'))
+
+    print('End of line')
+
+def get_settings(GRBL_port_path):
+
+    settings = []
+
+    with serial.Serial(GRBL_port_path, BAUD_RATE) as ser:
+        send_wake_up(ser)
+        
+        line = '$$'
+
+        # cleaning up gcode from file
+        cleaned_line = remove_eol_chars(remove_comment(line))
+        if cleaned_line:  # checks if string is empty
+            print("Sending gcode:" + str(cleaned_line))
+            # converts string to byte encoded string and append newline
+            command = str.encode(line + '\n')
+            ser.write(command)  # Send g-code
+
+            for i in range(1000):
+                grbl_out = ser.readline()  # Wait for response with carriage return
+                print(" : " , grbl_out.strip().decode('utf-8'))
+                out_decoded = grbl_out.strip().decode('utf-8')
+
+                settings.append(out_decoded)
+
+                if 'ok' in out_decoded:
+                    break
+
+    return settings
+
 if __name__ == "__main__":
 
     # GRBL_port_path = '/dev/tty.usbserial-A906L14X'
