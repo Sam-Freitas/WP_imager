@@ -35,13 +35,13 @@ t3 = []
 t4 = []
 t5 = []
 
-posx1y1x2y2 = [300,800,800,1000] # x down y across
+posx1y1x2y2 = [300,800,1500,1000] # x down y across
 
 for i,file in enumerate(tqdm.tqdm(imgs)):
     
     this_img = cv2.imread(file)[:,:,-1].astype(np.float32) # assume grayscale
     temp_img = this_img
-    temp_img = filters.gaussian(temp_img, sigma = 2)
+    temp_img = filters.gaussian(temp_img, sigma = 5)
 
     temp_img5 = filters.roberts(temp_img)
     t5.append(np.max(temp_img5[posx1y1x2y2[0]:posx1y1x2y2[2],posx1y1x2y2[1]:posx1y1x2y2[3]]))
