@@ -4,7 +4,7 @@ import u3
 def blink_led(d):
 
     d.toggleLED()
-    time.sleep(0.1)
+    time.sleep(0.25)
     d.toggleLED()
 
 def set_DAC(d,DAC_num,voltage):
@@ -19,23 +19,29 @@ def set_DAC(d,DAC_num,voltage):
     elif DAC_num == 1:
         d.writeRegister(5002, dac_value)  # Write DAC1 value to register 5002
 
+def setup_labjack():
 
-if __name__ == "__main__":
     d = u3.U3()
     print(d.configU3())
 
-    set_DAC(d,0,0)
-    set_DAC(d,1,0)
+    return d
 
-    set_DAC(d,0,5)
-    time.sleep(5)
-    set_DAC(d,0,0)
 
-    set_DAC(d,1,5)
-    time.sleep(5)
-    set_DAC(d,1,0)
+# if __name__ == "__main__":
+#     d = setup_labjack()
 
-    print(round(d.getTemperature()-273.15,1))
-    blink_led(d)
+#     set_DAC(d,0,0)
+#     set_DAC(d,1,0)
 
-    d.close()
+#     set_DAC(d,0,5)
+#     time.sleep(5)
+#     set_DAC(d,0,0)
+
+#     set_DAC(d,1,5)
+#     time.sleep(5)
+#     set_DAC(d,1,0)
+
+#     print(round(d.getTemperature()-273.15,1))
+#     blink_led(d)
+
+#     d.close()

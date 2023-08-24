@@ -24,6 +24,7 @@ BAUD_RATE = 9600 # 1200, 2400, 4800, 19200, 38400, 57600, and 115200
 def stream_gcode(port):
     # with contect opens file/connection and closes it if function(with) scope is left
     with serial.Serial(port, BAUD_RATE) as ser:
+        print('Reading coolLed settings:')
         ser.reset_input_buffer()
         ser.write(str.encode("CSS?\r\n"))
         time.sleep(0.5)   # Wait for Printrbot to initialize
@@ -33,7 +34,8 @@ def stream_gcode(port):
 
         time.sleep(0.1)
 
-        ser.write(str.encode("CSSAXF050BXN050CXN050DXN050\r\n"))
+        print('Resetting coolLed settings:')
+        ser.write(str.encode("CSSAXF000BXN000CXN000DXN000\r\n"))
         time.sleep(0.5)   # Wait for Printrbot to initialize
         out = ser.readline() 
         response = out.strip().decode('utf-8')
@@ -41,7 +43,8 @@ def stream_gcode(port):
 
         time.sleep(0.1)
 
-        ser.write(str.encode("CSSASN050BSN050CSN050DSN050\r\n")) ### CSS (all) A (orBCD channel) S (orX selected) N (orF on) 050 (50 intensity)
+        print('Writing coolLed settings:')
+        ser.write(str.encode("CSSASN010BSN010CSN010DSN010\r\n")) ### CSS (all) A (orBCD channel) S (orX selected) N (orF on) 050 (50 intensity)
         time.sleep(0.5)   # Wait for Printrbot to initialize
         out = ser.readline() 
         response = out.strip().decode('utf-8')
@@ -49,19 +52,20 @@ def stream_gcode(port):
 
         time.sleep(2)
 
-        ser.write(str.encode("CSSAXF050BXN050CXN050DXN050\r\n"))
+        print('Resetting coolLed settings:')
+        ser.write(str.encode("CSSAXF000BXN000CXN000DXN000\r\n"))
         time.sleep(0.5)   # Wait for Printrbot to initialize
         out = ser.readline() 
         response = out.strip().decode('utf-8')
         print(response)
         
-        print('End of gcode')
+        print('End of commands')
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
 
-    # GRBL_port_path = '/dev/tty.usbserial-A906L14X'
-    GRBL_port_path = 'COM4'
+#     # GRBL_port_path = '/dev/tty.usbserial-A906L14X'
+#     GRBL_port_path = 'COM4'
 
-    stream_gcode(GRBL_port_path)
+#     stream_gcode(GRBL_port_path)
 
-    print('EOF')
+#     print('EOF')
