@@ -27,11 +27,9 @@ def remove_comment(string):
     else:
         return string[:string.index(';')]
 
-
 def remove_eol_chars(string):
     # removed \n or traling spaces
     return string.strip()
-
 
 def send_wake_up(ser):
     # Wake up
@@ -47,9 +45,7 @@ def wait_for_movement_completion(ser,cleaned_line):
     if cleaned_line != '$X' or '$$':
 
         idle_counter = 0
-
         while True:
-
             # Event().wait(0.01)
             ser.reset_input_buffer()
             command = str.encode('?' + '\n')
@@ -58,14 +54,11 @@ def wait_for_movement_completion(ser,cleaned_line):
             grbl_response = grbl_out.strip().decode('utf-8')
 
             if grbl_response != 'ok':
-
                 if grbl_response.find('Idle') > 0:
                     idle_counter += 1
-
             if idle_counter > 10:
                 break
     return
-
 
 def stream_gcode(GRBL_port_path,gcode_path):
     # with contect opens file/connection and closes it if function(with) scope is left
@@ -84,8 +77,6 @@ def stream_gcode(GRBL_port_path,gcode_path):
 
                 grbl_out = ser.readline()  # Wait for response with carriage return
                 print(" : " , grbl_out.strip().decode('utf-8'))
-
-                
         
         print('End of gcode')
 
