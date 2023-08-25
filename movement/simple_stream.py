@@ -108,7 +108,7 @@ def get_settings(GRBL_port_path): # gets the settings from the grbl controller
     settings = []
  
     with serial.Serial(GRBL_port_path, BAUD_RATE) as ser:
-        send_wake_up(ser, sleep_amount=0.1)
+        send_wake_up(ser)
         
         line = '$$'
 
@@ -123,7 +123,7 @@ def get_settings(GRBL_port_path): # gets the settings from the grbl controller
             for i in range(1000):
                 grbl_out = ser.readline()  # Wait for response with carriage return
                 out_decoded = grbl_out.strip().decode('utf-8')
-                print(out_decoded)
+                # print(out_decoded)
 
                 settings.append(out_decoded)
 
