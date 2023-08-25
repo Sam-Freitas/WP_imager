@@ -31,11 +31,11 @@ def remove_eol_chars(string):
     # removed \n or traling spaces
     return string.strip()
 
-def send_wake_up(ser):
+def send_wake_up(ser,sleep_amount = 2):
     # Wake up
     # Hit enter a few times to wake the Printrbot
     ser.write(str.encode("\r\n\r\n"))
-    time.sleep(2)   # Wait for Printrbot to initialize
+    time.sleep(sleep_amount)   # Wait for Printrbot to initialize
     ser.flushInput()  # Flush startup text in serial input
 
 def wait_for_movement_completion(ser,cleaned_line):
@@ -102,12 +102,13 @@ def send_single_line(GRBL_port_path,gcode_line):
 
     print('End of line')
 
-def get_settings(GRBL_port_path):
+def get_settings(GRBL_port_path): # gets the settings from the grbl controller 
 
+    print('Getting GRBL controller settings')
     settings = []
-
+ 
     with serial.Serial(GRBL_port_path, BAUD_RATE) as ser:
-        send_wake_up(ser)
+        send_wake_up(ser, sleep_amount=0.1)
         
         line = '$$'
 
@@ -121,8 +122,8 @@ def get_settings(GRBL_port_path):
 
             for i in range(1000):
                 grbl_out = ser.readline()  # Wait for response with carriage return
-                print(" : " , grbl_out.strip().decode('utf-8'))
                 out_decoded = grbl_out.strip().decode('utf-8')
+                print(out_decoded)
 
                 settings.append(out_decoded)
 

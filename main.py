@@ -11,6 +11,7 @@ if __name__ == "__main__":
     s_plate_positions = settings.get_settings.get_plate_positions()
     s_machines = settings.get_settings.get_machine_settings()
     s_grbl_settings = movement.simple_stream.get_settings(s_machines['grbl'][0])
+    s_grbl_settings = settings.get_settings.convert_GRBL_settings(s_grbl_settings)
     s_camera_settings = []
 
     # run setup test to make sure everything works or throw error
