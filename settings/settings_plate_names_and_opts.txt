@@ -79,4 +79,4 @@ plate_index	row	column	plate_name	experiment_name	lifespan	fluorescence
 77	8	5	NONE	NONE	1	1
 78	8	6	NONE	NONE	1	1
 79	8	7	NONE	NONE	1	1
-80	8	8	NONE	NONE	1	1
+80	8	8	t_100	test	1	1

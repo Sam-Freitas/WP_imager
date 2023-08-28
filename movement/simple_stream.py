@@ -58,6 +58,9 @@ def wait_for_movement_completion(ser,cleaned_line):
                     idle_counter += 1
             if idle_counter > 10:
                 break
+            if 'alarm' in grbl_response.lower():
+                raise ValueError(grbl_response)
+
     return
 
 def stream_gcode(GRBL_port_path,gcode_path):
@@ -100,7 +103,7 @@ def send_single_line(GRBL_port_path,gcode_line):
             grbl_out = ser.readline()  # Wait for response with carriage return
             print(" : " , grbl_out.strip().decode('utf-8'))
 
-    print('End of line')
+    # print('End of line')
 
 def get_settings(GRBL_port_path): # gets the settings from the grbl controller 
 
@@ -119,7 +122,7 @@ def get_settings(GRBL_port_path): # gets the settings from the grbl controller
             # converts string to byte encoded string and append newline
             command = str.encode(line + '\n')
             ser.write(command)  # Send g-code
-
+ 
             for i in range(1000):
                 grbl_out = ser.readline()  # Wait for response with carriage return
                 out_decoded = grbl_out.strip().decode('utf-8')
@@ -131,6 +134,32 @@ def get_settings(GRBL_port_path): # gets the settings from the grbl controller
                     break
 
     return settings
+
+def home_GRBL(GRBL_port_path, testing = False):
+
+    if not testing:
+        send_single_line(GRBL_port_path,'$X')
+        send_single_line(GRBL_port_path,'$H')
+    if testing:
+        send_single_line(GRBL_port_path,'$X')
+        print('testing --- $H')
+
+
+def move_XYZ():
+    print('MOVE xyz')
+
+def move_XY_at_z_travel(plate_position,GRBL_port_path,z_travel_height = 0):
+    print('moving Z to travel height')
+    move_z_command = 'G1 ' + 'Z' + str(z_travel_height) + ' F3000'
+    send_single_line(GRBL_port_path,move_z_command)
+
+    print('moving to XY')
+    move_xy_command = 'G1 ' + 'X' + str(plate_position['x_pos']) + ' ' + 'Y' + str(plate_position['y_pos']) + ' F3000'
+    send_single_line(GRBL_port_path,move_xy_command)
+
+    print('move Z to imaging height')
+    move_xy_command = 'G1 ' + 'Z' + str(plate_position['z_pos']) + ' F3000'
+    send_single_line(GRBL_port_path,move_xy_command)
 
 if __name__ == "__main__":
 

@@ -1,0 +1,10 @@
+widefield	fluorescence	Explanation
+0	1	camera_port
+5472	1080	pixel_width
+3640	1080	pixel_height
+6	14	max_framerate
+5	0	time_between_images_seconds
+60	0	time_of_single_burst_seconds
+12	3	number_of_images_per_burst
+png	png	img_file_format
+8	8	img_pixel_depth
