@@ -19,29 +19,54 @@ def set_DAC(d,DAC_num,voltage):
     elif DAC_num == 1:
         d.writeRegister(5002, dac_value)  # Write DAC1 value to register 5002
 
-def setup_labjack():
+def setup_labjack(verbose = True):
 
     d = u3.U3()
-    print(d.configU3())
+    if verbose:
+        print(d.configU3())
 
     return d
 
+def turn_on_blue(d = None):
+    if d == None:
+        d = setup_labjack(verbose=False)
+    blink_led(d)
+    dac_value = 5
+    d.writeRegister(5002, dac_value)  # Write DAC1 value to register 5002
 
-# if __name__ == "__main__":
-#     d = setup_labjack()
+def turn_off_blue(d = None):
+    if d == None:
+        d = setup_labjack(verbose=False)
+    blink_led(d)
+    dac_value = 0
+    d.writeRegister(5002, dac_value)  # Write DAC1 value to register 5002
 
-#     set_DAC(d,0,0)
-#     set_DAC(d,1,0)
+def turn_off_everything(d = None):
+    if d == None:
+        d = setup_labjack(verbose=False)
+    blink_led(d)
 
-#     set_DAC(d,0,5)
-#     time.sleep(5)
-#     set_DAC(d,0,0)
+    # dac_value = int((voltage / 5.0) * 65535)  # Convert voltage to DAC value
+    dac_value = 0
 
-#     set_DAC(d,1,5)
-#     time.sleep(5)
-#     set_DAC(d,1,0)
+    d.writeRegister(5000, dac_value)  # Write DAC0 value to register 5000
+    d.writeRegister(5002, dac_value)  # Write DAC1 value to register 5002
 
-#     print(round(d.getTemperature()-273.15,1))
-#     blink_led(d)
+if __name__ == "__main__":
+    d = setup_labjack()
 
-#     d.close()
+    set_DAC(d,0,0)
+    set_DAC(d,1,0)
+
+    # set_DAC(d,0,5)
+    # time.sleep(5)
+    # set_DAC(d,0,0)
+
+    set_DAC(d,1,5)
+    time.sleep(5)
+    set_DAC(d,1,0)
+
+    print(round(d.getTemperature()-273.15,1))
+    blink_led(d)
+
+    d.close()

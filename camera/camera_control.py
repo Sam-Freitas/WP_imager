@@ -1,12 +1,14 @@
 import cv2, os, tqdm, glob, time, datetime
 import matplotlib.pyplot as plt
 
-def imshow_resize(frame_name = "img", frame = 0, resize_size = [640,480], default_ratio = 1.3333):
+def imshow_resize(frame_name = "img", frame = 0, resize_size = [640,480], default_ratio = 1.3333, always_on_top = True, use_waitkey = True):
 
     frame = cv2.resize(frame, dsize=resize_size)
     cv2.imshow(frame_name, frame)
-    cv2.setWindowProperty(frame_name, cv2.WND_PROP_TOPMOST, 1)
-    cv2.waitKey(1)
+    if always_on_top:
+        cv2.setWindowProperty(frame_name, cv2.WND_PROP_TOPMOST, 1)
+    if use_waitkey:
+        cv2.waitKey(1)
     cv2.moveWindow(frame_name,1920-resize_size[0],1)
     return True
 
@@ -17,17 +19,21 @@ def del_dir_contents(path_to_dir):
 
 def capture_images_for_time(cap,N):
 
-    start_time = time.process_time()
+    start_time = datetime.datetime.now()
 
     while True:
-        current_time = time.process_time()
+        current_time = datetime.datetime.now()
         ret, frame = cap.read()
         if not ret:
             print("Error: Unable to capture frame.")
             break
         # imshow_resize("img", frame, resize_size=[640,480])
-        if start_time + N < current_time:
+        if start_time + datetime.timedelta(0,N + 0.1) < current_time:
             break 
+
+def clear_camera_image_buffer(cap,N=2):
+    for i in range(N):
+        ret, frame = cap.read()
 
 def simple_capture_data(camera_settings, plate_parameters = None, testing = False):
 
@@ -44,7 +50,7 @@ def simple_capture_data(camera_settings, plate_parameters = None, testing = Fals
     cam_framerate = camera_settings['widefield'][3]
     time_between_images_seconds = float(camera_settings['widefield'][4])
     time_of_single_burst_seconds = camera_settings['widefield'][5]
-    number_of_images_per_burst = camera_settings['widefield'][6]
+    number_of_images_per_burst = float(camera_settings['widefield'][6])
     img_file_format = camera_settings['widefield'][7]
     img_pixel_depth = camera_settings['widefield'][8]
 
@@ -60,10 +66,9 @@ def simple_capture_data(camera_settings, plate_parameters = None, testing = Fals
         print("Error: Unable to open camera.")
         exit()
 
-    for i in range(5):
-        ret, frame = cap.read()
+    clear_camera_image_buffer(cap)
 
-    num_images = 5
+    num_images = int(number_of_images_per_burst)
     # Capture a series of images
     for i in tqdm.tqdm(range(num_images)):
         start_time = time.process_time()
@@ -77,16 +82,65 @@ def simple_capture_data(camera_settings, plate_parameters = None, testing = Fals
         image_filename = os.path.join(output_dir, image_name)
 
         cv2.imwrite(image_filename, frame)
-        print(f"\nCaptured image {i+1}/{num_images}")
-        # imshow_resize("img", frame, resize_size=[640,480])
+        # print(f"\nCaptured image {i+1}/{num_images}")
+        imshow_resize("img", frame, resize_size=[640,480])
 
         end_time = time.process_time() - start_time
         delay_time = time_between_images_seconds-end_time
-        if delay_time<0:
-            delay_time = 0.1
-        capture_images_for_time(cap,delay_time)
+        if i != num_images-1:
+            if delay_time<0:
+                delay_time = 0.1
+            capture_images_for_time(cap,delay_time)
         # time.sleep(1)
 
     # Release the camera
-    # cv2.destroyWindow("img")
+    cv2.destroyWindow("img")
+    cap.release()
+
+if __name__ == "__main__":
+
+    import pandas as pd
+
+    camera_settings = pd.read_csv('settings\settings_cameras.txt', delimiter = '\t',index_col=False).to_dict()
+
+    camera_id = camera_settings['widefield'][0]
+    cam_width = camera_settings['widefield'][1]
+    cam_height = camera_settings['widefield'][2]
+    cam_framerate = camera_settings['widefield'][3]
+    time_between_images_seconds = float(camera_settings['widefield'][4])
+    time_of_single_burst_seconds = camera_settings['widefield'][5]
+    number_of_images_per_burst = camera_settings['widefield'][6]
+    img_file_format = camera_settings['widefield'][7]
+    img_pixel_depth = camera_settings['widefield'][8]
+
+    # time_between_images_seconds = 0.1
+
+    # Open the camera0
+    cap = cv2.VideoCapture(int(camera_id))
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH,int(cam_width))
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT,int(cam_height))
+    cap.set(cv2.CAP_PROP_FPS,int(cam_framerate))
+
+    if not cap.isOpened():
+        print("Error: Unable to open camera.")
+        exit()
+
+    window_name = "Press ESC on window to end"
+
+    # Capture a series of images
+    while True:
+        start_time = time.process_time()
+        ret, frame = cap.read()
+        if not ret:
+            print("Error: Unable to capture frame.")
+            break
+
+        imshow_resize(window_name, frame, resize_size=[640,480],always_on_top = True, use_waitkey = False)
+        # time.sleep(1)
+        c = cv2.waitKey(1)
+        if c == 27 or c == 10:
+            break
+
+    # Release the camera
+    cv2.destroyWindow(window_name)
     cap.release()

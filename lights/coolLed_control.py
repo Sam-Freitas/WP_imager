@@ -61,6 +61,20 @@ def stream_TX(port):
         
         print('End of commands')
 
+def turn_everything_off():
+
+    import pandas as pd
+    s_machines = pd.read_csv('settings\settings_machines.txt', delimiter = '\t',index_col=False).to_dict()
+    port = s_machines['coolLed'][0] 
+        
+    with serial.Serial(port, BAUD_RATE) as ser:
+        print('Resetting coolLed settings:')
+        ser.write(str.encode("CSSAXF000BXN000CXN000DXN000\r\n"))
+        time.sleep(0.5)   # Wait for Printrbot to initialize
+        out = ser.readline() 
+        response = out.strip().decode('utf-8')
+        print(response)
+
 if __name__ == "__main__":
 
     # GRBL_port_path = '/dev/tty.usbserial-A906L14X'
