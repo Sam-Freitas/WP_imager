@@ -33,7 +33,7 @@ if __name__ == "__main__":
     # # coolLED_port = s_machines['coolLed'][0] # test the fluorescent lights (if applicable)
     # # lights.coolLed_control.stream_TX(coolLED_port)
 
-    # experiment set up
+    # experiment set up -- find optimal route ()
     lights.labjackU3_control.turn_off_everything(d)
 
     plate_index = []
@@ -42,8 +42,6 @@ if __name__ == "__main__":
         this_plate_name = s_plate_names_and_opts['plate_name'][this_plate_index]
         if this_plate_name != 'NONE':
             plate_index.append(this_plate_index)
-
-    ## find optimal route ()
 
     # run experiment 
     for this_plate_index in plate_index:

@@ -45,14 +45,28 @@ def simple_capture_data(camera_settings, plate_parameters = None, testing = Fals
         del_dir_contents(output_dir)
 
     camera_id = camera_settings['widefield'][0]
-    cam_width = camera_settings['widefield'][1]
-    cam_height = camera_settings['widefield'][2]
+    cam_width = float(camera_settings['widefield'][1])
+    cam_height = float(camera_settings['widefield'][2])
     cam_framerate = camera_settings['widefield'][3]
     time_between_images_seconds = float(camera_settings['widefield'][4])
     time_of_single_burst_seconds = camera_settings['widefield'][5]
     number_of_images_per_burst = float(camera_settings['widefield'][6])
     img_file_format = camera_settings['widefield'][7]
     img_pixel_depth = camera_settings['widefield'][8]
+
+    # Define the text and font settings
+    text = plate_parameters['experiment_name'] + '--' + plate_parameters['plate_name'] + '--' + todays_date
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    font_scale = 10.0
+    font_color1 = (255, 255, 255)  # white color
+    thickness1 = 15
+    font_color2 = (0, 0, 0)  # black color for outline
+    thickness2 = 50
+
+    # Calculate the position for placing the text
+    text_size = cv2.getTextSize(text, font, font_scale, thickness1)[0]
+    text_x = (cam_width - text_size[0]) // 2  # Center horizontally
+    text_y = 250  # 250 pixels from the top
 
     time_between_images_seconds = 0.1
 
@@ -81,16 +95,22 @@ def simple_capture_data(camera_settings, plate_parameters = None, testing = Fals
         image_name = current_time + '.' + img_file_format
         image_filename = os.path.join(output_dir, image_name)
 
-        cv2.imwrite(image_filename, frame)
+        # cv2.imwrite(image_filename, frame)
         # print(f"\nCaptured image {i+1}/{num_images}")
+
+        # Put the text on the image
+        cv2.putText(frame, text, (int(text_x), int(text_y)), font, font_scale, font_color2, thickness2) # black 
+        cv2.putText(frame, text, (int(text_x), int(text_y)), font, font_scale, font_color1, thickness1) # white
+
         imshow_resize("img", frame, resize_size=[640,480])
 
         end_time = time.process_time() - start_time
         delay_time = time_between_images_seconds-end_time
         if i != num_images-1:
             if delay_time<0:
-                delay_time = 0.1
-            capture_images_for_time(cap,delay_time)
+                pass
+            else:
+                capture_images_for_time(cap,delay_time)
         # time.sleep(1)
 
     # Release the camera
@@ -99,48 +119,4 @@ def simple_capture_data(camera_settings, plate_parameters = None, testing = Fals
 
 if __name__ == "__main__":
 
-    import pandas as pd
-
-    camera_settings = pd.read_csv('settings\settings_cameras.txt', delimiter = '\t',index_col=False).to_dict()
-
-    camera_id = camera_settings['widefield'][0]
-    cam_width = camera_settings['widefield'][1]
-    cam_height = camera_settings['widefield'][2]
-    cam_framerate = camera_settings['widefield'][3]
-    time_between_images_seconds = float(camera_settings['widefield'][4])
-    time_of_single_burst_seconds = camera_settings['widefield'][5]
-    number_of_images_per_burst = camera_settings['widefield'][6]
-    img_file_format = camera_settings['widefield'][7]
-    img_pixel_depth = camera_settings['widefield'][8]
-
-    # time_between_images_seconds = 0.1
-
-    # Open the camera0
-    cap = cv2.VideoCapture(int(camera_id))
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH,int(cam_width))
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT,int(cam_height))
-    cap.set(cv2.CAP_PROP_FPS,int(cam_framerate))
-
-    if not cap.isOpened():
-        print("Error: Unable to open camera.")
-        exit()
-
-    window_name = "Press ESC on window to end"
-
-    # Capture a series of images
-    while True:
-        start_time = time.process_time()
-        ret, frame = cap.read()
-        if not ret:
-            print("Error: Unable to capture frame.")
-            break
-
-        imshow_resize(window_name, frame, resize_size=[640,480],always_on_top = True, use_waitkey = False)
-        # time.sleep(1)
-        c = cv2.waitKey(1)
-        if c == 27 or c == 10:
-            break
-
-    # Release the camera
-    cv2.destroyWindow(window_name)
-    cap.release()
+    print('pass')
