@@ -1,4 +1,4 @@
-import os, sys, serial, time
+import os, sys, serial, time, datetime
 import u3
 
 def blink_led(d):
@@ -27,19 +27,41 @@ def setup_labjack(verbose = True):
 
     return d
 
-def turn_on_blue(d = None):
+def turn_on_blue(d = None, return_time = False):
     if d == None:
         d = setup_labjack(verbose=False)
     blink_led(d)
     dac_value = 5
     d.writeRegister(5002, dac_value)  # Write DAC1 value to register 5002
+    if return_time:
+        return time.time()
 
-def turn_off_blue(d = None):
+def turn_off_blue(d = None, return_time = False):
     if d == None:
         d = setup_labjack(verbose=False)
     blink_led(d)
     dac_value = 0
     d.writeRegister(5002, dac_value)  # Write DAC1 value to register 5002
+    if return_time:
+        return time.time()
+    
+def turn_on_red(d = None, return_time = False):
+    if d == None:
+        d = setup_labjack(verbose=False)
+    blink_led(d)
+    dac_value = 5
+    d.writeRegister(5000, dac_value)  # Write DAC1 value to register 5002
+    if return_time:
+        return time.time()
+
+def turn_off_red(d = None, return_time = False):
+    if d == None:
+        d = setup_labjack(verbose=False)
+    blink_led(d)
+    dac_value = 0
+    d.writeRegister(5000, dac_value)  # Write DAC1 value to register 5002
+    if return_time:
+        return time.time()
 
 def turn_off_everything(d = None):
     if d == None:
@@ -53,20 +75,21 @@ def turn_off_everything(d = None):
     d.writeRegister(5002, dac_value)  # Write DAC1 value to register 5002
 
 if __name__ == "__main__":
-    d = setup_labjack()
+    print('pass')
+    # d = setup_labjack()
 
-    set_DAC(d,0,0)
-    set_DAC(d,1,0)
-
-    # set_DAC(d,0,5)
-    # time.sleep(5)
     # set_DAC(d,0,0)
+    # set_DAC(d,1,0)
 
-    set_DAC(d,1,5)
-    time.sleep(5)
-    set_DAC(d,1,0)
+    # # set_DAC(d,0,5)
+    # # time.sleep(5)
+    # # set_DAC(d,0,0)
 
-    print(round(d.getTemperature()-273.15,1))
-    blink_led(d)
+    # set_DAC(d,1,5)
+    # time.sleep(5)
+    # set_DAC(d,1,0)
 
-    d.close()
+    # print(round(d.getTemperature()-273.15,1))
+    # blink_led(d)
+
+    # d.close()

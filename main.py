@@ -45,6 +45,7 @@ if __name__ == "__main__":
         if this_plate_name != 'NONE':
             plate_index.append(this_plate_index)
 
+    lights.labjackU3_control.turn_on_red(d)
     # run experiment 
     for this_plate_index in plate_index:
         this_plate_parameters,this_plate_position = settings.get_settings.get_indexed_dict_parameters(s_plate_names_and_opts,s_plate_positions,this_plate_index)
@@ -54,9 +55,12 @@ if __name__ == "__main__":
 
         # movement.simple_stream.move_XY_at_z_travel(this_plate_position,s_machines['grbl'][0],s_machines['grbl'][2])
 
-        camera.camera_control.simple_capture_data(s_camera_settings,this_plate_parameters, testing=False, output_dir=output_dir)
-        lights.labjackU3_control.turn_on_blue(d)
-        camera.camera_control.simple_capture_data(s_camera_settings,this_plate_parameters, testing=False, output_dir=output_dir)
+        camera.camera_control.simple_capture_data(s_camera_settings, plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir)
+        t = lights.labjackU3_control.turn_on_blue(d, return_time=True)
+        camera.camera_control.capture_single_image_wait_N_seconds(s_camera_settings, timestart=t, excitation_amount = s_machines['labjack'][3], 
+                                                                  plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir)
+        lights.labjackU3_control.turn_off_blue(d)
+        camera.camera_control.simple_capture_data(s_camera_settings, plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir)
         lights.labjackU3_control.turn_off_blue(d)
         print('')
 
