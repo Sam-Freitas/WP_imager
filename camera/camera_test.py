@@ -55,20 +55,15 @@ if __name__ == "__main__":
     img_file_format = camera_settings['widefield'][7]
     img_pixel_depth = camera_settings['widefield'][8]
 
-    # time_between_images_seconds = 0.1
-
     # Open the camera0
     cap = cv2.VideoCapture(int(camera_id))
     cap.set(cv2.CAP_PROP_FRAME_WIDTH,int(cam_width))
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT,int(cam_height))
     cap.set(cv2.CAP_PROP_FPS,int(cam_framerate))
 
-    cap.set(cv2.CAP_PROP_PVAPI_BINNINGX,4)
-    cap.set(cv2.CAP_PROP_PVAPI_BINNINGY,4)
-
     cap.set(cv2.CAP_PROP_FRAME_WIDTH,int(1824))
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT,int(1824))
-    cap.set(cv2.CAP_PROP_FPS,int(100))
+    cap.set(cv2.CAP_PROP_FPS,int(30))
 
     if not cap.isOpened():
         print("Error: Unable to open camera.")
@@ -83,7 +78,7 @@ if __name__ == "__main__":
             print("Error: Unable to capture frame.")
             break
 
-        imshow_resize(window_name, frame, resize_size=[640,480],always_on_top = True, use_waitkey = False)
+        imshow_resize(window_name, frame, resize_size=[1080,1080],always_on_top = True, use_waitkey = False)
         # time.sleep(1)
         c = cv2.waitKey(1)
         if c == 27 or c == 10:

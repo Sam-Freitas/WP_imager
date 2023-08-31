@@ -1,10 +1,17 @@
 import pandas as pd
+import os
 
+def get_base_path():
+
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+
+    return dir_path
 
 def get_plate_names_and_opts(): # this gets the plate parameters (this SHOULD change )
 
     print('Getting plate names and options')
-    df = pd.read_csv('settings\settings_plate_names_and_opts.txt', delimiter = '\t',index_col=False)
+    path = os.path.join(get_base_path(),'settings_plate_names_and_opts.txt')
+    df = pd.read_csv(path, delimiter = '\t',index_col=False)
     df = df.to_dict()
 
     return df
@@ -12,7 +19,8 @@ def get_plate_names_and_opts(): # this gets the plate parameters (this SHOULD ch
 def get_plate_positions(): # this gets the plate positions (this shouldnt change )
 
     print('Getting plate positions')
-    df = pd.read_csv('settings\settings_plate_positions.txt', delimiter = '\t',index_col=False)
+    path = os.path.join(get_base_path(),'settings_plate_positions.txt')
+    df = pd.read_csv(path, delimiter = '\t',index_col=False)
     df = df.to_dict()
 
     return df
@@ -20,7 +28,8 @@ def get_plate_positions(): # this gets the plate positions (this shouldnt change
 def get_machine_settings(): # this reads the machine settings file
 
     print('Getting machines settings')
-    df = pd.read_csv('settings\settings_machines.txt', delimiter = '\t',index_col=False)
+    path = os.path.join(get_base_path(),'settings_machines.txt')
+    df = pd.read_csv(path, delimiter = '\t',index_col=False)
     df = df.to_dict()
 
     return df
@@ -28,17 +37,16 @@ def get_machine_settings(): # this reads the machine settings file
 def get_basic_camera_settings():
 
     print('Getting camera(s) settings')
-    df = pd.read_csv('settings\settings_cameras.txt', delimiter = '\t',index_col=False)
+    path = os.path.join(get_base_path(),'settings_cameras.txt')
+    df = pd.read_csv(path, delimiter = '\t',index_col=False)
     df = df.to_dict()
 
     return df
 
-
-
-
 def convert_GRBL_settings(settings): # this converts grblHAL settings to readable dictionary 
 
-    df_descriptor = df = pd.read_csv('settings\settings_grbl_base.txt', delimiter = ';',index_col=False,header = None)
+    path = os.path.join(get_base_path(),'settings_grbl_base.txt')
+    df_descriptor = df = pd.read_csv(path, delimiter = ';',index_col=False,header = None)
 
     new_settings = dict()
 

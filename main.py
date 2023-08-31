@@ -16,6 +16,8 @@ if __name__ == "__main__":
 
     atexit.register(turn_everything_off_at_exit)
 
+    output_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),'output')
+
     # read in settings
     s_plate_names_and_opts = settings.get_settings.get_plate_names_and_opts()
     s_plate_positions = settings.get_settings.get_plate_positions()
@@ -52,9 +54,9 @@ if __name__ == "__main__":
 
         # movement.simple_stream.move_XY_at_z_travel(this_plate_position,s_machines['grbl'][0],s_machines['grbl'][2])
 
-        camera.camera_control.simple_capture_data(s_camera_settings,this_plate_parameters, testing=False)
+        camera.camera_control.simple_capture_data(s_camera_settings,this_plate_parameters, testing=False, output_dir=output_dir)
         lights.labjackU3_control.turn_on_blue(d)
-        camera.camera_control.simple_capture_data(s_camera_settings,this_plate_parameters, testing=False)
+        camera.camera_control.simple_capture_data(s_camera_settings,this_plate_parameters, testing=False, output_dir=output_dir)
         lights.labjackU3_control.turn_off_blue(d)
         print('')
 

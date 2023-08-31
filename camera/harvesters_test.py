@@ -1,4 +1,6 @@
-import cv2
+import cv2, tqdm
+import matplotlib.pyplot as plt
+import numpy as np
 from harvesters.core import Harvester
 
 def imshow_resize(frame_name = "img", frame = 0, resize_size = [640,480], default_ratio = 1.3333, always_on_top = True, use_waitkey = True):
@@ -11,6 +13,10 @@ def imshow_resize(frame_name = "img", frame = 0, resize_size = [640,480], defaul
         cv2.waitKey(1)
     cv2.moveWindow(frame_name,1920-resize_size[0],1)
     return True
+
+def generator():
+    while True:
+        yield
 
 def open_imaging_source_camera(serial_number):
     try:
@@ -48,10 +54,16 @@ def open_imaging_source_camera(serial_number):
 def main():
     camera_serial_number = "04910039"  # Replace with your camera's serial number
     h, cam = open_imaging_source_camera(camera_serial_number)
+
+    # cam.remote_device.node_map.BinningHorizontal.value = 2
+    # cam.remote_device.node_map.BinningVertical.value = 2
+
+    cam.remote_device.node_map.Height.value = 2736
+    cam.remote_device.node_map.Width.value = 1824
     
     if cam is not None:
         try:
-            while True:
+            for _ in tqdm.tqdm(generator()):
                 try:
                     with cam.fetch() as buffer:
                         # Work with the Buffer object. It consists of everything you need.
@@ -60,12 +72,14 @@ def main():
                         image = buffer.payload.components[0]
                         out = image.data.reshape(image.height,image.width)
                         imshow_resize("Camera Stream", out, always_on_top = True, use_waitkey = False)
+                        c = cv2.waitKey(1)
+                        if c == 27 or c == 10:
+                            break
                 except Exception as e:
                     print("Error fetching or displaying image:", e)
 
-                c = cv2.waitKey(1)
-                if c == 27 or c == 10:
-                    break
+                # if c == 27 or c == 10:
+                #     break
         finally:
             cam.stop()
             cam.destroy()
