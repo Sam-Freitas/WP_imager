@@ -39,7 +39,7 @@ def capture_images_for_time(cap,N, show_images = False, move_to = [100,100], res
         if show_images:
             imshow_resize("stream", frame, resize_size=resize_size, move_to=move_to)
         current_time = time.time()
-        if start_time < current_time - N + 0.1:
+        if start_time < current_time - N + 0.1: # dont know why the 0.1 is necessary but it works much better with it
             break 
 
 # this captures the first N images to clear the pipeline (sometime just black images)

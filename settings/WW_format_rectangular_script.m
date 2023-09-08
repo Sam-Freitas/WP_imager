@@ -63,7 +63,7 @@ cols = 9*ones(1,rows);
 clc;
 
 % fprintf('plate_index\trow\tcolumn\tx_pos\ty_pos\tz_pos\n') %%% default
-fprintf('plate_index\trow\tcolumn\tplate_name\texperiment_name\tlifespan\tfluorescence\n') %name and opts
+fprintf('plate_index\trow\tcolumn\tplate_name\texperiment_name\tlifespan\tfluorescence\tfluorescence_times\n') %name and opts
 xo = -31;
 yo = -29;
 zo = -24;
@@ -81,7 +81,7 @@ for r = 0:rows - 1
     for c = 0:cols(r+1) - 1
 %         fprintf('%d\t%d\t%d\t%5.2f\t%5.2f\t%5.2f\t\n',counter,r,c,xo+(dx*i),yo+(dy*j),zo); %%%default 
 %         fprintf('%5.2f\t%5.2f\t%5.2f\t\n',xo+(dx*i),yo+(dy*j),zo); %%%%%%%%%%%just xyz 
-        fprintf('%d\t%d\t%d\tNONE\tNONE\t%d\t%d\n',counter,r,c,1,1); %%% name and opts 
+        fprintf('%d\t%d\t%d\tNONE\tNONE\t%d\t%d\t%d\n',counter,r,c,1,1,100); %%% name and opts 
         counter = counter + 1;
         i = i +1;
     end
