@@ -75,8 +75,8 @@ def update_todays_runs(s_todays_runs = None, overwrite = False, overwrite_val = 
 def get_plate_names_and_opts(): # this gets the plate parameters (this SHOULD change )
 
     print('Getting plate names and options')
-    path = os.path.join(get_base_path(),'settings_plate_names_and_opts.txt')
-    df = pd.read_csv(path, delimiter = '\t',index_col=False)
+    path = os.path.join(get_base_path(),'settings_plate_names_and_opts.csv')
+    df = pd.read_csv(path, delimiter = ',',index_col=False)
     df = df.to_dict()
 
     return df
@@ -84,8 +84,8 @@ def get_plate_names_and_opts(): # this gets the plate parameters (this SHOULD ch
 def get_plate_positions(): # this gets the plate positions (this shouldnt change )
 
     print('Getting plate positions')
-    path = os.path.join(get_base_path(),'settings_plate_positions.txt')
-    df = pd.read_csv(path, delimiter = '\t',index_col=False)
+    path = os.path.join(get_base_path(),'settings_plate_positions.csv')
+    df = pd.read_csv(path, delimiter = ',',index_col=False)
     df = df.to_dict()
 
     return df
@@ -93,8 +93,8 @@ def get_plate_positions(): # this gets the plate positions (this shouldnt change
 def get_machine_settings(): # this reads the machine settings file
 
     print('Getting machines settings')
-    path = os.path.join(get_base_path(),'settings_machines.txt')
-    df = pd.read_csv(path, delimiter = '\t',index_col=False)
+    path = os.path.join(get_base_path(),'settings_machines.csv')
+    df = pd.read_csv(path, delimiter = ',',index_col=False)
     df = df.to_dict()
 
     return df
@@ -102,8 +102,8 @@ def get_machine_settings(): # this reads the machine settings file
 def get_basic_camera_settings():
 
     print('Getting camera(s) settings')
-    path = os.path.join(get_base_path(),'settings_cameras.txt')
-    df = pd.read_csv(path, delimiter = '\t',index_col=False)
+    path = os.path.join(get_base_path(),'settings_cameras.csv')
+    df = pd.read_csv(path, delimiter = ',',index_col=False)
     df = df.to_dict()
 
     return df

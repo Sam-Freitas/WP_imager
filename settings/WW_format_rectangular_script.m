@@ -14,7 +14,7 @@
 
 %% OPTION 1: Manually specify rows and columns
 rows = 9;
-cols = 9*ones(1,rows);
+cols = 8*ones(1,rows);
 
 %% OPTION 2: Automatically detect the rows and columns in the WW User Parameters
 
@@ -64,9 +64,9 @@ clc;
 
 % fprintf('plate_index\trow\tcolumn\tx_pos\ty_pos\tz_pos\n') %%% default
 fprintf('plate_index\trow\tcolumn\tplate_name\texperiment_name\tlifespan\tfluorescence\tfluorescence_times\n') %name and opts
-xo = -31;
-yo = -29;
-zo = -24;
+xo = -50.375;
+yo = -212.035;
+zo = -100;
 
 dx = -153.2;
 dy = -116;
