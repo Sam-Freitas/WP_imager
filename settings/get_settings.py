@@ -108,6 +108,15 @@ def get_basic_camera_settings():
 
     return df
 
+def get_terasaki_positions():
+
+    print('Getting Terasaki positions')
+    path = os.path.join(get_base_path(),'settings_terasaki_positions.csv')
+    df = pd.read_csv(path, delimiter = ',',index_col=False)
+    df = df.to_dict()
+
+    return df
+
 def convert_GRBL_settings(settings): # this converts grblHAL settings to readable dictionary 
 
     path = os.path.join(get_base_path(),'settings_grbl_base.txt')

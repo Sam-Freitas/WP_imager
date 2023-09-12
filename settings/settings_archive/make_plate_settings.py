@@ -3,20 +3,20 @@ import pandas as pd
 import os
 
 # this is a script that will overwrite settings and replace them with cvs's
-# uncomment to run a specific section 
+# uncomment to run a specific section
 # this WILL REWRITE ALL SETTINGS
 
-path_to_settings_folder = os.path.join(os.getcwd(),'settings')
+path_to_settings_folder = os.path.join(os.getcwd(), "settings")
 
-rows = 9 # rows and columns
+rows = 9  # rows and columns
 cols = 8
 
-xo = -50.375 #  approximate intial starting points
+xo = -50.375  #  approximate intial starting points
 yo = -212.035  #  approximate intial starting points
-zo = -90 #  approximate intial starting points
+zo = -90  #  approximate intial starting points
 
-dx = -153.2 # distace between plates
-dy = -115 # used to be 116
+dx = -153.2  # distace between plates
+dy = -115  # used to be 116
 
 # #############################################
 # ## this is for the settings plate postions
@@ -30,7 +30,7 @@ dy = -115 # used to be 116
 # for r in range(rows):
 #     i = 0
 #     for c in range(cols):
-#         df.loc[counter] = [counter,r,c,xo+(dx*i),yo+(dy*j),zo] #just xyz 
+#         df.loc[counter] = [counter,r,c,xo+(dx*i),yo+(dy*j),zo] #just xyz
 #         counter = counter + 1
 #         i = i +1
 #     j = j+1

@@ -7,17 +7,19 @@ import os
 import sys
 import clip
 
-def imclearborder(imgBW, radius):
 
+def imclearborder(imgBW, radius):
     # Given a black and white image, first find all of its contours
     imgBWcopy = imgBW.copy()
-    contours,hierarchy = cv2.findContours(imgBWcopy.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+    contours, hierarchy = cv2.findContours(
+        imgBWcopy.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE
+    )
 
     # Get dimensions of image
     imgRows = imgBW.shape[0]
-    imgCols = imgBW.shape[1]    
+    imgCols = imgBW.shape[1]
 
-    contourList = [] # ID list of contours that touch the border
+    contourList = []  # ID list of contours that touch the border
 
     # For each contour...
     for idx in np.arange(len(contours)):
@@ -31,42 +33,52 @@ def imclearborder(imgBW, radius):
 
             # If this is within the radius of the border
             # this contour goes bye bye!
-            check1 = (rowCnt >= 0 and rowCnt < radius) or (rowCnt >= imgRows-1-radius and rowCnt < imgRows)
-            check2 = (colCnt >= 0 and colCnt < radius) or (colCnt >= imgCols-1-radius and colCnt < imgCols)
+            check1 = (rowCnt >= 0 and rowCnt < radius) or (
+                rowCnt >= imgRows - 1 - radius and rowCnt < imgRows
+            )
+            check2 = (colCnt >= 0 and colCnt < radius) or (
+                colCnt >= imgCols - 1 - radius and colCnt < imgCols
+            )
 
             if check1 or check2:
                 contourList.append(idx)
                 break
 
     for idx in contourList:
-        cv2.drawContours(imgBWcopy, contours, idx, (0,0,0), -1)
+        cv2.drawContours(imgBWcopy, contours, idx, (0, 0, 0), -1)
 
     return imgBWcopy
 
-def overlay_masks_on_image(annotations,base_image, alpha = 0.5, individual = False):
 
+def overlay_masks_on_image(annotations, base_image, alpha=0.5, individual=False):
     out = base_image.copy()
 
-    assert out.shape[-1] == 3 # make sure that the input image is a rgb filetype
+    assert out.shape[-1] == 3  # make sure that the input image is a rgb filetype
 
     if individual:
-        
-        this_colormap = plt.cm.Set1(range(annotations.shape[0]))*255
+        this_colormap = plt.cm.Set1(range(annotations.shape[0])) * 255
 
-        mask = torch.zeros(*annotations[0].shape).to(annotations.get_device()) # add all the masks together
-        for i,each_ann in enumerate(annotations):
-            this_mask = (each_ann>0)*1
-            mask = mask + this_mask*(i+1)
-            out[this_mask.cpu() == 1] = ( 
-                out[this_mask.cpu() == 1]*(1-alpha) + 
-                np.array(this_colormap[i][0:3])*alpha ) # turn the mast red with alpha
-        
+        mask = torch.zeros(*annotations[0].shape).to(
+            annotations.get_device()
+        )  # add all the masks together
+        for i, each_ann in enumerate(annotations):
+            this_mask = (each_ann > 0) * 1
+            mask = mask + this_mask * (i + 1)
+            out[this_mask.cpu() == 1] = (
+                out[this_mask.cpu() == 1] * (1 - alpha)
+                + np.array(this_colormap[i][0:3]) * alpha
+            )  # turn the mast red with alpha
+
     else:
-        mask = torch.zeros(*annotations[0].shape).to(annotations.get_device()) # add all the masks together
+        mask = torch.zeros(*annotations[0].shape).to(
+            annotations.get_device()
+        )  # add all the masks together
         for each_ann in annotations:
-            mask = ((mask + each_ann)>0)*1
+            mask = ((mask + each_ann) > 0) * 1
 
-        out[mask.cpu() == 1] = ( out[mask.cpu() == 1]*(1-alpha) + np.array([255,0,0])*alpha ) # turn the mast red with alpha
+        out[mask.cpu() == 1] = (
+            out[mask.cpu() == 1] * (1 - alpha) + np.array([255, 0, 0]) * alpha
+        )  # turn the mast red with alpha
 
     return out, np.asarray(mask.cpu())
 
@@ -78,7 +90,7 @@ def convert_box_xywh_to_xyxy(box):
         result = []
         for b in box:
             b = convert_box_xywh_to_xyxy(b)
-            result.append(b)               
+            result.append(b)
     return result
 
 
@@ -166,8 +178,8 @@ def fast_process(
     original_h = image.shape[0]
     original_w = image.shape[1]
     if sys.platform == "darwin":
-            plt.switch_backend("TkAgg")
-    plt.figure(figsize=(original_w/100, original_h/100))
+        plt.switch_backend("TkAgg")
+    plt.figure(figsize=(original_w / 100, original_h / 100))
     # Add subplot with no margin.
     plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
     plt.margins(0, 0)
@@ -242,16 +254,18 @@ def fast_process(
     plt.axis("off")
     fig = plt.gcf()
     plt.draw()
-    
+
     try:
         buf = fig.canvas.tostring_rgb()
     except AttributeError:
         fig.canvas.draw()
         buf = fig.canvas.tostring_rgb()
-    
+
     cols, rows = fig.canvas.get_width_height()
     img_array = np.fromstring(buf, dtype=np.uint8).reshape(rows, cols, 3)
-    cv2.imwrite(os.path.join(save_path, result_name), cv2.cvtColor(img_array, cv2.COLOR_RGB2BGR))
+    cv2.imwrite(
+        os.path.join(save_path, result_name), cv2.cvtColor(img_array, cv2.COLOR_RGB2BGR)
+    )
 
 
 # CPU post process
@@ -388,9 +402,7 @@ def fast_show_mask_gpu(
 
 # clip
 @torch.no_grad()
-def retriev(
-    model, preprocess, elements: [Image.Image], search_text: str, device
-):
+def retriev(model, preprocess, elements: [Image.Image], search_text: str, device):
     preprocessed_images = [preprocess(image).to(device) for image in elements]
     tokenized_text = clip.tokenize([search_text]).to(device)
     stacked_images = torch.stack(preprocessed_images)
@@ -463,10 +475,10 @@ def point_prompt(masks, points, point_label, target_height, target_width):  # nu
             for point in points
         ]
     onemask = np.zeros((h, w))
-    masks = sorted(masks, key=lambda x: x['area'], reverse=True)
+    masks = sorted(masks, key=lambda x: x["area"], reverse=True)
     for i, annotation in enumerate(masks):
         if type(annotation) == dict:
-            mask = annotation['segmentation']
+            mask = annotation["segmentation"]
         else:
             mask = annotation
         for i, point in enumerate(points):
@@ -483,9 +495,7 @@ def text_prompt(annotations, text, img_path, device, wider=False, threshold=0.9)
         annotations, img_path
     )
     clip_model, preprocess = clip.load("ViT-B/32", device=device)
-    scores = retriev(
-        clip_model, preprocess, cropped_boxes, text, device=device
-    )
+    scores = retriev(clip_model, preprocess, cropped_boxes, text, device=device)
     max_idx = scores.argsort()
     max_idx = max_idx[-1]
     max_idx = origin_id[int(max_idx)]
@@ -494,11 +504,19 @@ def text_prompt(annotations, text, img_path, device, wider=False, threshold=0.9)
     if wider:
         mask0 = annotations_[max_idx]["segmentation"]
         area0 = np.sum(mask0)
-        areas = [(i, np.sum(mask["segmentation"])) for i, mask in enumerate(annotations_) if i in origin_id]
+        areas = [
+            (i, np.sum(mask["segmentation"]))
+            for i, mask in enumerate(annotations_)
+            if i in origin_id
+        ]
         areas = sorted(areas, key=lambda area: area[1], reverse=True)
         indices = [area[0] for area in areas]
         for index in indices:
-            if index == max_idx or np.sum(annotations_[index]["segmentation"] & mask0) / area0 > threshold:
+            if (
+                index == max_idx
+                or np.sum(annotations_[index]["segmentation"] & mask0) / area0
+                > threshold
+            ):
                 max_idx = index
                 break
 

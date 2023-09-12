@@ -23,6 +23,7 @@ if __name__ == "__main__":
     # read in settings
     s_plate_names_and_opts = settings.get_settings.get_plate_names_and_opts()
     s_plate_positions = settings.get_settings.get_plate_positions()
+    s_terasaki_positions = settings.get_settings.get_terasaki_positions()
     s_machines = settings.get_settings.get_machine_settings()
     s_grbl_settings = movement.simple_stream.get_settings(s_machines['grbl'][0])
     _,s_grbl_settings = settings.get_settings.convert_GRBL_settings(s_grbl_settings)
@@ -33,13 +34,13 @@ if __name__ == "__main__":
 
     # run setup test to make sure everything works or throw error
 
-    # # movement.simple_stream.home_GRBL(s_machines['grbl'][0], testing = True) # home the machine
+    movement.simple_stream.home_GRBL(s_machines['grbl'][0], testing = run_as_testing) # home the machine
     s_todays_runs = settings.get_settings.update_todays_runs(s_todays_runs, overwrite=run_as_testing)
     d = lights.labjackU3_control.setup_labjack(verbose=run_as_testing)    # test the blue and red lights
     lights.labjackU3_control.blink_led(d)
 
-    # # coolLED_port = s_machines['coolLed'][0] # test the fluorescent lights (if applicable)
-    # # lights.coolLed_control.stream_TX(coolLED_port)
+    coolLED_port = s_machines['coolLed'][0] # test the fluorescent lights (if applicable)
+    lights.coolLed_control.test_coolLed_connection(coolLED_port, testing= run_as_testing)
 
     # experiment set up -- find optimal route ()
     lights.labjackU3_control.turn_off_everything(d)
@@ -53,43 +54,59 @@ if __name__ == "__main__":
 
     lights.labjackU3_control.turn_on_red(d)
     # run experiment 
+    # for this_plate_index in plate_index:
+    #     this_plate_parameters,this_plate_position = settings.get_settings.get_indexed_dict_parameters(s_plate_names_and_opts,s_plate_positions,this_plate_index)
+    
+    #     print(this_plate_parameters)
+    #     print(this_plate_position)
+
+    #     movement.simple_stream.move_XY_at_z_travel(this_plate_position,s_machines['grbl'][0],z_travel_height = s_machines['grbl'][2], testing=run_as_testing)
+
+    #     camera.camera_control.simple_capture_data(s_camera_settings, plate_parameters=this_plate_parameters, testing=run_as_testing, output_dir=output_dir)
+    #     t = lights.labjackU3_control.turn_on_blue(d, return_time=True)
+    #     camera.camera_control.capture_single_image_wait_N_seconds(s_camera_settings, timestart=t, excitation_amount = s_machines['labjack'][3], 
+    #                                                               plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir)
+    #     lights.labjackU3_control.turn_off_blue(d)
+    #     camera.camera_control.simple_capture_data(s_camera_settings, plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir)
+    #     lights.labjackU3_control.turn_off_blue(d)
+    #     print('')
+
+    movement.simple_stream.home_GRBL(s_machines['grbl'][0], testing = True) # home the machine
+    lights.labjackU3_control.turn_off_everything(d) # make sure everything if off
+
     for this_plate_index in plate_index:
         this_plate_parameters,this_plate_position = settings.get_settings.get_indexed_dict_parameters(s_plate_names_and_opts,s_plate_positions,this_plate_index)
     
         print(this_plate_parameters)
         print(this_plate_position)
 
-        movement.simple_stream.move_XY_at_z_travel(this_plate_position,s_machines['grbl'][0],s_machines['grbl'][2], testing=run_as_testing)
+        # adjust for the imaging head 7 positions 
+        this_plate_position['y_pos'] = this_plate_position['y_pos'] + s_terasaki_positions['y_offset_to_fluor_mm'][0]
 
-        camera.camera_control.simple_capture_data(s_camera_settings, plate_parameters=this_plate_parameters, testing=run_as_testing, output_dir=output_dir)
-        t = lights.labjackU3_control.turn_on_blue(d, return_time=True)
-        camera.camera_control.capture_single_image_wait_N_seconds(s_camera_settings, timestart=t, excitation_amount = s_machines['labjack'][3], 
-                                                                  plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir)
-        lights.labjackU3_control.turn_off_blue(d)
-        camera.camera_control.simple_capture_data(s_camera_settings, plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir)
-        lights.labjackU3_control.turn_off_blue(d)
-        print('')
+        # move to xy base plate position (do not move back down)
+        movement.simple_stream.move_XY_at_z_travel(this_plate_position,s_machines['grbl'][0],z_travel_height = s_machines['grbl'][2], testing=run_as_testing, go_back_down = False)
+        # calculate the calibration corner coordinates
+        calibration_coordinates = dict()
+        calibration_coordinates['x_pos'] = this_plate_position['x_pos'] + s_terasaki_positions['calib_x_pos_mm'][0]
+        calibration_coordinates['y_pos'] = this_plate_position['y_pos'] + s_terasaki_positions['calib_y_pos_mm'][0]
+        calibration_coordinates['z_pos'] = s_terasaki_positions['calib_z_pos_mm'][0]
+        # move to the calibration side
+        movement.simple_stream.move_XYZ(calibration_coordinates,s_machines['grbl'][0], testing=run_as_testing)
 
-    ## for each plate:
-    ##   do work
+        # run the calibration script 
+        print('running Z calibration script -------------------------------------------------------------------------------------')
+        calibration_coordinates['z_pos'] = calibration_coordinates['z_pos'] - 10
 
-    for this_plate_index in plate_index:
-        this_plate_parameters,this_plate_position = settings.get_settings.get_indexed_dict_parameters(s_plate_names_and_opts,s_plate_positions,this_plate_index)
-    
-        print(this_plate_parameters)
-        print(this_plate_position)
-
-        # calculate locations of 
-            # autofocus corner 
-            # terasaki wells (xy) z to be calculated
-
-        # move to xy base plate position (or just move straight to the autocus corner ????) move_XY_at_z_travel
-        # move head to near the autofocus place move_XY_at_z_travel
-        # run autofocus algorithm 
-        # for each terasaki well
-            # move to terasaki well 
-
-        # movement.simple_stream.move_XY_at_z_travel(this_plate_position,s_machines['grbl'][0],s_machines['grbl'][2])
+        for well_index,this_terasaki_well_xy in enumerate(zip(s_terasaki_positions['x_relative_pos_mm'].values(),s_terasaki_positions['y_relative_pos_mm'].values())):
+            this_plate_parameters['well_name'] = s_terasaki_positions['name'][well_index]
+            terasaki_well_coords = dict()
+            terasaki_well_coords['x_pos'] = this_plate_position['x_pos'] + this_terasaki_well_xy[0]
+            terasaki_well_coords['y_pos'] = this_plate_position['y_pos'] + this_terasaki_well_xy[1]
+            terasaki_well_coords['z_pos'] = calibration_coordinates['z_pos']
+            print(well_index, terasaki_well_coords)
+            movement.simple_stream.move_XYZ(terasaki_well_coords,s_machines['grbl'][0], testing=run_as_testing)
+            print('imaging')
+            camera.camera_control.simple_capture_data_fluor(s_camera_settings, plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir)
 
     # shut everything down 
     lights.labjackU3_control.turn_off_everything(d)

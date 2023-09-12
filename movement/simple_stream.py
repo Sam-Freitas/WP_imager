@@ -149,14 +149,14 @@ def move_XYZ(position,GRBL_port_path, testing = False):
 
     if testing == False:
         print('moving to XYZ')
-        move_xyz_command = 'G1 ' + 'X' + str(position['x_pos']) + ' ' + 'Y' + str(position['y_pos']) + 'Z' + str(position['z_pos'])+ ' F3000'
+        move_xyz_command = 'G1 ' + 'X' + str(position['x_pos']) + ' ' + 'Y' + str(position['y_pos']) + ' ' + 'Z' + str(position['z_pos'])+ ' F3000'
         send_single_line(GRBL_port_path,move_xyz_command)
     else:
         print('moving to XYZ')
-        move_xyz_command = 'G1 ' + 'X' + str(position['x_pos']) + ' ' + 'Y' + str(position['y_pos']) + 'Z' + str(position['z_pos'])+ ' F3000'
+        move_xyz_command = 'G1 ' + 'X' + str(position['x_pos']) + ' ' + 'Y' + str(position['y_pos']) + ' ' + 'Z' + str(position['z_pos'])+ ' F3000'
         print(GRBL_port_path,move_xyz_command)
 
-def move_XY_at_z_travel(plate_position,GRBL_port_path,z_travel_height = 0.5, testing = False):
+def move_XY_at_z_travel(plate_position,GRBL_port_path,z_travel_height = 0.5, testing = False, go_back_down = True):
 
     if testing == False:
         print('moving Z to travel height')
@@ -167,9 +167,11 @@ def move_XY_at_z_travel(plate_position,GRBL_port_path,z_travel_height = 0.5, tes
         move_xy_command = 'G1 ' + 'X' + str(plate_position['x_pos']) + ' ' + 'Y' + str(plate_position['y_pos']) + ' F3000'
         send_single_line(GRBL_port_path,move_xy_command)
 
-        print('move Z to imaging height')
-        move_xy_command = 'G1 ' + 'Z' + str(plate_position['z_pos']) + ' F3000'
-        send_single_line(GRBL_port_path,move_xy_command)
+        if go_back_down:
+
+            print('move Z to imaging height')
+            move_xy_command = 'G1 ' + 'Z' + str(plate_position['z_pos']) + ' F3000'
+            send_single_line(GRBL_port_path,move_xy_command)
     else:
         print('moving Z to travel height')
         move_z_command = 'G1 ' + 'Z' + str(z_travel_height) + ' F3000'
@@ -179,9 +181,11 @@ def move_XY_at_z_travel(plate_position,GRBL_port_path,z_travel_height = 0.5, tes
         move_xy_command = 'G1 ' + 'X' + str(plate_position['x_pos']) + ' ' + 'Y' + str(plate_position['y_pos']) + ' F3000'
         print(GRBL_port_path,move_xy_command)
 
-        print('move Z to imaging height')
-        move_xy_command = 'G1 ' + 'Z' + str(plate_position['z_pos']) + ' F3000'
-        print(GRBL_port_path,move_xy_command)
+        if go_back_down:
+
+            print('move Z to imaging height')
+            move_xy_command = 'G1 ' + 'Z' + str(plate_position['z_pos']) + ' F3000'
+            print(GRBL_port_path,move_xy_command)
 
 if __name__ == "__main__":
 
