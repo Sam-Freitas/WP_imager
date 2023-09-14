@@ -122,23 +122,15 @@ def capture_single_image_wait_N_seconds(camera_settings,timestart = None, excita
         # Put the text on the image
         cv2.putText(frame, text, (int(text_x), int(text_y)), font, font_scale, font_color2, thickness2) # black 
         cv2.putText(frame, text, (int(text_x), int(text_y)), font, font_scale, font_color1, thickness1) # white
-
-        # Put the text on the image
         cv2.putText(frame, current_time_for_filename, (int(text_x2), int(text_y2)), font, font_scale, font_color2, thickness2) # black 
         cv2.putText(frame, current_time_for_filename, (int(text_x2), int(text_y2)), font, font_scale, font_color1, thickness1) # white
 
         imshow_resize("img", frame, resize_size=[640,480])
 
-        # end_time = time.time()
-        # delay_time = time_between_images_seconds
-        # # if i != num_images-1:
-        # if delay_time<0:
-        #     pass
-        # else:
         capture_images_for_time(cap,time_between_images_seconds, show_images=True,move_to = [1920,520], start_time = timestart)        # time.sleep(1)
 
     # Release the camera
-    cv2.destroyAllWindows()
+    # cv2.destroyAllWindows()
     cap.release()
 
 
@@ -153,7 +145,7 @@ def simple_capture_data(camera_settings, plate_parameters = None, testing = Fals
     
     os.makedirs(output_dir,exist_ok=True)
     if testing:
-        del_dir_contents(output_dir)
+        del_dir_contents(output_dir, recursive=testing)
 
     camera_id = camera_settings['widefield'][0]
     cam_width = float(camera_settings['widefield'][1])
@@ -214,30 +206,20 @@ def simple_capture_data(camera_settings, plate_parameters = None, testing = Fals
         cv2.imwrite(image_filename, frame[:,:,-1])#, [int(cv2.IMWRITE_PNG_COMPRESSION), 5])
         # print(f"\nCaptured image {i+1}/{num_images}")
 
-        # Put the text on the image
+        # Put the text on the image white with a black background
         cv2.putText(frame, text, (int(text_x), int(text_y)), font, font_scale, font_color2, thickness2) # black 
         cv2.putText(frame, text, (int(text_x), int(text_y)), font, font_scale, font_color1, thickness1) # white
-
-        # Put the text on the image
         cv2.putText(frame, current_time_for_filename, (int(text_x2), int(text_y2)), font, font_scale, font_color2, thickness2) # black 
         cv2.putText(frame, current_time_for_filename, (int(text_x2), int(text_y2)), font, font_scale, font_color1, thickness1) # white
 
         imshow_resize("img", frame, resize_size=[640,480])
 
-        # end_time = time.time()
-        # time_delta = end_time-start_time
-        # delay_time = time_between_images_seconds-time_delta
-        # # if i != num_images-1:
-        # if delay_time<0:
-        #     pass
-        # else:
         capture_images_for_time(cap,time_between_images_seconds, show_images=True,move_to = [1920,520], start_time = start_time)
         # time.sleep(1)
 
     # Release the camera
-    cv2.destroyAllWindows()
+    # cv2.destroyAllWindows()
     cap.release()
-
 
 
 def simple_capture_data_fluor(camera_settings, plate_parameters = None, testing = False, output_dir = None):
@@ -308,17 +290,15 @@ def simple_capture_data_fluor(camera_settings, plate_parameters = None, testing 
             break
         
         current_time_for_filename = datetime.datetime.now().strftime("%Y-%m-%d (%H-%M-%S-%f)")
-        image_name = plate_parameters['well_name'] + '_00' + str(i) + '_' + '.' + img_file_format#current_time_for_filename + '.' + img_file_format
+        image_name = plate_parameters['well_name'] + '_00' + str(i+1) + '_' + '.' + img_file_format#current_time_for_filename + '.' + img_file_format
         image_filename = os.path.join(output_dir, image_name)
 
         cv2.imwrite(image_filename, frame[:,:,-1])#, [int(cv2.IMWRITE_PNG_COMPRESSION), 5])
         # print(f"\nCaptured image {i+1}/{num_images}")
 
-        # Put the text on the image
+        # Put the text on the image white with a black background
         cv2.putText(frame, text, (int(text_x), int(text_y)), font, font_scale, font_color2, thickness2) # black 
         cv2.putText(frame, text, (int(text_x), int(text_y)), font, font_scale, font_color1, thickness1) # white
-
-        # Put the text on the image
         cv2.putText(frame, current_time_for_filename, (int(text_x2), int(text_y2)), font, font_scale, font_color2, thickness2) # black 
         cv2.putText(frame, current_time_for_filename, (int(text_x2), int(text_y2)), font, font_scale, font_color1, thickness1) # white
 
@@ -328,7 +308,7 @@ def simple_capture_data_fluor(camera_settings, plate_parameters = None, testing 
         # time.sleep(1)
 
     # Release the camera
-    cv2.destroyAllWindows()
+    # cv2.destroyAllWindows()
     cap.release()
 
 if __name__ == "__main__":

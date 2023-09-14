@@ -14,12 +14,17 @@ tested on
 > GRBL 1.1
 
 """
-
+import cv2
 import serial
 import time
 from threading import Event
+from camera.camera_control import capture_images_for_time
+
 
 BAUD_RATE = 115200
+
+def update_camera_for_N_seconds():
+    return 0
 
 def remove_comment(string):
     if (string.find(';') == -1):
@@ -36,7 +41,21 @@ def send_wake_up(ser,sleep_amount = 2):
     # Hit enter a few times to wake the Printrbot
     ser.write(str.encode("\r\n\r\n"))
     time.sleep(sleep_amount)   # Wait for Printrbot to initialize
-    ser.flushInput()  # Flush startup text in serial input
+    ser.reset_input_buffer()  # Flush startup text in serial input # ser.flushInput()
+
+def send_wake_up_update_cam_stream(ser,sleep_amount = 2):
+
+    cap = cv2.VideoCapture(int(0))
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH,int(5472))
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT,int(3640))
+    cap.set(cv2.CAP_PROP_FPS,int(6))
+    # Wake up
+    # Hit enter a few times to wake the Printrbot
+    ser.write(str.encode("\r\n\r\n"))
+    # time.sleep(sleep_amount)   # Wait for Printrbot to initialize
+    start_time = time.time()
+    capture_images_for_time(cap,sleep_amount, show_images=True,move_to = [1920,520], start_time = start_time)
+    ser.reset_input_buffer()  # Flush startup text in serial input # ser.flushInput()
 
 def wait_for_movement_completion(ser,cleaned_line):
 
@@ -46,7 +65,40 @@ def wait_for_movement_completion(ser,cleaned_line):
 
         idle_counter = 0
         while True:
-            # Event().wait(0.01)
+            time.sleep(0.2)
+            ser.reset_input_buffer()
+            command = str.encode('?' + '\n')
+            ser.write(command)
+            grbl_out = ser.readline() 
+            grbl_response = grbl_out.strip().decode('utf-8')
+
+            if grbl_response != 'ok':
+                if grbl_response.find('Idle') > 0:
+                    idle_counter += 1
+            if idle_counter > 10:
+                break
+            if 'alarm' in grbl_response.lower():
+                raise ValueError(grbl_response)
+
+    return
+
+def wait_for_movement_completion_update_cam_stream(ser,cleaned_line,cam_settings = False):
+
+    cap = cv2.VideoCapture(int(0))
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH,int(5472))
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT,int(3640))
+    cap.set(cv2.CAP_PROP_FPS,int(6))
+
+    # Event().wait(1)
+    start_time = time.time()
+    capture_images_for_time(cap,1, show_images=True,move_to = [1920,520], start_time = start_time)
+
+    if cleaned_line != '$X' or '$$':
+
+        idle_counter = 0
+        while True:
+            start_time = time.time()
+            capture_images_for_time(cap,0.2, show_images=True,move_to = [1920,520], start_time = start_time)
             ser.reset_input_buffer()
             command = str.encode('?' + '\n')
             ser.write(command)
@@ -64,9 +116,12 @@ def wait_for_movement_completion(ser,cleaned_line):
     return
 
 def stream_gcode(GRBL_port_path,gcode_path):
+    outputs = []
     # with contect opens file/connection and closes it if function(with) scope is left
     with open(gcode_path, "r") as file, serial.Serial(GRBL_port_path, BAUD_RATE) as ser:
         send_wake_up(ser)
+        ser.timeout = 2
+
         for line in file:
             # cleaning up gcode from file
             cleaned_line = remove_eol_chars(remove_comment(line))
@@ -80,13 +135,18 @@ def stream_gcode(GRBL_port_path,gcode_path):
 
                 grbl_out = ser.readline()  # Wait for response with carriage return
                 print(" : " , grbl_out.strip().decode('utf-8'))
+                outputs.append(grbl_out.strip().decode('utf-8'))
         
         print('End of gcode')
 
+    return outputs
+
 def send_single_line(GRBL_port_path,gcode_line):
+    outputs = []
 
     with serial.Serial(GRBL_port_path, BAUD_RATE) as ser:
         send_wake_up(ser)
+        ser.timeout = 2
         
         line = gcode_line
 
@@ -98,12 +158,15 @@ def send_single_line(GRBL_port_path,gcode_line):
             command = str.encode(line + '\n')
             ser.write(command)  # Send g-code
 
-            wait_for_movement_completion(ser,cleaned_line)
+            # if the sent line is a checker then skip right to 
+            if cleaned_line != '?':
+                wait_for_movement_completion_update_cam_stream(ser,cleaned_line) 
 
             grbl_out = ser.readline()  # Wait for response with carriage return
             print(" : " , grbl_out.strip().decode('utf-8'))
+            outputs = grbl_out.strip().decode('utf-8')
 
-    # print('End of line')
+    return outputs
 
 def get_settings(GRBL_port_path): # gets the settings from the grbl controller 
 
@@ -143,6 +206,17 @@ def home_GRBL(GRBL_port_path, testing = False):
     if testing:
         send_single_line(GRBL_port_path,'$X')
         print('testing --- $H')
+
+def get_current_position(GRBL_port_path, testing = False):
+
+    if not testing:
+        send_single_line(GRBL_port_path,'$')
+        send_single_line(GRBL_port_path,'$H')
+    if testing:
+        send_single_line(GRBL_port_path,'$X')
+        print('testing --- $H')
+
+    return 0
 
 
 def move_XYZ(position,GRBL_port_path, testing = False):

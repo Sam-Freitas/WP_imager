@@ -53,23 +53,23 @@ if __name__ == "__main__":
             plate_index.append(this_plate_index)
 
     lights.labjackU3_control.turn_on_red(d)
-    # run experiment 
-    # for this_plate_index in plate_index:
-    #     this_plate_parameters,this_plate_position = settings.get_settings.get_indexed_dict_parameters(s_plate_names_and_opts,s_plate_positions,this_plate_index)
+    # # # run experiment
+    for this_plate_index in plate_index:
+        this_plate_parameters,this_plate_position = settings.get_settings.get_indexed_dict_parameters(s_plate_names_and_opts,s_plate_positions,this_plate_index)
     
-    #     print(this_plate_parameters)
-    #     print(this_plate_position)
+        print(this_plate_parameters)
+        print(this_plate_position)
 
-    #     movement.simple_stream.move_XY_at_z_travel(this_plate_position,s_machines['grbl'][0],z_travel_height = s_machines['grbl'][2], testing=run_as_testing)
+        movement.simple_stream.move_XY_at_z_travel(this_plate_position,s_machines['grbl'][0],z_travel_height = s_machines['grbl'][2], testing=False)
 
-    #     camera.camera_control.simple_capture_data(s_camera_settings, plate_parameters=this_plate_parameters, testing=run_as_testing, output_dir=output_dir)
-    #     t = lights.labjackU3_control.turn_on_blue(d, return_time=True)
-    #     camera.camera_control.capture_single_image_wait_N_seconds(s_camera_settings, timestart=t, excitation_amount = s_machines['labjack'][3], 
-    #                                                               plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir)
-    #     lights.labjackU3_control.turn_off_blue(d)
-    #     camera.camera_control.simple_capture_data(s_camera_settings, plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir)
-    #     lights.labjackU3_control.turn_off_blue(d)
-    #     print('')
+        camera.camera_control.simple_capture_data(s_camera_settings, plate_parameters=this_plate_parameters, testing=run_as_testing, output_dir=output_dir)
+        t = lights.labjackU3_control.turn_on_blue(d, return_time=True)
+        camera.camera_control.capture_single_image_wait_N_seconds(s_camera_settings, timestart=t, excitation_amount = s_machines['labjack'][3], 
+                                                                  plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir)
+        lights.labjackU3_control.turn_off_blue(d)
+        camera.camera_control.simple_capture_data(s_camera_settings, plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir)
+        lights.labjackU3_control.turn_off_blue(d)
+        print('')
 
     movement.simple_stream.home_GRBL(s_machines['grbl'][0], testing = True) # home the machine
     lights.labjackU3_control.turn_off_everything(d) # make sure everything if off
