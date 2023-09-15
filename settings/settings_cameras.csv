@@ -5,7 +5,7 @@ pixel_height,3640,2500
 max_framerate,6,10
 time_between_images_seconds,5,0.33
 time_of_single_burst_seconds,60,0
-number_of_images_per_burst,12,3
+number_of_images_per_burst,12,1
 img_file_format,png,png
 img_pixel_depth,8,8
 img_color,0,1

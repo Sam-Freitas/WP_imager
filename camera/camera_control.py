@@ -236,7 +236,7 @@ def simple_capture_data_fluor(camera_settings, plate_parameters = None, testing 
         del_dir_contents(output_dir)
 
     camera_id = camera_settings['fluorescence'][0]
-    camera_id = 0
+    camera_id = 0 #####################################################################################S
     cam_width = float(camera_settings['fluorescence'][1])
     cam_height = float(camera_settings['fluorescence'][2])
     cam_framerate = camera_settings['fluorescence'][3]
@@ -250,7 +250,7 @@ def simple_capture_data_fluor(camera_settings, plate_parameters = None, testing 
     # Define the text and font settings
     text = plate_parameters['experiment_name'] + '--' + plate_parameters['plate_name'] + '--' + todays_date
     font = cv2.FONT_HERSHEY_SIMPLEX
-    font_scale = 10.0
+    font_scale = 4
     font_color1 = (255, 255, 255)  # white color
     thickness1 = 15
     font_color2 = (0, 0, 0)  # black color for outline
@@ -289,7 +289,8 @@ def simple_capture_data_fluor(camera_settings, plate_parameters = None, testing 
             print("Error: Unable to capture frame.")
             break
         
-        current_time_for_filename = datetime.datetime.now().strftime("%Y-%m-%d (%H-%M-%S-%f)")
+        # current_time_for_filename = datetime.datetime.now().strftime("%Y-%m-%d (%H-%M-%S-%f)")
+        image_subtype = plate_parameters['well_name'] + '_00' + str(i+1)
         image_name = plate_parameters['well_name'] + '_00' + str(i+1) + '_' + '.' + img_file_format#current_time_for_filename + '.' + img_file_format
         image_filename = os.path.join(output_dir, image_name)
 
@@ -299,8 +300,8 @@ def simple_capture_data_fluor(camera_settings, plate_parameters = None, testing 
         # Put the text on the image white with a black background
         cv2.putText(frame, text, (int(text_x), int(text_y)), font, font_scale, font_color2, thickness2) # black 
         cv2.putText(frame, text, (int(text_x), int(text_y)), font, font_scale, font_color1, thickness1) # white
-        cv2.putText(frame, current_time_for_filename, (int(text_x2), int(text_y2)), font, font_scale, font_color2, thickness2) # black 
-        cv2.putText(frame, current_time_for_filename, (int(text_x2), int(text_y2)), font, font_scale, font_color1, thickness1) # white
+        cv2.putText(frame, image_subtype, (int(text_x2), int(text_y2)), font, font_scale, font_color2, thickness2) # black 
+        cv2.putText(frame, image_subtype, (int(text_x2), int(text_y2)), font, font_scale, font_color1, thickness1) # white
 
         imshow_resize("img", frame, resize_size=[640,480])
 

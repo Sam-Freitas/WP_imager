@@ -145,7 +145,8 @@ def send_single_line(GRBL_port_path,gcode_line):
     outputs = []
 
     with serial.Serial(GRBL_port_path, BAUD_RATE) as ser:
-        send_wake_up(ser)
+        send_wake_up_update_cam_stream(ser)
+        # send_wake_up(ser)
         ser.timeout = 2
         
         line = gcode_line
@@ -230,7 +231,7 @@ def move_XYZ(position,GRBL_port_path, testing = False):
         move_xyz_command = 'G1 ' + 'X' + str(position['x_pos']) + ' ' + 'Y' + str(position['y_pos']) + ' ' + 'Z' + str(position['z_pos'])+ ' F3000'
         print(GRBL_port_path,move_xyz_command)
 
-def move_XY_at_z_travel(plate_position,GRBL_port_path,z_travel_height = 0.5, testing = False, go_back_down = True):
+def move_XY_at_Z_travel(plate_position,GRBL_port_path,z_travel_height = 0.5, testing = False, go_back_down = True):
 
     if testing == False:
         print('moving Z to travel height')
