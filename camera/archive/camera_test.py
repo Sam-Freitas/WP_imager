@@ -54,7 +54,7 @@ if __name__ == "__main__":
     import pandas as pd
 
     camera_settings = pd.read_csv(
-        "settings\settings_cameras.txt", delimiter="\t", index_col=False
+        "settings\settings_cameras.csv", index_col=False
     ).to_dict()
 
     camera_id = camera_settings["widefield"][0]
@@ -73,9 +73,9 @@ if __name__ == "__main__":
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, int(cam_height))
     cap.set(cv2.CAP_PROP_FPS, int(cam_framerate))
 
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, int(1824))
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, int(1824))
-    cap.set(cv2.CAP_PROP_FPS, int(30))
+    # cap.set(cv2.CAP_PROP_FRAME_WIDTH, int(1824))
+    # cap.set(cv2.CAP_PROP_FRAME_HEIGHT, int(1824))
+    # cap.set(cv2.CAP_PROP_FPS, int(30))
 
     if not cap.isOpened():
         print("Error: Unable to open camera.")
