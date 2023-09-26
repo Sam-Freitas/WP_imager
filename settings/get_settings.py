@@ -146,3 +146,19 @@ def get_indexed_dict_parameters(s_plate_names_and_opts,s_plate_positions,plate_i
         plate_position[parameter] = s_plate_positions[parameter][plate_index]
 
     return plate_parameters,plate_position
+
+def check_grbl_port(GRBL_port):
+
+    import serial.tools.list_ports
+    ports = serial.tools.list_ports.comports()
+    simple_ports = []
+    for port, desc, hwid in sorted(ports):
+            simple_ports.append(port)
+            print("{}: {} [{}]".format(port, desc, hwid))
+
+    assert GRBL_port in simple_ports
+
+    print('GRBL port found in', simple_ports)
+
+
+    

@@ -16,19 +16,24 @@ if __name__ == "__main__":
 
     atexit.register(turn_everything_off_at_exit)
 
-    print(sys.argv)
+    # NEED TO HAVE AT LEAST ONE CAMERA, GRBL, AND LABJACK MACHINE PLUGGED IN
+
+    # print(sys.argv)
 
     output_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),'output')
 
-    # read in settings
+    # read in settings from files
     s_plate_names_and_opts = settings.get_settings.get_plate_names_and_opts()
     s_plate_positions = settings.get_settings.get_plate_positions()
     s_terasaki_positions = settings.get_settings.get_terasaki_positions()
     s_machines = settings.get_settings.get_machine_settings()
-    s_grbl_settings = movement.simple_stream.get_settings(s_machines['grbl'][0])
-    _,s_grbl_settings = settings.get_settings.convert_GRBL_settings(s_grbl_settings)
     s_camera_settings = settings.get_settings.get_basic_camera_settings()
     s_todays_runs = settings.get_settings.get_todays_runs()
+
+    # read in settings from machines
+    settings.get_settings.check_grbl_port(s_machines['grbl'][0])
+    s_grbl_settings = movement.simple_stream.get_settings(s_machines['grbl'][0])
+    s_grbl_settings_df,s_grbl_settings = settings.get_settings.convert_GRBL_settings(s_grbl_settings)
 
     run_as_testing = True
 
@@ -60,7 +65,7 @@ if __name__ == "__main__":
         print(this_plate_parameters)
         print(this_plate_position)
 
-        movement.simple_stream.move_XY_at_Z_travel(this_plate_position,s_machines['grbl'][0],z_travel_height = s_machines['grbl'][2], testing=False)
+        movement.simple_stream.move_XY_at_Z_travel(this_plate_position,s_machines['grbl'][0],z_travel_height = s_machines['grbl'][2], testing=False, round_decimals = 4)
 
         camera.camera_control.simple_capture_data(s_camera_settings, plate_parameters=this_plate_parameters, testing=run_as_testing, output_dir=output_dir)
         t = lights.labjackU3_control.turn_on_blue(d, return_time=True)
@@ -84,14 +89,14 @@ if __name__ == "__main__":
         this_plate_position['y_pos'] = this_plate_position['y_pos'] + s_terasaki_positions['y_offset_to_fluor_mm'][0]
 
         # move to xy base plate position (do not move back down)
-        movement.simple_stream.move_XY_at_Z_travel(this_plate_position,s_machines['grbl'][0],z_travel_height = s_machines['grbl'][2], testing=False, go_back_down = False)
+        movement.simple_stream.move_XY_at_Z_travel(this_plate_position,s_machines['grbl'][0],z_travel_height = s_machines['grbl'][2], testing=False, go_back_down = False, round_decimals = 4)
         # calculate the calibration corner coordinates
         calibration_coordinates = dict()
         calibration_coordinates['x_pos'] = this_plate_position['x_pos'] + s_terasaki_positions['calib_x_pos_mm'][0]
         calibration_coordinates['y_pos'] = this_plate_position['y_pos'] + s_terasaki_positions['calib_y_pos_mm'][0]
         calibration_coordinates['z_pos'] = s_terasaki_positions['calib_z_pos_mm'][0]
         # move to the calibration side
-        movement.simple_stream.move_XYZ(calibration_coordinates,s_machines['grbl'][0], testing=False)
+        movement.simple_stream.move_XYZ(calibration_coordinates,s_machines['grbl'][0], testing=False, round_decimals = 4)
 
         # run the calibration script 
         print('running Z calibration script -------------------------------------------------------------------------------------')
@@ -104,7 +109,7 @@ if __name__ == "__main__":
             terasaki_well_coords['y_pos'] = this_plate_position['y_pos'] + this_terasaki_well_xy[1]
             terasaki_well_coords['z_pos'] = calibration_coordinates['z_pos']
             print(well_index, terasaki_well_coords)
-            movement.simple_stream.move_XYZ(terasaki_well_coords,s_machines['grbl'][0], testing=False)
+            movement.simple_stream.move_XYZ(terasaki_well_coords,s_machines['grbl'][0], testing=False, round_decimals = 4)
             print('imaging')
             camera.camera_control.simple_capture_data_fluor(s_camera_settings, plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir)
 

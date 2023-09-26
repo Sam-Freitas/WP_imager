@@ -39,21 +39,21 @@ dy = -115  # used to be 116
 
 # #############################################
 # ## this is for the settings plate names and opts
-# header = ['plate_index','row','column','plate_name','experiment_name','lifespan','fluorescence','fluorescence_times']
-# df = pd.DataFrame(columns = header)
-# i = 0
-# j = 0
-# counter = 0
+header = ['plate_index','row','column','plate_name','experiment_name','lifespan','fluorescence','fluorescence_times','fluorescence_UV','fluorescence_BLUE','fluorescence_GREEN','fluorescence_RED']
+df = pd.DataFrame(columns = header)
+i = 0
+j = 0
+counter = 0
 
-# for r in range(rows):
-#     i = 0
-#     for c in range(cols):
-#         df.loc[counter] = [counter ,r , c ,'NONE','NONE','1','1','100']
-#         counter = counter + 1
-#         i = i +1
-#     j = j+1
+for r in range(rows):
+    i = 0
+    for c in range(cols):
+        df.loc[counter] = [counter ,r , c ,'NONE','NONE','1','1','100','100','100','100','100']
+        counter = counter + 1
+        i = i +1
+    j = j+1
 
-# df.to_csv(os.path.join(path_to_settings_folder,'settings_plate_names_and_opts.csv'),index= False)
+df.to_csv(os.path.join(path_to_settings_folder,'settings_plate_names_and_opts.csv'),index= False)
 
 # #############################################
 # ## this is for the setting machines
@@ -71,21 +71,21 @@ dy = -115  # used to be 116
 # #############################################
 # ## this is for the setting machines
 
-header = ['Explanation','widefield','fluorescence']
-df = pd.DataFrame(columns = header)
+# header = ['Explanation','widefield','fluorescence']
+# df = pd.DataFrame(columns = header)
 
-df.loc[0] = ['camera_port','0','1']
-df.loc[1] = ['pixel_width','5472','2496']
-df.loc[2] = ['pixel_height','3640','2500']
-df.loc[3] = ['max_framerate','6','10']
-df.loc[4] = ['time_between_images_seconds','5','0.33']
-df.loc[5] = ['time_of_single_burst_seconds','60','0']
-df.loc[6] = ['number_of_images_per_burst','12','3']
-df.loc[7] = ['img_file_format','png','png']
-df.loc[8] = ['img_pixel_depth','8','8']
-df.loc[9] = ['img_color','0','1']
+# df.loc[0] = ['camera_port','0','1']
+# df.loc[1] = ['pixel_width','5472','2496']
+# df.loc[2] = ['pixel_height','3640','2500']
+# df.loc[3] = ['max_framerate','6','10']
+# df.loc[4] = ['time_between_images_seconds','5','0.33']
+# df.loc[5] = ['time_of_single_burst_seconds','60','0']
+# df.loc[6] = ['number_of_images_per_burst','12','3']
+# df.loc[7] = ['img_file_format','png','png']
+# df.loc[8] = ['img_pixel_depth','8','8']
+# df.loc[9] = ['img_color','0','1']
 
-df.to_csv(os.path.join(path_to_settings_folder,'settings_cameras.csv'),index= False)
+# df.to_csv(os.path.join(path_to_settings_folder,'settings_cameras.csv'),index= False)
 
 # #############################################
 # ## this id for the grbl base

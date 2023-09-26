@@ -6,20 +6,21 @@ It then reads the grbl_test.gcode and sends it to the controller
 The script waits for the completion of the sent line of gcode before moving onto the next line
 
 tested on
-> MacOs Monterey arm64
-> Python 3.9.5 | packaged by conda-forge | (default, Jun 19 2021, 00:24:55) 
-[Clang 11.1.0 ] on darwin
+> WINDOWS 10
+> Python 3.8 
 > Vscode 1.62.3
-> Openbuilds BlackBox GRBL controller
-> GRBL 1.1
+> Openbuilds BlackBox x32 GRBL controller
+> GRBL 1.1g (GRBLhal openbuilds)
 
 """
 import cv2
 import serial
 import time
 from threading import Event
-from camera.camera_control import capture_images_for_time
-
+try:
+    from camera.camera_control import capture_images_for_time
+except:
+    print('cant import camera commands')
 
 BAUD_RATE = 115200
 
@@ -51,7 +52,8 @@ def send_wake_up_update_cam_stream(ser,sleep_amount = 2):
     cap.set(cv2.CAP_PROP_FPS,int(6))
     # Wake up
     # Hit enter a few times to wake the Printrbot
-    ser.write(str.encode("\r\n\r\n"))
+    ser.timeout =2
+    ser.write(str.encode("\n"))
     # time.sleep(sleep_amount)   # Wait for Printrbot to initialize
     start_time = time.time()
     capture_images_for_time(cap,sleep_amount, show_images=True,move_to = [1920,520], start_time = start_time)
@@ -61,13 +63,13 @@ def wait_for_movement_completion(ser,cleaned_line):
 
     Event().wait(1)
 
-    if cleaned_line != '$X' or '$$':
+    if (cleaned_line != '$X') and (cleaned_line != '$$'):
 
         idle_counter = 0
         while True:
             time.sleep(0.2)
             ser.reset_input_buffer()
-            command = str.encode('?' + '\n')
+            command = str.encode('? ' + '\n')
             ser.write(command)
             grbl_out = ser.readline() 
             grbl_response = grbl_out.strip().decode('utf-8')
@@ -79,7 +81,6 @@ def wait_for_movement_completion(ser,cleaned_line):
                 break
             if 'alarm' in grbl_response.lower():
                 raise ValueError(grbl_response)
-
     return
 
 def wait_for_movement_completion_update_cam_stream(ser,cleaned_line,cam_settings = False):
@@ -91,16 +92,16 @@ def wait_for_movement_completion_update_cam_stream(ser,cleaned_line,cam_settings
 
     # Event().wait(1)
     start_time = time.time()
-    capture_images_for_time(cap,1, show_images=True,move_to = [1920,520], start_time = start_time)
+    capture_images_for_time(cap,N=1, show_images=True,move_to = [1920,520], start_time = start_time)
 
-    if cleaned_line != '$X' or '$$':
+    if (cleaned_line != '$X') and (cleaned_line != '$$'):
 
         idle_counter = 0
         while True:
             start_time = time.time()
             capture_images_for_time(cap,0.2, show_images=True,move_to = [1920,520], start_time = start_time)
             ser.reset_input_buffer()
-            command = str.encode('?' + '\n')
+            command = str.encode('? ' + '\n')
             ser.write(command)
             grbl_out = ser.readline() 
             grbl_response = grbl_out.strip().decode('utf-8')
@@ -160,10 +161,12 @@ def send_single_line(GRBL_port_path,gcode_line):
             ser.write(command)  # Send g-code
 
             # if the sent line is a checker then skip right to 
-            if cleaned_line != '?':
+            if cleaned_line != '?' and cleaned_line != '$X' and cleaned_line != '$$':
                 wait_for_movement_completion_update_cam_stream(ser,cleaned_line) 
+                grbl_out = ser.readline()  # Wait for response with carriage return
+            else:
+                grbl_out = ser.read_until(expected='ok')
 
-            grbl_out = ser.readline()  # Wait for response with carriage return
             print(" : " , grbl_out.strip().decode('utf-8'))
             outputs = grbl_out.strip().decode('utf-8')
 
@@ -219,54 +222,65 @@ def get_current_position(GRBL_port_path, testing = False):
 
     return 0
 
+def move_XYZ(position,GRBL_port_path, testing = False, round_decimals = False):
 
-def move_XYZ(position,GRBL_port_path, testing = False):
+    if round_decimals:
+        position['x_pos'] = round(position['x_pos'],4)
+        position['y_pos'] = round(position['y_pos'],4)
+        position['z_pos'] = round(position['z_pos'],4)
 
     if testing == False:
         print('moving to XYZ')
-        move_xyz_command = 'G1 ' + 'X' + str(position['x_pos']) + ' ' + 'Y' + str(position['y_pos']) + ' ' + 'Z' + str(position['z_pos'])+ ' F3000'
+        move_xyz_command = 'G0 ' + 'X' + str(position['x_pos']) + ' ' + 'Y' + str(position['y_pos']) + ' ' + 'Z' + str(position['z_pos'])
         send_single_line(GRBL_port_path,move_xyz_command)
     else:
         print('moving to XYZ')
-        move_xyz_command = 'G1 ' + 'X' + str(position['x_pos']) + ' ' + 'Y' + str(position['y_pos']) + ' ' + 'Z' + str(position['z_pos'])+ ' F3000'
+        move_xyz_command = 'G0 ' + 'X' + str(position['x_pos']) + ' ' + 'Y' + str(position['y_pos']) + ' ' + 'Z' + str(position['z_pos'])
         print(GRBL_port_path,move_xyz_command)
 
-def move_XY_at_Z_travel(plate_position,GRBL_port_path,z_travel_height = 0.5, testing = False, go_back_down = True):
+def move_XY_at_Z_travel(position,GRBL_port_path,z_travel_height = 0.5, testing = False, go_back_down = True , round_decimals = False):
+
+    if round_decimals:
+        position['x_pos'] = round(position['x_pos'],4)
+        position['y_pos'] = round(position['y_pos'],4)
+        position['z_pos'] = round(position['z_pos'],4)
 
     if testing == False:
         print('moving Z to travel height')
-        move_z_command = 'G1 ' + 'Z' + str(z_travel_height) + ' F3000'
+        move_z_command = 'G0 ' + 'Z' + str(z_travel_height) 
         send_single_line(GRBL_port_path,move_z_command)
 
         print('moving to XY')
-        move_xy_command = 'G1 ' + 'X' + str(plate_position['x_pos']) + ' ' + 'Y' + str(plate_position['y_pos']) + ' F3000'
+        move_xy_command = 'G0 ' + 'X' + str(position['x_pos']) + ' ' + 'Y' + str(position['y_pos']) 
         send_single_line(GRBL_port_path,move_xy_command)
 
         if go_back_down:
 
             print('move Z to imaging height')
-            move_xy_command = 'G1 ' + 'Z' + str(plate_position['z_pos']) + ' F3000'
+            move_xy_command = 'G0 ' + 'Z' + str(position['z_pos']) 
             send_single_line(GRBL_port_path,move_xy_command)
     else:
         print('moving Z to travel height')
-        move_z_command = 'G1 ' + 'Z' + str(z_travel_height) + ' F3000'
+        move_z_command = 'G0 ' + 'Z' + str(z_travel_height) 
         print(GRBL_port_path,move_z_command)
 
         print('moving to XY')
-        move_xy_command = 'G1 ' + 'X' + str(plate_position['x_pos']) + ' ' + 'Y' + str(plate_position['y_pos']) + ' F3000'
+        move_xy_command = 'G0 ' + 'X' + str(position['x_pos']) + ' ' + 'Y' + str(position['y_pos']) 
         print(GRBL_port_path,move_xy_command)
 
         if go_back_down:
 
             print('move Z to imaging height')
-            move_xy_command = 'G1 ' + 'Z' + str(plate_position['z_pos']) + ' F3000'
+            move_xy_command = 'G0 ' + 'Z' + str(position['z_pos']) 
             print(GRBL_port_path,move_xy_command)
 
 if __name__ == "__main__":
+    import os
 
     # GRBL_port_path = '/dev/tty.usbserial-A906L14X'
-    GRBL_port_path = 'COM3'
-    gcode_path = 'grbl_test.gcode'
+    GRBL_port_path = 'COM5'
+    gcode_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),'grbl_test.gcode')
+    assert os.path.isfile(gcode_path)
 
     print("USB Port: ", GRBL_port_path)
     print("Gcode file: ", gcode_path)
