@@ -46,12 +46,18 @@ def send_wake_up(ser,sleep_amount = 2):
     time.sleep(sleep_amount)   # Wait for Printrbot to initialize
     ser.reset_input_buffer()  # Flush startup text in serial input # ser.flushInput()
 
-def send_wake_up_update_cam_stream(ser,sleep_amount = 2):
+def send_wake_up_update_cam_stream(ser,sleep_amount = 2, camera_idx = 0):
 
-    cap = cv2.VideoCapture(int(0))
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH,int(5472))
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT,int(3640))
-    cap.set(cv2.CAP_PROP_FPS,int(6))
+    if camera_idx == 0:
+        cap = cv2.VideoCapture(int(camera_idx))
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH,int(5472))
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT,int(3640))
+        cap.set(cv2.CAP_PROP_FPS,int(6))
+    if camera_idx == 1:
+        cap = cv2.VideoCapture(int(camera_idx))
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH,int(2560))
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT,int(2560))
+        cap.set(cv2.CAP_PROP_FPS,int(10))
     # Wake up
     # Hit enter a few times to wake the Printrbot
     ser.timeout =2
@@ -85,12 +91,18 @@ def wait_for_movement_completion(ser,cleaned_line):
                 raise ValueError(grbl_response)
     return
 
-def wait_for_movement_completion_update_cam_stream(ser,cleaned_line,cam_settings = False):
+def wait_for_movement_completion_update_cam_stream(ser,cleaned_line,camera_idx = 0):
 
-    cap = cv2.VideoCapture(int(0))
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH,int(5472))
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT,int(3640))
-    cap.set(cv2.CAP_PROP_FPS,int(6))
+    if camera_idx == 0:
+        cap = cv2.VideoCapture(int(camera_idx))
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH,int(5472))
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT,int(3640))
+        cap.set(cv2.CAP_PROP_FPS,int(6))
+    if camera_idx == 1:
+        cap = cv2.VideoCapture(int(camera_idx))
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH,int(2560))
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT,int(2560))
+        cap.set(cv2.CAP_PROP_FPS,int(10))
 
     # Event().wait(1)
     start_time = time.time()
@@ -144,7 +156,7 @@ def stream_gcode(GRBL_port_path,gcode_path):
 
     return outputs
 
-def send_single_line(GRBL_port_path,gcode_line, camera = 1):
+def send_single_line(GRBL_port_path,gcode_line, camera = None):
     outputs = []
 
     with serial.Serial(GRBL_port_path, BAUD_RATE) as ser:

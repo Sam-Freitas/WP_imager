@@ -51,7 +51,6 @@ def update_todays_runs(s_todays_runs = None, overwrite = False, overwrite_val = 
     if s_todays_runs == None:
         s_todays_runs = get_todays_runs()
 
-    path = os.path.join(get_base_path(),'todays_runs.txt')
     runs = np.asarray(s_todays_runs[1:])
 
     if overwrite == False:

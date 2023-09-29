@@ -39,8 +39,8 @@ if __name__ == "__main__":
 
     # run setup test to make sure everything works or throw error
 
-    movement.simple_stream.home_GRBL(s_machines['grbl'][0], testing = run_as_testing, camera=1) # home the machine
     s_todays_runs = settings.get_settings.update_todays_runs(s_todays_runs, overwrite=run_as_testing)
+    movement.simple_stream.home_GRBL(s_machines['grbl'][0], testing = run_as_testing, camera=0) # home the machine
     d = lights.labjackU3_control.setup_labjack(verbose=run_as_testing)    # test the blue and red lights
     lights.labjackU3_control.blink_led(d)
 
@@ -65,7 +65,7 @@ if __name__ == "__main__":
         print(this_plate_parameters)
         print(this_plate_position)
 
-        movement.simple_stream.move_XY_at_Z_travel(this_plate_position,s_machines['grbl'][0],z_travel_height = s_machines['grbl'][2], testing=False, round_decimals = 4, camera=1)
+        movement.simple_stream.move_XY_at_Z_travel(this_plate_position,s_machines['grbl'][0],z_travel_height = s_machines['grbl'][2], testing=False, round_decimals = 4, camera=0)
 
         camera.camera_control.simple_capture_data(s_camera_settings, plate_parameters=this_plate_parameters, testing=run_as_testing, output_dir=output_dir)
         t = lights.labjackU3_control.turn_on_blue(d, return_time=True)
@@ -76,7 +76,7 @@ if __name__ == "__main__":
         lights.labjackU3_control.turn_off_blue(d)
         print('')
 
-    movement.simple_stream.home_GRBL(s_machines['grbl'][0], testing = True,camera=1) # home the machine
+    movement.simple_stream.home_GRBL(s_machines['grbl'][0], testing = True,camera=0) # home the machine
     lights.labjackU3_control.turn_off_everything(d) # make sure everything if off
 
     for this_plate_index in plate_index:

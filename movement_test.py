@@ -15,9 +15,6 @@ import atexit
 if __name__ == "__main__":
 
     # atexit.register(turn_everything_off_at_exit)
-
-    # NEED TO HAVE AT LEAST ONE CAMERA, GRBL, AND LABJACK MACHINE PLUGGED IN
-
     # print(sys.argv)
 
     output_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),'output')
@@ -35,20 +32,12 @@ if __name__ == "__main__":
     s_grbl_settings = movement.simple_stream.get_settings(s_machines['grbl'][0])
     s_grbl_settings_df,s_grbl_settings = settings.get_settings.convert_GRBL_settings(s_grbl_settings)
 
-    run_as_testing = True
+    run_as_testing = False
 
     # run setup test to make sure everything works or throw error
 
-    movement.simple_stream.home_GRBL(s_machines['grbl'][0], testing = run_as_testing, camera = None) # home the machine
     s_todays_runs = settings.get_settings.update_todays_runs(s_todays_runs, overwrite=run_as_testing)
-    # d = lights.labjackU3_control.setup_labjack(verbose=run_as_testing)    # test the blue and red lights
-    # lights.labjackU3_control.blink_led(d)
-
-    # coolLED_port = s_machines['coolLed'][0] # test the fluorescent lights (if applicable)
-    # lights.coolLed_control.test_coolLed_connection(coolLED_port, testing= run_as_testing)
-
-    # # experiment set up -- find optimal route ()
-    # lights.labjackU3_control.turn_off_everything(d)
+    movement.simple_stream.home_GRBL(s_machines['grbl'][0], testing = run_as_testing, camera = None) # home the machine
 
     plate_index = []
     plate_positions = []
@@ -57,7 +46,6 @@ if __name__ == "__main__":
         if this_plate_name != 'NONE':
             plate_index.append(this_plate_index)
 
-    # lights.labjackU3_control.turn_on_red(d)
     # # # run experiment
     for this_plate_index in plate_index:
         this_plate_parameters,this_plate_position = settings.get_settings.get_indexed_dict_parameters(s_plate_names_and_opts,s_plate_positions,this_plate_index)
@@ -67,18 +55,10 @@ if __name__ == "__main__":
 
         movement.simple_stream.move_XY_at_Z_travel(this_plate_position,s_machines['grbl'][0],z_travel_height = s_machines['grbl'][2], testing=False, round_decimals = 4, camera = None)
 
-        # camera.camera_control.simple_capture_data(s_camera_settings, plate_parameters=this_plate_parameters, testing=run_as_testing, output_dir=output_dir)
-        # t = lights.labjackU3_control.turn_on_blue(d, return_time=True)
-        # camera.camera_control.capture_single_image_wait_N_seconds(s_camera_settings, timestart=t, excitation_amount = s_machines['labjack'][3], 
-        #                                                           plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir)
-        # lights.labjackU3_control.turn_off_blue(d)
-        # camera.camera_control.simple_capture_data(s_camera_settings, plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir)
-        # lights.labjackU3_control.turn_off_blue(d)
         time.sleep(1)
         print('')
 
     movement.simple_stream.home_GRBL(s_machines['grbl'][0], testing = True,camera=None) # home the machine
-    # lights.labjackU3_control.turn_off_everything(d) # make sure everything if off
 
     for this_plate_index in plate_index:
         this_plate_parameters,this_plate_position = settings.get_settings.get_indexed_dict_parameters(s_plate_names_and_opts,s_plate_positions,this_plate_index)
@@ -88,8 +68,6 @@ if __name__ == "__main__":
 
         # adjust for the imaging head 7 positions 
         this_plate_position['y_pos'] = this_plate_position['y_pos'] + s_terasaki_positions['y_offset_to_fluor_mm'][0]
-
-        # move to xy base plate position (do not move back down)
         movement.simple_stream.move_XY_at_Z_travel(this_plate_position,s_machines['grbl'][0],z_travel_height = s_machines['grbl'][2], testing=False, go_back_down = False, round_decimals = 4, camera = None)
         # calculate the calibration corner coordinates
         calibration_coordinates = dict()
@@ -112,10 +90,8 @@ if __name__ == "__main__":
             print(well_index, terasaki_well_coords)
             movement.simple_stream.move_XYZ(terasaki_well_coords,s_machines['grbl'][0], testing=False, round_decimals = 4, camera = None)
             print('imaging')
-            # camera.camera_control.simple_capture_data_fluor(s_camera_settings, plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir)
             time.sleep(1)
 
     # shut everything down 
-    # lights.labjackU3_control.turn_off_everything(d)
 
     print('eof')
