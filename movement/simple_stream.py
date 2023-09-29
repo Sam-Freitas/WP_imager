@@ -40,7 +40,9 @@ def remove_eol_chars(string):
 def send_wake_up(ser,sleep_amount = 2):
     # Wake up
     # Hit enter a few times to wake the Printrbot
-    ser.write(str.encode("\r\n\r\n"))
+    ser.timeout =2
+    ser.write(str.encode("\n"))
+    ser.write(str.encode("\n"))
     time.sleep(sleep_amount)   # Wait for Printrbot to initialize
     ser.reset_input_buffer()  # Flush startup text in serial input # ser.flushInput()
 
@@ -142,12 +144,14 @@ def stream_gcode(GRBL_port_path,gcode_path):
 
     return outputs
 
-def send_single_line(GRBL_port_path,gcode_line):
+def send_single_line(GRBL_port_path,gcode_line, camera = 1):
     outputs = []
 
     with serial.Serial(GRBL_port_path, BAUD_RATE) as ser:
-        send_wake_up_update_cam_stream(ser)
-        # send_wake_up(ser)
+        if camera is not None:
+            send_wake_up_update_cam_stream(ser)
+        else:
+            send_wake_up(ser)
         ser.timeout = 2
         
         line = gcode_line
@@ -162,7 +166,10 @@ def send_single_line(GRBL_port_path,gcode_line):
 
             # if the sent line is a checker then skip right to 
             if cleaned_line != '?' and cleaned_line != '$X' and cleaned_line != '$$':
-                wait_for_movement_completion_update_cam_stream(ser,cleaned_line) 
+                if camera is not None:
+                    wait_for_movement_completion_update_cam_stream(ser,cleaned_line) 
+                else:
+                    wait_for_movement_completion(ser,cleaned_line)
                 grbl_out = ser.readline()  # Wait for response with carriage return
             else:
                 grbl_out = ser.read_until(expected='ok')
@@ -202,13 +209,13 @@ def get_settings(GRBL_port_path): # gets the settings from the grbl controller
 
     return settings
 
-def home_GRBL(GRBL_port_path, testing = False):
+def home_GRBL(GRBL_port_path, testing = False, camera = None):
 
     if not testing:
-        send_single_line(GRBL_port_path,'$X')
-        send_single_line(GRBL_port_path,'$H')
+        send_single_line(GRBL_port_path,'$X', camera=camera)
+        send_single_line(GRBL_port_path,'$H', camera=camera)
     if testing:
-        send_single_line(GRBL_port_path,'$X')
+        send_single_line(GRBL_port_path,'$X', camera=camera)
         print('testing --- $H')
 
 def get_current_position(GRBL_port_path, testing = False):
@@ -222,7 +229,7 @@ def get_current_position(GRBL_port_path, testing = False):
 
     return 0
 
-def move_XYZ(position,GRBL_port_path, testing = False, round_decimals = False):
+def move_XYZ(position,GRBL_port_path, testing = False, round_decimals = False, camera = None):
 
     if round_decimals:
         position['x_pos'] = round(position['x_pos'],4)
@@ -232,13 +239,13 @@ def move_XYZ(position,GRBL_port_path, testing = False, round_decimals = False):
     if testing == False:
         print('moving to XYZ')
         move_xyz_command = 'G0 ' + 'X' + str(position['x_pos']) + ' ' + 'Y' + str(position['y_pos']) + ' ' + 'Z' + str(position['z_pos'])
-        send_single_line(GRBL_port_path,move_xyz_command)
+        send_single_line(GRBL_port_path,move_xyz_command, camera=camera)
     else:
         print('moving to XYZ')
         move_xyz_command = 'G0 ' + 'X' + str(position['x_pos']) + ' ' + 'Y' + str(position['y_pos']) + ' ' + 'Z' + str(position['z_pos'])
-        print(GRBL_port_path,move_xyz_command)
+        print(GRBL_port_path,move_xyz_command, camera=camera)
 
-def move_XY_at_Z_travel(position,GRBL_port_path,z_travel_height = 0.5, testing = False, go_back_down = True , round_decimals = False):
+def move_XY_at_Z_travel(position,GRBL_port_path,z_travel_height = 0.5, testing = False, go_back_down = True , round_decimals = False, camera = None):
 
     if round_decimals:
         position['x_pos'] = round(position['x_pos'],4)
@@ -248,17 +255,17 @@ def move_XY_at_Z_travel(position,GRBL_port_path,z_travel_height = 0.5, testing =
     if testing == False:
         print('moving Z to travel height')
         move_z_command = 'G0 ' + 'Z' + str(z_travel_height) 
-        send_single_line(GRBL_port_path,move_z_command)
+        send_single_line(GRBL_port_path,move_z_command, camera=camera)
 
         print('moving to XY')
         move_xy_command = 'G0 ' + 'X' + str(position['x_pos']) + ' ' + 'Y' + str(position['y_pos']) 
-        send_single_line(GRBL_port_path,move_xy_command)
+        send_single_line(GRBL_port_path,move_xy_command, camera=camera)
 
         if go_back_down:
 
             print('move Z to imaging height')
             move_xy_command = 'G0 ' + 'Z' + str(position['z_pos']) 
-            send_single_line(GRBL_port_path,move_xy_command)
+            send_single_line(GRBL_port_path,move_xy_command, camera=camera)
     else:
         print('moving Z to travel height')
         move_z_command = 'G0 ' + 'Z' + str(z_travel_height) 
