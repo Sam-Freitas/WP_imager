@@ -69,13 +69,13 @@ def send_wake_up_update_cam_stream(ser,sleep_amount = 2, camera_idx = 0):
 
 def wait_for_movement_completion(ser,cleaned_line):
 
-    Event().wait(1)
+    # Event().wait(1)
 
     if (cleaned_line != '$X') and (cleaned_line != '$$'):
 
         idle_counter = 0
         while True:
-            time.sleep(0.2)
+            time.sleep(0.02)
             ser.reset_input_buffer()
             command = str.encode('? ' + '\n')
             ser.write(command)
@@ -160,10 +160,10 @@ def send_single_line(GRBL_port_path,gcode_line, camera = None):
     outputs = []
 
     with serial.Serial(GRBL_port_path, BAUD_RATE) as ser:
-        if camera is not None:
-            send_wake_up_update_cam_stream(ser)
-        else:
-            send_wake_up(ser)
+        # if camera is not None:
+        #     send_wake_up_update_cam_stream(ser)
+        # else:
+        #     send_wake_up(ser)
         ser.timeout = 2
         
         line = gcode_line

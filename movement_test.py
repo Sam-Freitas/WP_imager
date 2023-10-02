@@ -1,9 +1,9 @@
 import os,time,glob,sys,time,tqdm,cv2
-import lights.labjackU3_control
-import lights.coolLed_control
+# import lights.labjackU3_control
+# import lights.coolLed_control
 import settings.get_settings
 import movement.simple_stream
-import camera.camera_control
+# import camera.camera_control
 
 # def turn_everything_off_at_exit():
 #     lights.labjackU3_control.turn_off_everything()
@@ -36,7 +36,7 @@ if __name__ == "__main__":
 
     # run setup test to make sure everything works or throw error
 
-    s_todays_runs = settings.get_settings.update_todays_runs(s_todays_runs, overwrite=run_as_testing)
+    s_todays_runs = settings.get_settings.update_todays_runs(s_todays_runs, overwrite=True)
     movement.simple_stream.home_GRBL(s_machines['grbl'][0], testing = run_as_testing, camera = None) # home the machine
 
     plate_index = []
@@ -58,7 +58,7 @@ if __name__ == "__main__":
         time.sleep(1)
         print('')
 
-    movement.simple_stream.home_GRBL(s_machines['grbl'][0], testing = True,camera=None) # home the machine
+    movement.simple_stream.home_GRBL(s_machines['grbl'][0], testing = False,camera=None) # home the machine
 
     for this_plate_index in plate_index:
         this_plate_parameters,this_plate_position = settings.get_settings.get_indexed_dict_parameters(s_plate_names_and_opts,s_plate_positions,this_plate_index)
@@ -90,8 +90,9 @@ if __name__ == "__main__":
             print(well_index, terasaki_well_coords)
             movement.simple_stream.move_XYZ(terasaki_well_coords,s_machines['grbl'][0], testing=False, round_decimals = 4, camera = None)
             print('imaging')
-            time.sleep(1)
+            time.sleep(0.1)
 
     # shut everything down 
+    movement.simple_stream.home_GRBL(s_machines['grbl'][0], testing = False,camera=None) # home the machine
 
     print('eof')
