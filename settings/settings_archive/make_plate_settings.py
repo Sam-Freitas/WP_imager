@@ -11,36 +11,24 @@ path_to_settings_folder = os.path.join(os.getcwd(), "settings")
 rows = 9  # rows and columns
 cols = 8
 
-xo = -50.375  #  approximate intial starting points
-yo = -212.035  #  approximate intial starting points
-zo = -90  #  approximate intial starting points
+# xo = -108.85 + 63.1#  approximate intial starting points
+# yo = -269.66 + 148.16 #  approximate intial starting points
+# zo = -50  #  approximate intial starting points
+
+xo = -40.75
+yo = -113.50
+zo = -100
+
+print('START:','x',xo,'y',yo,'z',zo)
 
 dx = -153.2  # distace between plates
 dy = -115  # used to be 116
 
-# #############################################
-# ## this is for the settings plate postions
-# header = ['plate_index','row','column','x_pos','y_pos','z_pos']
-# df = pd.DataFrame(columns = header)
-
-# i = 0
-# j = 0
-# counter = 0
-
-# for r in range(rows):
-#     i = 0
-#     for c in range(cols):
-#         df.loc[counter] = [counter,r,c,xo+(dx*i),yo+(dy*j),zo] #just xyz
-#         counter = counter + 1
-#         i = i +1
-#     j = j+1
-
-# df.to_csv(os.path.join(path_to_settings_folder,'settings_plate_positions.csv'),index= False)
-
-# #############################################
-# ## this is for the settings plate names and opts
-header = ['plate_index','row','column','plate_name','experiment_name','lifespan','fluorescence','fluorescence_times','fluorescence_UV','fluorescence_BLUE','fluorescence_GREEN','fluorescence_RED']
+#############################################
+## this is for the settings plate postions
+header = ['plate_index','row','column','x_pos','y_pos','z_pos']
 df = pd.DataFrame(columns = header)
+
 i = 0
 j = 0
 counter = 0
@@ -48,12 +36,30 @@ counter = 0
 for r in range(rows):
     i = 0
     for c in range(cols):
-        df.loc[counter] = [counter ,r , c ,'NONE','NONE','1','1','100','100','100','100','100']
+        df.loc[counter] = [counter,r,c,xo+(dx*i),yo+(dy*j),zo] #just xyz
         counter = counter + 1
         i = i +1
     j = j+1
 
-df.to_csv(os.path.join(path_to_settings_folder,'settings_plate_names_and_opts.csv'),index= False)
+df.to_csv(os.path.join(path_to_settings_folder,'settings_plate_positions.csv'),index= False)
+
+# # #############################################
+# # ## this is for the settings plate names and opts
+# header = ['plate_index','row','column','plate_name','experiment_name','lifespan','fluorescence','fluorescence_times','fluorescence_UV','fluorescence_BLUE','fluorescence_GREEN','fluorescence_RED']
+# df = pd.DataFrame(columns = header)
+# i = 0
+# j = 0
+# counter = 0
+
+# for r in range(rows):
+#     i = 0
+#     for c in range(cols):
+#         df.loc[counter] = [counter ,r , c ,'NONE','NONE','1','1','100','100','100','100','100']
+#         counter = counter + 1
+#         i = i +1
+#     j = j+1
+
+# df.to_csv(os.path.join(path_to_settings_folder,'settings_plate_names_and_opts.csv'),index= False)
 
 # #############################################
 # ## this is for the setting machines
