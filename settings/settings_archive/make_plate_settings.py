@@ -11,13 +11,13 @@ path_to_settings_folder = os.path.join(os.getcwd(), "settings")
 rows = 9  # rows and columns
 cols = 8
 
-# xo = -108.85 + 63.1#  approximate intial starting points
-# yo = -269.66 + 148.16 #  approximate intial starting points
-# zo = -50  #  approximate intial starting points
+xo = -108.85 + 63.1 + 5.#  approximate intial starting points -------------- xo to center of plate + xo from center of plate to homing swtich + homing switch offset 
+yo = -269.66 + 148.16 + 5. + 3.#  approximate intial starting points ------- same as above with an added 3 for calibration(???)
+zo = -100  #  approximate intial starting points --------------------------- measured height for widefield imaging
 
-xo = -40.75
-yo = -113.50
-zo = -100
+xo = round(xo,4)
+yo = round(yo,4)
+zo = round(zo,4)
 
 print('START:','x',xo,'y',yo,'z',zo)
 
@@ -36,7 +36,7 @@ counter = 0
 for r in range(rows):
     i = 0
     for c in range(cols):
-        df.loc[counter] = [counter,r,c,xo+(dx*i),yo+(dy*j),zo] #just xyz
+        df.loc[counter] = [counter,r,c,round(xo+(dx*i),4),round(yo+(dy*j),4),zo] #just xyz
         counter = counter + 1
         i = i +1
     j = j+1
