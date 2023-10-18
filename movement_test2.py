@@ -46,11 +46,40 @@ if __name__ == "__main__":
     coords['z_pos'] = -10.0
     serial_connection = movement.move.get_serial_connection(s_machines['grbl'][0])
 
+    serial_connection.flush()
     command = str.encode('?')
     serial_connection.write(command)
     a = serial_connection.read_until('ok')
     print(a)
+    time.sleep(0.1)
 
+    serial_connection.flush()
+    command = str.encode('$X')
+    serial_connection.write(command)
+    a = serial_connection.read_until('ok')
+    print(a)
+    time.sleep(0.1)
+
+    serial_connection.flush()
+    command = str.encode('$H')
+    serial_connection.write(command)
+    a = serial_connection.read_until('ok')
+    print(a)
+    time.sleep(0.1)
+
+    serial_connection.flush()
+    command = str.encode('g0 x-100 y-100 z-10')
+    serial_connection.write(command)
+    a = serial_connection.read_until('ok')
+    print(a)
+    time.sleep(0.1)
+
+    serial_connection.flush()
+    command = str.encode('g0 x-100 y-100 z-10')
+    serial_connection.write(command)
+    a = serial_connection.read_until('ok')
+    print(a)
+    time.sleep(0.1)
     # time.sleep(1)
 
     # movement.simple_stream.move_XYZ(coords,s_machines['grbl'][0], testing=False, round_decimals = 4, camera = None)
