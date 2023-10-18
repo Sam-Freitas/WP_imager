@@ -40,7 +40,7 @@ def remove_eol_chars(string):
 def send_wake_up(ser,sleep_amount = 2):
     # Wake up
     # Hit enter a few times to wake the Printrbot
-    ser.timeout =2
+    ser.timeout = 2
     ser.write(str.encode("\n"))
     ser.write(str.encode("\n"))
     time.sleep(sleep_amount)   # Wait for Printrbot to initialize
@@ -60,7 +60,7 @@ def send_wake_up_update_cam_stream(ser,sleep_amount = 2, camera_idx = 0):
         cap.set(cv2.CAP_PROP_FPS,int(10))
     # Wake up
     # Hit enter a few times to wake the Printrbot
-    ser.timeout =2
+    ser.timeout = 2
     ser.write(str.encode("\n"))
     # time.sleep(sleep_amount)   # Wait for Printrbot to initialize
     start_time = time.time()

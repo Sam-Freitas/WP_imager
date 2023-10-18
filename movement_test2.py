@@ -3,6 +3,7 @@ import os,time,glob,sys,time,tqdm,cv2
 # import lights.coolLed_control
 import settings.get_settings
 import movement.simple_stream
+import movement.move
 # import camera.camera_control
 
 # def turn_everything_off_at_exit():
@@ -36,21 +37,26 @@ if __name__ == "__main__":
 
     # run setup test to make sure everything works or throw error
 
-    s_todays_runs = settings.get_settings.update_todays_runs(s_todays_runs, overwrite=True)
-    movement.simple_stream.home_GRBL(s_machines['grbl'][0], testing = run_as_testing, camera = None) # home the machine
+    # s_todays_runs = settings.get_settings.update_todays_runs(s_todays_runs, overwrite=True)
+    # movement.simple_stream.home_GRBL(s_machines['grbl'][0], testing = run_as_testing, camera = None) # home the machine
 
     coords = dict()
     coords['x_pos'] = -100.0
     coords['y_pos'] = -100.0
     coords['z_pos'] = -10.0
-    movement.simple_stream.move_XYZ(coords,s_machines['grbl'][0], testing=False, round_decimals = 4, camera = None)
+    serial_connection = movement.move.get_serial_connection(s_machines['grbl'][0])
 
-    time.sleep(1)
+    command = str.encode('?')
+    serial_connection.write(command)
+    a = serial_connection.read_until('ok')
+    print(a)
 
-    movement.simple_stream.move_XYZ(coords,s_machines['grbl'][0], testing=False, round_decimals = 4, camera = None)
+    # time.sleep(1)
 
-    time.sleep(1)
+    # movement.simple_stream.move_XYZ(coords,s_machines['grbl'][0], testing=False, round_decimals = 4, camera = None)
 
-    movement.simple_stream.move_XYZ(coords,s_machines['grbl'][0], testing=False, round_decimals = 4, camera = None)
+    # time.sleep(1)
 
-    print('eof')
+    # movement.simple_stream.move_XYZ(coords,s_machines['grbl'][0], testing=False, round_decimals = 4, camera = None)
+
+    # print('eof')
