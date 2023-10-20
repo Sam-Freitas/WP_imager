@@ -27,7 +27,9 @@ class CNCController:
             idle_counter = 0
             while True:
                 time.sleep(0.1)
-                self.ser.flush()
+                # self.ser.flush()
+                self.ser.reset_input_buffer()
+                self.ser.reset_output_buffer()
                 time.sleep(0.1)
                 command = str.encode("?"+ "\n")
                 self.ser.write(command)
@@ -47,7 +49,9 @@ class CNCController:
                     raise ValueError(grbl_response)
 
     def send_command(self, command):
-        self.ser.flush()
+        # self.ser.flush()
+        self.ser.reset_input_buffer()
+        self.ser.reset_output_buffer()
         time.sleep(0.1)
         self.ser.write(command.encode())
         time.sleep(0.1)
@@ -73,10 +77,10 @@ if __name__ == "__main__":
 
     # atexit.register(CNCController.close_connection)
     # print(sys.argv)
-    GRBL_port_path = 'COM6'
+    GRBL_port_path = 'COM5'
     BAUD_RATE = 115200
 
-    controller = CNCController(port='COM6', baudrate=115200)
+    controller = CNCController(port=GRBL_port_path, baudrate=BAUD_RATE)
 
     command = "$$"+ "\n"
     response, out = controller.send_command(command)
@@ -90,7 +94,15 @@ if __name__ == "__main__":
     response, out = controller.send_command(command)
     print(out)
 
-    command = "g0 x-100"+ "\n"
+    command = "$H"+ "\n"
+    response, out = controller.send_command(command)
+    print(out)
+
+    command = "g0 x-200 y-200"+ "\n"
+    response, out = controller.send_command(command)
+    print(out)
+
+    command = "g0 x-200 y-200"+ "\n"
     response, out = controller.send_command(command)
     print(out)
 
@@ -98,9 +110,9 @@ if __name__ == "__main__":
     response, out = controller.send_command(command)
     print(out)
 
-    # command = "$H"+ "\n"
-    # response, out = controller.send_command(command)
-    # print(out)
+    command = "$H"+ "\n"
+    response, out = controller.send_command(command)
+    print(out)
 
     controller.close_connection()
     # output_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),'output')
