@@ -77,7 +77,7 @@ if __name__ == "__main__":
 
     # atexit.register(CNCController.close_connection)
     # print(sys.argv)
-    GRBL_port_path = 'COM5'
+    GRBL_port_path = 'COM6'
     BAUD_RATE = 115200
 
     controller = CNCController(port=GRBL_port_path, baudrate=BAUD_RATE)
