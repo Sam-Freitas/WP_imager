@@ -36,7 +36,8 @@ class CNCController:
                     if 'idle' in grbl_response.lower():
                         idle_counter += 1
                     else:
-                        print(grbl_response)
+                        if grbl_response != '':
+                            print(grbl_response)
                 if idle_counter == 1:
                     print(grbl_response)
                 if idle_counter > 10:
@@ -103,9 +104,9 @@ if __name__ == "__main__":
     command = "?"+ "\n"
     response, out = controller.send_command(command)
 
-    # command = "$H"+ "\n"
-    # response, out = controller.send_command(command)
-    # # # movement.simple_stream.home_GRBL(s_machines['grbl'][0], testing = run_as_testing, camera = None) # home the machine
+    command = "$H"+ "\n"
+    response, out = controller.send_command(command)
+    # # movement.simple_stream.home_GRBL(s_machines['grbl'][0], testing = run_as_testing, camera = None) # home the machine
 
     plate_index = []
     plate_positions = []
