@@ -12,6 +12,7 @@ import movement.simple_stream
 
 class CNCController:
     def __init__(self, port, baudrate):
+        import re
         self.ser = serial.Serial(port, baudrate, timeout=1)
         time.sleep(2)
 
@@ -127,6 +128,7 @@ if __name__ == "__main__":
     controller = CNCController(port=s_machines['grbl'][0], baudrate=s_machines['grbl'][1])
     response, s_grbl_settings = controller.send_command("$$"+ "\n")
     s_grbl_settings_df,s_grbl_settings = settings.get_settings.convert_GRBL_settings(s_grbl_settings)
+    z_travel_height = s_machines['grbl'][2]
 
     # run setup test to make sure everything works or throw error
     s_todays_runs = settings.get_settings.update_todays_runs(s_todays_runs, overwrite=True)
@@ -168,7 +170,7 @@ if __name__ == "__main__":
         command = 'G0 ' + 'Z' + str(position['z_pos']) 
         response, out = controller.send_command(command)
 
-        time.sleep(0.5)
+        time.sleep(0.1)
         print('IMAGING TEST RIGHT NOW')
 
         #### go to z travel height
