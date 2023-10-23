@@ -22,14 +22,14 @@ class CNCController:
 
         if ('$X' not in cleaned_line) and ('$$' not in cleaned_line) and ('?' not in cleaned_line):
             idle_counter = 0
+            time.sleep(0.1)
             while True:
-                time.sleep(0.1)
-                # self.ser.flush()
                 self.ser.reset_input_buffer()
                 self.ser.reset_output_buffer()
                 time.sleep(0.1)
                 command = str.encode("?"+ "\n")
                 self.ser.write(command)
+                time.sleep(0.1)
                 grbl_out = self.ser.readline().decode().strip()
                 grbl_response = grbl_out.strip()
 
@@ -47,8 +47,7 @@ class CNCController:
                     raise ValueError(grbl_response)
 
     def send_command(self, command):
-        # self.ser.flush()
-        self.ser.reset_input_buffer()
+        self.ser.reset_input_buffer() # flush the input and the output 
         self.ser.reset_output_buffer()
         time.sleep(0.1)
         self.ser.write(command.encode())
@@ -84,6 +83,34 @@ class CNCController:
         position['z_pos'] = MPos[2]
 
         return position
+    
+    def move_XY_at_Z_travel(self, position, z_travel_height):
+
+        current_position = CNCController.get_current_position()
+
+        if round(float(current_position['z_pos']),1) != float(z_travel_height):
+            #### go to z travel height
+            command = "g0 z" + str(z_travel_height) + " " + "\n"
+            response, out = CNCController.send_command(command)
+        
+        print('moving to XY')
+        command = 'G0 ' + 'X' + str(position['x_pos']) + ' ' + 'Y' + str(position['y_pos']) 
+        response, out = CNCController.send_command(command)
+        ##### move z
+        print('moving to Z')
+        command = 'G0 ' + 'Z' + str(position['z_pos']) 
+        response, out = CNCController.send_command(command)
+
+        return CNCController.get_current_position()
+    
+    def move_XYZ(self, position):
+
+        ##### move xyz
+        print('moving to XYZ')
+        command = 'G0 ' + 'X' + str(position['x_pos']) + ' ' + 'Y' + str(position['y_pos']) + ' ' + 'Z' + str(position['z_pos']) 
+        response, out = CNCController.send_command(command)
+
+        return CNCController.get_current_position()
     
     def home_grbl(self):
         print("HOMING CNC")
@@ -141,91 +168,79 @@ if __name__ == "__main__":
         if this_plate_name != 'NONE':
             plate_index.append(this_plate_index)
 
-    # # # run experiment
+    # # # run lifespan imaging experiments
     for this_plate_index in plate_index:
+        # get the experiment options
         this_plate_parameters,this_plate_position = settings.get_settings.get_indexed_dict_parameters(s_plate_names_and_opts,s_plate_positions,this_plate_index)
-    
         print(this_plate_parameters)
         print(this_plate_position)
 
+        # get the position of the experiment
         position = this_plate_position.copy()
-        position['x_pos'] = round(position['x_pos'],4)
-        position['y_pos'] = round(position['y_pos'],4)
-        position['z_pos'] = round(position['z_pos'],4)
+        position['x_pos'],position['y_pos'],position['z_pos'] = round(position['x_pos'],4), round(position['y_pos'],4), round(position['z_pos'],4)
 
-        current_position = controller.get_current_position()
+        # move the imaging module to the position
+        controller.move_XY_at_Z_travel(position = position,
+                                       z_travel_height = z_travel_height)
 
-        if round(float(current_position['z_pos']),1) != float(z_travel_height):
-            #### go to z travel height
-            command = "g0 z" + str(z_travel_height) + " " + "\n"
-            response, out = controller.send_command(command)
-
-        ##### move xy
-        print('moving to XY')
-        command = 'G0 ' + 'X' + str(position['x_pos']) + ' ' + 'Y' + str(position['y_pos']) 
-        response, out = controller.send_command(command)
-
-        ##### move z
-        print('moving to Z')
-        command = 'G0 ' + 'Z' + str(position['z_pos']) 
-        response, out = controller.send_command(command)
-
+        # image the experiment 
         time.sleep(0.1)
-        print('IMAGING TEST RIGHT NOW')
-
-        #### go to z travel height
-        z_travel_height = s_machines['grbl'][2]
-        command = "g0 z" + str(z_travel_height) + " " + "\n"
-        response, out = controller.send_command(command)
-
-        # movement.simple_stream.move_XY_at_Z_travel(this_plate_position,s_machines['grbl'][0],z_travel_height = s_machines['grbl'][2], testing=False, round_decimals = 4, camera = None)
+        print('IMAGING TEST RIGHT NOW') ######################################################################################################################
 
         time.sleep(0.1)
         print('')
-
-    command = "g0 x-5 y-5 z-5\n"
-    response, out = controller.send_command(command)
-
-    command = "?" + "\n"
-    response, out = controller.send_command(command)
-    print(out)
-
     
-    # movement.simple_stream.home_GRBL(s_machines['grbl'][0], testing = False,camera=None) # home the machine
+    # reset and home the machine
+    controller.set_up_grbl(home = True)
 
-    # for this_plate_index in plate_index:
-    #     this_plate_parameters,this_plate_position = settings.get_settings.get_indexed_dict_parameters(s_plate_names_and_opts,s_plate_positions,this_plate_index)
-    
-    #     print(this_plate_parameters)
-    #     print(this_plate_position)
+    # # # run fluorescent imaging experiments
+    for this_plate_index in plate_index:
+        # get the experiment options
+        this_plate_parameters,this_plate_position = settings.get_settings.get_indexed_dict_parameters(s_plate_names_and_opts,s_plate_positions,this_plate_index)
+        print(this_plate_parameters)
+        print(this_plate_position)
 
-    #     # adjust for the imaging head 7 positions 
-    #     this_plate_position['y_pos'] = this_plate_position['y_pos'] + s_terasaki_positions['y_offset_to_fluor_mm'][0]
-    #     movement.simple_stream.move_XY_at_Z_travel(this_plate_position,s_machines['grbl'][0],z_travel_height = s_machines['grbl'][2], testing=False, go_back_down = False, round_decimals = 4, camera = None)
-    #     # calculate the calibration corner coordinates
-    #     calibration_coordinates = dict()
-    #     calibration_coordinates['x_pos'] = this_plate_position['x_pos'] + s_terasaki_positions['calib_x_pos_mm'][0]
-    #     calibration_coordinates['y_pos'] = this_plate_position['y_pos'] + s_terasaki_positions['calib_y_pos_mm'][0]
-    #     calibration_coordinates['z_pos'] = s_terasaki_positions['calib_z_pos_mm'][0]
-    #     # move to the calibration side
-    #     movement.simple_stream.move_XYZ(calibration_coordinates,s_machines['grbl'][0], testing=False, round_decimals = 4, camera = None)
+        # adjust for imaging head y difference positions 
+        this_plate_position['y_pos'] = this_plate_position['y_pos'] + s_terasaki_positions['y_offset_to_fluor_mm'][0]
 
-    #     # run the calibration script 
-    #     print('running Z calibration script -------------------------------------------------------------------------------------')
-    #     calibration_coordinates['z_pos'] = calibration_coordinates['z_pos'] - 10
+        position = this_plate_position.copy()
+        position['x_pos'],position['y_pos'],position['z_pos'] = round(position['x_pos'],4), round(position['y_pos'],4), round(position['z_pos'],4)
+        current_position = controller.get_current_position()
 
-    #     for well_index,this_terasaki_well_xy in enumerate(zip(s_terasaki_positions['x_relative_pos_mm'].values(),s_terasaki_positions['y_relative_pos_mm'].values())):
-    #         this_plate_parameters['well_name'] = s_terasaki_positions['name'][well_index]
-    #         terasaki_well_coords = dict()
-    #         terasaki_well_coords['x_pos'] = this_plate_position['x_pos'] + this_terasaki_well_xy[0]
-    #         terasaki_well_coords['y_pos'] = this_plate_position['y_pos'] + this_terasaki_well_xy[1]
-    #         terasaki_well_coords['z_pos'] = calibration_coordinates['z_pos']
-    #         print(well_index, terasaki_well_coords)
-    #         movement.simple_stream.move_XYZ(terasaki_well_coords,s_machines['grbl'][0], testing=False, round_decimals = 4, camera = None)
-    #         print('imaging')
-    #         time.sleep(0.1)
+        # move the fluorescent imaging head to the experiment
+        controller.move_XY_at_Z_travel(position = position,
+                                       z_travel_height = z_travel_height)
 
-    # # shut everything down 
+        # calculate the calibration corner coordinates
+        calibration_coordinates = dict()
+        calibration_coordinates['x_pos'] = this_plate_position['x_pos'] + s_terasaki_positions['calib_x_pos_mm'][0]
+        calibration_coordinates['y_pos'] = this_plate_position['y_pos'] + s_terasaki_positions['calib_y_pos_mm'][0]
+        calibration_coordinates['z_pos'] = s_terasaki_positions['calib_z_pos_mm'][0]
+
+        # move to the calibration side
+        controller.move_XYZ(position = calibration_coordinates)
+        # run the calibration script 
+        print('running Z calibration script -------------------------------------------------------------------------------------')
+        calibration_coordinates['z_pos'] = -90 # calibration_coordinates['z_pos'] -40 ### do something here
+
+        # fluorescently image each of the terasaki wells (96)
+        for well_index,this_terasaki_well_xy in enumerate(zip(s_terasaki_positions['x_relative_pos_mm'].values(),s_terasaki_positions['y_relative_pos_mm'].values())):
+            # get plate parameters
+            this_plate_parameters['well_name'] = s_terasaki_positions['name'][well_index]
+            terasaki_well_coords = dict()
+            # calculate the specific well location
+            terasaki_well_coords['x_pos'] = this_plate_position['x_pos'] + this_terasaki_well_xy[0]
+            terasaki_well_coords['y_pos'] = this_plate_position['y_pos'] + this_terasaki_well_xy[1]
+            terasaki_well_coords['z_pos'] = calibration_coordinates['z_pos']
+            print(well_index, terasaki_well_coords)
+            # move the fluorescent imaging head to that specific well
+            controller.move_XYZ(position = terasaki_well_coords)
+
+            print('imaging')
+            time.sleep(0.1)
+
+    # shut everything down 
+    controller.set_up_grbl(home = True)
     # movement.simple_stream.home_GRBL(s_machines['grbl'][0], testing = False,camera=None) # home the machine
 
     # print('eof')
