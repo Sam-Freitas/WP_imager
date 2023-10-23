@@ -32,15 +32,15 @@ class CNCController:
                 grbl_out = self.ser.readline().decode().strip()
                 grbl_response = grbl_out.strip()
 
-                if 'ok' not in grbl_response.lower():
+                if 'ok' not in grbl_response.lower():   
                     if 'idle' in grbl_response.lower():
                         idle_counter += 1
                     else:
                         if grbl_response != '':
                             print(grbl_response)
-                if idle_counter == 1:
+                if idle_counter == 1 or idle_counter == 2:
                     print(grbl_response)
-                if idle_counter > 10:
+                if idle_counter > 5:
                     break
                 if 'alarm' in grbl_response.lower():
                     raise ValueError(grbl_response)
@@ -127,6 +127,9 @@ if __name__ == "__main__":
         position['y_pos'] = round(position['y_pos'],4)
         position['z_pos'] = round(position['z_pos'],4)
 
+        command = "? " + "\n"
+        response, out = controller.send_command(command)
+
         #### go to z travel height
         z_travel_height = s_machines['grbl'][2]
         command = "g0 z" + str(z_travel_height) + " " + "\n"
@@ -152,7 +155,7 @@ if __name__ == "__main__":
 
         # movement.simple_stream.move_XY_at_Z_travel(this_plate_position,s_machines['grbl'][0],z_travel_height = s_machines['grbl'][2], testing=False, round_decimals = 4, camera = None)
 
-        time.sleep(1)
+        # time.sleep(1)
         print('')
 
     # movement.simple_stream.home_GRBL(s_machines['grbl'][0], testing = False,camera=None) # home the machine
