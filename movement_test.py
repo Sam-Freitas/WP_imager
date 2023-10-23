@@ -66,6 +66,39 @@ class CNCController:
                 break
             # print(response)
         return response, out
+    
+    def get_current_position(self):
+
+        command = "? " + "\n"
+        response, out = CNCController.send_command(self,command)
+        MPos = out[0] # get the idle output
+        MPos = MPos.split('|')[1] # get the specific output
+        MPos = MPos.split(',')
+        MPos[0] = MPos[0].split(':')[1]
+
+        position = dict()
+
+        position['x_pos'] = MPos[0]
+        position['y_pos'] = MPos[1]
+        position['z_pos'] = MPos[2]
+
+        return position
+    
+    def home_grbl(self):
+        print("HOMING CNC")
+        command = "$H"+ "\n"
+        response, out = CNCController.send_command(command)
+    
+    def set_up_grbl(self, home = True):
+        # unlock 
+        command = "$X"+ "\n"
+        response, out = CNCController.send_command(command)
+
+        command = "?"+ "\n"
+        response, out = CNCController.send_command(command)
+
+        if home:
+            CNCController.home_grbl(self)
 
     def close_connection(self):
         self.ser.close()
@@ -90,23 +123,14 @@ if __name__ == "__main__":
     # read in settings from machines
     run_as_testing = False
 
-    settings.get_settings.check_grbl_port(s_machines['grbl'][0], run_as_testing = True)
+    settings.get_settings.check_grbl_port(s_machines['grbl'][0], run_as_testing = False)
     controller = CNCController(port=s_machines['grbl'][0], baudrate=s_machines['grbl'][1])
     response, s_grbl_settings = controller.send_command("$$"+ "\n")
     s_grbl_settings_df,s_grbl_settings = settings.get_settings.convert_GRBL_settings(s_grbl_settings)
 
     # run setup test to make sure everything works or throw error
     s_todays_runs = settings.get_settings.update_todays_runs(s_todays_runs, overwrite=True)
-    command = "$X"+ "\n"
-    response, out = controller.send_command(command)
-
-    s_todays_runs = settings.get_settings.update_todays_runs(s_todays_runs, overwrite=True)
-    command = "?"+ "\n"
-    response, out = controller.send_command(command)
-
-    command = "$H"+ "\n"
-    response, out = controller.send_command(command)
-    # # movement.simple_stream.home_GRBL(s_machines['grbl'][0], testing = run_as_testing, camera = None) # home the machine
+    controller.set_up_grbl(home = True)
 
     plate_index = []
     plate_positions = []
@@ -127,13 +151,12 @@ if __name__ == "__main__":
         position['y_pos'] = round(position['y_pos'],4)
         position['z_pos'] = round(position['z_pos'],4)
 
-        command = "? " + "\n"
-        response, out = controller.send_command(command)
+        current_position = controller.get_current_position()
 
-        #### go to z travel height
-        z_travel_height = s_machines['grbl'][2]
-        command = "g0 z" + str(z_travel_height) + " " + "\n"
-        response, out = controller.send_command(command)
+        if round(float(current_position['z_pos']),1) != float(z_travel_height):
+            #### go to z travel height
+            command = "g0 z" + str(z_travel_height) + " " + "\n"
+            response, out = controller.send_command(command)
 
         ##### move xy
         print('moving to XY')
@@ -155,9 +178,17 @@ if __name__ == "__main__":
 
         # movement.simple_stream.move_XY_at_Z_travel(this_plate_position,s_machines['grbl'][0],z_travel_height = s_machines['grbl'][2], testing=False, round_decimals = 4, camera = None)
 
-        # time.sleep(1)
+        time.sleep(0.1)
         print('')
 
+    command = "g0 x-5 y-5 z-5\n"
+    response, out = controller.send_command(command)
+
+    command = "?" + "\n"
+    response, out = controller.send_command(command)
+    print(out)
+
+    
     # movement.simple_stream.home_GRBL(s_machines['grbl'][0], testing = False,camera=None) # home the machine
 
     # for this_plate_index in plate_index:
@@ -195,4 +226,4 @@ if __name__ == "__main__":
     # # shut everything down 
     # movement.simple_stream.home_GRBL(s_machines['grbl'][0], testing = False,camera=None) # home the machine
 
-    print('eof')
+    # print('eof')

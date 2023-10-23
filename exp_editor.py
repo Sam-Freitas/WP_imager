@@ -1,10 +1,11 @@
 import tkinter as tk
 import pandas as pd
-from numpy import asarray, arange, nonzero
+from numpy import asarray, arange, nonzero, zeros,uint8
+from PIL import Image, ImageTk
 import os
 import settings.get_settings
-from tkinter import messagebox
-import atexit
+from tkinter import messagebox, PhotoImage
+import atexit, json
 
 ### plate name, experiment name, lifepsan, healthspan, fluor timing, uv, blue, green, red
 DEFAULT_VALUES = ['NONE','NONE',1,0,100,0,0,0,0]
@@ -60,6 +61,8 @@ def update_button_with_new_preferences(row,col,options):
     if options is not None:
         buttons[row][col]['text'] = options[0] + '\n' + options[1] + '\n' + f'{row}-{col}'
         buttons[row][col]['bg'] = 'Green'
+        if bool(options[3]):
+            buttons[row][col]['bg'] = 'Purple'
     if options == None:
         buttons[row][col]['text'] = DEFAULT_VALUES[0] + '\n' + DEFAULT_VALUES[1] + '\n' + f'{row}-{col}'
         buttons[row][col]['bg'] = 'White'
@@ -75,6 +78,14 @@ def get_index_from_row_col(row,col): # get the row and column as the plate index
     index = int(nonzero((1*index_bool) * (arange(1,len(index_bool)+1)))[0]) # convert to int
 
     return index
+
+def get_settings_from_index(index):
+
+    temp = dict()
+    for key in s_plate_names_and_opts.keys():
+        temp[key] = s_plate_names_and_opts[key][index]
+
+    return temp
 
 def button_click(row, col):
     # Create a new tkinter window
@@ -97,10 +108,17 @@ def button_click(row, col):
     entry2.insert(0, s_plate_names_and_opts['experiment_name'][index])  # Set default value
     entry2.pack()
 
+    button_settings = get_settings_from_index(index)
+    print(json.dumps(button_settings, indent = 4))
+
     # Create checkbuttons for the remaining seven options with default value True
-    check_var = [tk.BooleanVar(value=True),tk.BooleanVar(value=False),tk.BooleanVar(value=True),
-                 tk.BooleanVar(value=False),tk.BooleanVar(value=False),tk.BooleanVar(value=False),
-                 tk.BooleanVar(value=False)]
+    check_var = [tk.BooleanVar(value=bool(button_settings['lifespan'])),
+                 tk.BooleanVar(value=bool(button_settings['fluorescence'])),
+                 tk.BooleanVar(value=bool(button_settings['fluorescence_times'])),
+                 tk.BooleanVar(value=bool(button_settings['fluorescence_UV'])),
+                 tk.BooleanVar(value=bool(button_settings['fluorescence_BLUE'])),
+                 tk.BooleanVar(value=bool(button_settings['fluorescence_GREEN'])),
+                 tk.BooleanVar(value=bool(button_settings['fluorescence_RED']))]
     checkbutton_names = ["Lifespan", "Fluorescence", "Fluorescence Time(s)", "UV excitation", "BLUE excitation", "GREEN excitation", "RED excitation"]
     for i in range(7):
         if i == 2:  # Move the first check button to a different row
@@ -146,6 +164,13 @@ def button_click(row, col):
     delete_button = tk.Button(popup, text="DELETE", command=reset_values)
     delete_button.pack()
 
+def numpy_to_photoimage(numpy_array):
+    # Convert the NumPy array to a PIL image
+    pil_image = Image.fromarray(numpy_array)
+    # Convert the PIL image to a PhotoImage object
+    photo_image = ImageTk.PhotoImage(pil_image)
+    return photo_image
+
 if __name__ == "__main__":
     atexit.register(exit_function)
     # Create the main window
@@ -172,14 +197,29 @@ if __name__ == "__main__":
 
             text = s_plate_names_and_opts['plate_name'][index] + '\n' + s_plate_names_and_opts['experiment_name'][index] + '\n' + f'{i}-{j}'
 
+            fluor_option = bool(s_plate_names_and_opts['fluorescence'][index])
+            bg = zeros(shape= (x,y,3)).astype(uint8)
+
+            # if 'NONE' in text:
+            #     bg[:,:,:] = 255#'White'
+            # else:
+            #     bg[:,:,1] = 255#'Green'
+
             if 'NONE' in text:
                 bg = 'White'
             else:
                 bg = 'Green'
 
+            if 'NONE' not in text and fluor_option:
+                bg = 'Purple'
+
+            # bg = numpy_to_photoimage(bg)
+
             buttons[i][j] = tk.Button(root, text=text, 
-                                    command=lambda i=i, j=j: button_click(i, j), width=BUTTON_W, height=BUTTON_H,
+                                    command=lambda i=i, j=j: button_click(i, j), 
+                                    width=BUTTON_W, height=BUTTON_H,
                                     bg = bg)
+                                    # image= bg)
             buttons[i][j].grid(row=i, column=j, padx=2, pady=2)
             index += 1
 
