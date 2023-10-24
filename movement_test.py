@@ -172,7 +172,7 @@ if __name__ == "__main__":
             if s_plate_names_and_opts['fluorescence'][this_plate_index]:
                 plate_index_fluor.append(this_plate_index)
 
-    controller.set_up_grbl(home = True)
+    controller.set_up_grbl(home = False)
     # # # run lifespan imaging experiments
     for this_plate_index in plate_index:
         # get the experiment options
@@ -196,7 +196,7 @@ if __name__ == "__main__":
         print('')
     
     # reset and home the machine
-    controller.set_up_grbl(home = True)
+    controller.set_up_grbl(home = False)
 
     # # # run fluorescent imaging experiments
     for this_plate_index in plate_index_fluor:
@@ -209,7 +209,8 @@ if __name__ == "__main__":
         this_plate_position['y_pos'] = this_plate_position['y_pos'] + s_terasaki_positions['y_offset_to_fluor_mm'][0]
 
         position = this_plate_position.copy()
-        position['x_pos'],position['y_pos'],position['z_pos'] = round(position['x_pos'],4), round(position['y_pos'],4), round(position['z_pos'],4)
+        position['x_pos'],position['y_pos'] = round(position['x_pos'],4), round(position['y_pos'],4)
+        position['z_pos'] = round(float(z_travel_height),4)
         current_position = controller.get_current_position()
 
         # move the fluorescent imaging head to the experiment
@@ -226,7 +227,7 @@ if __name__ == "__main__":
         controller.move_XYZ(position = calibration_coordinates)
         # run the calibration script 
         print('running Z calibration script -------------------------------------------------------------------------------------')
-        calibration_coordinates['z_pos'] = -83 # calibration_coordinates['z_pos'] -40 ### do something here
+        calibration_coordinates['z_pos'] = -83.5 # calibration_coordinates['z_pos'] -40 ### do something here
 
         # fluorescently image each of the terasaki wells (96)
         for well_index,this_terasaki_well_xy in enumerate(zip(s_terasaki_positions['x_relative_pos_mm'].values(),s_terasaki_positions['y_relative_pos_mm'].values())):
@@ -234,8 +235,8 @@ if __name__ == "__main__":
             this_plate_parameters['well_name'] = s_terasaki_positions['name'][well_index]
             terasaki_well_coords = dict()
             # calculate the specific well location
-            terasaki_well_coords['x_pos'] = this_plate_position['x_pos'] + this_terasaki_well_xy[0]
-            terasaki_well_coords['y_pos'] = this_plate_position['y_pos'] + this_terasaki_well_xy[1]
+            terasaki_well_coords['x_pos'] = round(this_plate_position['x_pos'] + this_terasaki_well_xy[0],4)
+            terasaki_well_coords['y_pos'] = round(this_plate_position['y_pos'] + this_terasaki_well_xy[1],4)
             terasaki_well_coords['z_pos'] = calibration_coordinates['z_pos']
             print(well_index, terasaki_well_coords)
             # move the fluorescent imaging head to that specific well

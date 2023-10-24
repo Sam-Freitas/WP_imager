@@ -13,7 +13,7 @@ cols = 8
 
 xo = -108.85 + 63.1 + 5.#  approximate intial starting points -------------- xo to center of plate + xo from center of plate to homing swtich + homing switch offset 
 yo = -269.66 + 148.16 + 5. + 3.#  approximate intial starting points ------- same as above with an added 3 for calibration(???)
-zo = -100  #  approximate intial starting points --------------------------- measured height for widefield imaging
+zo = -90  #  approximate intial starting points --------------------------- measured height for widefield imaging
 
 xo = round(xo,4)
 yo = round(yo,4)
@@ -23,6 +23,70 @@ print('START:','x',xo,'y',yo,'z',zo)
 
 dx = -153.2  # distace between plates
 dy = -115  # used to be 116
+
+# # ##############################################
+## this is for the settings terasaki positions 
+header = ['CentroidsX_mm','CentroidsY_mm','x_relative_pos_mm','y_relative_pos_mm','calib_x_pos_mm','calib_y_pos_mm','calib_z_pos_mm','y_offset_to_fluor_mm','name']
+df = pd.DataFrame(columns = header)
+
+calib_x_pos_mm = -43.75
+calib_y_pos_mm = -28.5
+calib_z_pos_mm = -83.5
+y_offset_to_fluor_mm = 87.75
+
+names = ['h1','g1','f1','e1','d1','c1','b1','a1',
+         'h2','g2','f2','e2','d2','c2','b2','a2',
+         'h3','g3','f3','e3','d3','c3','b3','a3',
+         'h4','g4','f4','e4','d4','c4','b4','a4',
+         'h5','g5','f5','e5','d5','c5','b5','a5',
+         'h6','g6','f6','e6','d6','c6','b6','a6',
+         'h7','g7','f7','e7','d7','c7','b7','a7',
+         'h8','g8','f8','e8','d8','c8','b8','a8',
+         'h9','g9','f9','e9','d9','c9','b9','a9',
+         'h10','g10','f10','e10','d10','c10','b10','a10',
+         'h11','g11','f11','e11','d11','c11','b11','a11',
+         'h12','g12','f12','e12','d12','c12','b12','a12']
+
+i = 0
+j = 0
+counter = 0
+
+terasaki_xo = 0.0
+terasaki_yo = -42
+terasanki_zo = -83.5
+
+terasaki_xextent = -69.7
+terasaki_yextent = -42
+
+terasaki_rows = 8
+terasaki_cols = 12
+
+x_linspace = np.linspace(0,terasaki_xextent,terasaki_cols)
+y_linspace = np.linspace(terasaki_yextent,0,terasaki_rows)
+
+xv,yv = np.meshgrid(x_linspace,y_linspace)
+
+for c in range(terasaki_cols):
+    i = 0
+    for r in range(terasaki_rows):
+
+        BLx = round(xv[r][c],4)
+        BLy = round(yv[r][c],4)
+
+        centered_x = BLx - (terasaki_xextent/2)
+        centered_y = BLy - (terasaki_yextent/2)
+
+        df.loc[counter] = [BLx,BLy,centered_x,centered_y,0,0,0,0,names[counter]] #just xyz
+        counter = counter + 1
+        i = i +1
+    j = j+1
+
+df.iloc[0,4] = calib_x_pos_mm
+df.iloc[0,5] = calib_y_pos_mm
+df.iloc[0,6] = calib_z_pos_mm
+df.iloc[0,7] = y_offset_to_fluor_mm
+df.to_csv(os.path.join(path_to_settings_folder,'settings_terasaki_positions.csv'),index= False)
+
 
 #############################################
 ## this is for the settings plate postions
