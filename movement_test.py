@@ -172,7 +172,7 @@ if __name__ == "__main__":
             if s_plate_names_and_opts['fluorescence'][this_plate_index]:
                 plate_index_fluor.append(this_plate_index)
 
-    controller.set_up_grbl(home = False)
+    controller.set_up_grbl(home = True)
     # # # run lifespan imaging experiments
     for this_plate_index in plate_index:
         # get the experiment options
@@ -196,7 +196,7 @@ if __name__ == "__main__":
         print('')
     
     # reset and home the machine
-    controller.set_up_grbl(home = False)
+    controller.set_up_grbl(home = True)
 
     # # # run fluorescent imaging experiments
     for this_plate_index in plate_index_fluor:

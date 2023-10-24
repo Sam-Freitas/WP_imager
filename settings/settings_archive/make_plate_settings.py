@@ -11,9 +11,9 @@ path_to_settings_folder = os.path.join(os.getcwd(), "settings")
 rows = 9  # rows and columns
 cols = 8
 
-xo = -108.85 + 63.1 + 5.#  approximate intial starting points -------------- xo to center of plate + xo from center of plate to homing swtich + homing switch offset 
-yo = -269.66 + 148.16 + 5. + 3.#  approximate intial starting points ------- same as above with an added 3 for calibration(???)
-zo = -90  #  approximate intial starting points --------------------------- measured height for widefield imaging
+xo = -108.85 + 63.1 + 5.0 - 5.0 #  approximate intial starting points -------------- xo to center of plate + xo from center of plate to homing swtich + homing switch offset 
+yo = -269.66 + 148.16 + 5. + 3. + 1.9#  approximate intial starting points ------- same as above with an added 3 for calibration(???)
+zo = -95  #  approximate intial starting points --------------------------- measured height for widefield imaging
 
 xo = round(xo,4)
 yo = round(yo,4)
