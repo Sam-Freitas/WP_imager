@@ -1,9 +1,9 @@
 import os,time,glob,sys,time,tqdm,cv2, serial, json
-# import lights.labjackU3_control
+import lights.labjackU3_control
 # import lights.coolLed_control
 import settings.get_settings
 import movement.simple_stream
-# import camera.camera_control
+import camera.camera_control
 
 # def turn_everything_off_at_exit():
 #     lights.labjackU3_control.turn_off_everything()
@@ -133,7 +133,7 @@ class CNCController:
 
 def jprint(input):
     print(json.dumps(input,indent=4))
-
+    
 import atexit
 
 if __name__ == "__main__":
@@ -162,7 +162,10 @@ if __name__ == "__main__":
 
     # run setup test to make sure everything works or throw error
     s_todays_runs = settings.get_settings.update_todays_runs(s_todays_runs, overwrite=True)
+    d = lights.labjackU3_control.setup_labjack(verbose=True)    # test the blue and red lights
+    lights.labjackU3_control.blink_led(d)
 
+    # get all the experiments that are not defunct
     plate_index = []
     plate_index_fluor = []
     for this_plate_index in s_plate_names_and_opts['plate_index']:
@@ -172,6 +175,7 @@ if __name__ == "__main__":
             if s_plate_names_and_opts['fluorescence'][this_plate_index]:
                 plate_index_fluor.append(this_plate_index)
 
+    lights.labjackU3_control.turn_on_red(d)
     controller.set_up_grbl(home = True)
     # # # run lifespan imaging experiments
     for this_plate_index in plate_index:
@@ -187,6 +191,14 @@ if __name__ == "__main__":
         # move the imaging module to the position
         controller.move_XY_at_Z_travel(position = position,
                                        z_travel_height = z_travel_height)
+        
+        camera.camera_control.simple_capture_data(s_camera_settings, plate_parameters=this_plate_parameters, testing=run_as_testing, output_dir=output_dir)
+        t = lights.labjackU3_control.turn_on_blue(d, return_time=True)
+        camera.camera_control.capture_single_image_wait_N_seconds(s_camera_settings, timestart=t, excitation_amount = s_machines['labjack'][3], 
+                                                                  plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir)
+        lights.labjackU3_control.turn_off_blue(d)
+        camera.camera_control.simple_capture_data(s_camera_settings, plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir)
+        lights.labjackU3_control.turn_off_blue(d)
 
         # image the experiment 
         time.sleep(0.1)
@@ -240,6 +252,7 @@ if __name__ == "__main__":
             print(well_index, terasaki_well_coords)
             # move the fluorescent imaging head to that specific well
             controller.move_XYZ(position = terasaki_well_coords)
+            camera.camera_control.simple_capture_data_fluor(s_camera_settings, plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir)
 
             print('imaging')
             time.sleep(0.1)
