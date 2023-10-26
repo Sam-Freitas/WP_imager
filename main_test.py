@@ -5,10 +5,12 @@ import settings.get_settings
 import movement.simple_stream
 import camera.camera_control
 
-# def turn_everything_off_at_exit():
-#     lights.labjackU3_control.turn_off_everything()
-#     cv2.destroyAllWindows()
-#     # lights.coolLed_control.turn_everything_off()
+from Run_yolo_model import run_yolo_model
+
+def turn_everything_off_at_exit():
+    lights.labjackU3_control.turn_off_everything()
+    cv2.destroyAllWindows()
+    # lights.coolLed_control.turn_everything_off()
 
 class CNCController:
     def __init__(self, port, baudrate):
@@ -138,7 +140,7 @@ import atexit
 
 if __name__ == "__main__":
 
-    # atexit.register(turn_everything_off_at_exit)
+    atexit.register(turn_everything_off_at_exit)
     # print(sys.argv)
 
     output_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),'output')
@@ -153,6 +155,7 @@ if __name__ == "__main__":
 
     # read in settings from machines
     run_as_testing = False
+    home_setting = False ############################################################################## make sure this is true in production robot
 
     settings.get_settings.check_grbl_port(s_machines['grbl'][0], run_as_testing = False)
     controller = CNCController(port=s_machines['grbl'][0], baudrate=s_machines['grbl'][1])
@@ -176,7 +179,7 @@ if __name__ == "__main__":
                 plate_index_fluor.append(this_plate_index)
 
     lights.labjackU3_control.turn_on_red(d)
-    controller.set_up_grbl(home = True)
+    controller.set_up_grbl(home = home_setting)
     # # # run lifespan imaging experiments
     for this_plate_index in plate_index:
         # get the experiment options
@@ -192,23 +195,26 @@ if __name__ == "__main__":
         controller.move_XY_at_Z_travel(position = position,
                                        z_travel_height = z_travel_height)
         
+        # image the experiment 
         camera.camera_control.simple_capture_data(s_camera_settings, plate_parameters=this_plate_parameters, testing=run_as_testing, output_dir=output_dir)
+        # turn on blue excitation light and capture a single image
         t = lights.labjackU3_control.turn_on_blue(d, return_time=True)
         camera.camera_control.capture_single_image_wait_N_seconds(s_camera_settings, timestart=t, excitation_amount = s_machines['labjack'][3], 
                                                                   plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir)
         lights.labjackU3_control.turn_off_blue(d)
+        # image the experiment 
         camera.camera_control.simple_capture_data(s_camera_settings, plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir)
         lights.labjackU3_control.turn_off_blue(d)
 
-        # image the experiment 
-        time.sleep(0.1)
-        print('IMAGING TEST RIGHT NOW') ######################################################################################################################
-
-        time.sleep(0.1)
+        time.sleep(0.05)
         print('')
-    
+
+    # blink the red light as a confirmation of finish
+    lights.labjackU3_control.turn_on_red(d)
+    time.sleep(0.5)
+    lights.labjackU3_control.turn_off_everything(d)
     # reset and home the machine
-    controller.set_up_grbl(home = True)
+    controller.set_up_grbl(home = home_setting)
 
     # # # run fluorescent imaging experiments
     for this_plate_index in plate_index_fluor:
@@ -217,16 +223,24 @@ if __name__ == "__main__":
         print(this_plate_parameters)
         print(this_plate_position)
 
-        # adjust for imaging head y difference positions 
-        this_plate_position['y_pos'] = this_plate_position['y_pos'] + s_terasaki_positions['y_offset_to_fluor_mm'][0]
+        # adjust for imaging head y difference positions ----- not used anymore, move to plate and measure from images
+        # this_plate_position['y_pos'] = this_plate_position['y_pos']# + s_terasaki_positions['y_offset_to_fluor_mm'][0]
 
         position = this_plate_position.copy()
         position['x_pos'],position['y_pos'],position['z_pos'] = round(position['x_pos'],4), round(position['y_pos'],4), round(position['z_pos'],4)
         current_position = controller.get_current_position()
 
-        # move the fluorescent imaging head to the experiment
+        # move the imaging head to the experiment
         controller.move_XY_at_Z_travel(position = position,
                                        z_travel_height = z_travel_height)
+
+        # turn on red
+        lights.labjackU3_control.turn_on_red(d)
+        # capture a single image for calibration
+        image_filename = camera.camera_control.simple_capture_data_single_image(s_camera_settings, plate_parameters=this_plate_parameters, testing=run_as_testing, output_dir=output_dir)
+        # turn off red
+        lights.labjackU3_control.turn_off_red(d)
+        a,b = run_yolo_model(img_filename=image_filename)
 
         # calculate the calibration corner coordinates
         calibration_coordinates = dict()

@@ -2,6 +2,11 @@
 *.pt
 output/
 
+__pycache__/
+
+ultralytics_yolov5_master\models\__pycache__
+ultralytics_yolov5_master\__pycache__\
+
 camera/__pycache__/
 lights/__pycache__/
 movement/__pycache__/
