@@ -239,10 +239,10 @@ if __name__ == "__main__":
         # turn on red
         lights.labjackU3_control.turn_on_red(d)
         # capture a single image for calibration
-        image_filename = camera.camera_control.simple_capture_data_single_image(s_camera_settings, plate_parameters=this_plate_parameters, testing=run_as_testing, output_dir=output_dir)
+        image_filename = camera.camera_control.simple_capture_data_single_image(s_camera_settings, plate_parameters=this_plate_parameters, output_dir=output_dir, image_file_format = 'jpg')
         # turn off red
         lights.labjackU3_control.turn_off_red(d)
-        individual_well_locations,center_location = run_yolo_model(img_filename=None)
+        individual_well_locations,center_location = run_yolo_model(img_filename=image_filename, plot_results = True)
 
         ########### calibration attempt
         # get the dx dy of the measured well centers
@@ -272,8 +272,8 @@ if __name__ == "__main__":
             this_plate_parameters['well_name'] = s_terasaki_positions['name'][well_index]
             terasaki_well_coords = dict()
             # calculate the specific well location
-            terasaki_well_coords['x_pos'] = this_plate_position['x_pos'] + this_terasaki_well_xy[0] + calibration_coordinates['x_pos'] 
-            terasaki_well_coords['y_pos'] = this_plate_position['y_pos'] + this_terasaki_well_xy[1] + calibration_coordinates['y_pos'] 
+            terasaki_well_coords['x_pos'] = this_plate_position['x_pos'] + this_terasaki_well_xy[0] - calibration_coordinates['x_pos'] 
+            terasaki_well_coords['y_pos'] = this_plate_position['y_pos'] + this_terasaki_well_xy[1] - calibration_coordinates['y_pos'] 
             terasaki_well_coords['z_pos'] = calibration_coordinates['z_pos']
             print(well_index, terasaki_well_coords)
             # move the fluorescent imaging head to that specific well

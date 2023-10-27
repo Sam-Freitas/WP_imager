@@ -221,7 +221,7 @@ def simple_capture_data(camera_settings, plate_parameters = None, testing = Fals
     # cv2.destroyAllWindows()
     cap.release()
 
-def simple_capture_data_single_image(camera_settings, plate_parameters = None, testing = False, output_dir = None):
+def simple_capture_data_single_image(camera_settings, plate_parameters = None, testing = True, output_dir = None, image_file_format = 'png'):
 
     todays_date = datetime.date.today().strftime("%Y-%m-%d")
 
@@ -261,8 +261,10 @@ def simple_capture_data_single_image(camera_settings, plate_parameters = None, t
     text_y2 = 500
 
     # time_between_images_seconds = 2 # this is just for testing 
-    img_file_format = 'png' # slow and lossless but smaller 
-    # # img_file_format = 'jpg' # fast but lossy small files
+    if img_file_format == 'png':
+        img_file_format = 'png' # slow and lossless but smaller 
+    else:
+        img_file_format = image_file_format # fast but lossy small files
     # # img_file_format = 'bmp' # fastest and lossess huge files
 
     # Open the camera0

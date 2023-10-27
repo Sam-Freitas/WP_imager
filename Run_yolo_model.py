@@ -1,22 +1,47 @@
 from ultralytics_yolov5_master.models.experimental import attempt_load
 import os,glob,torch,cv2
 from PIL import Image
-from utils2 import s
 import numpy as np
 from sklearn.cluster import KMeans
+
+import tkinter
+import matplotlib
+matplotlib.use('TkAgg')
+import matplotlib.pyplot as plt
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 if device.type == 'cpu':
     if torch.backends.mps.is_available():
         device = torch.device('mps')
 
+def normalize_img(input_img):
+    input_img = input_img - input_img.min()
+    input_img = input_img/input_img.max()
+    return input_img
+
+def s(img, title = None):
+    matplotlib.use('TkAgg')
+    if 'torch' in str(img.dtype):
+        img = img.squeeze()
+        if len(img.shape) > 2: # check RGB
+            if argmin(tensor(img.shape)) == 0: # check if CHW 
+                img = img.permute((1, 2, 0)) # change to HWC
+        img = normalize_img(img)*255
+        img = img.to('cpu').to(uint8)
+    else:
+        img_shape = img.shape
+        if np.argmin(img_shape) == 0:
+            img = np.moveaxis(img,0,-1)
+    plt.figure()
+    plt.imshow(img)
+    plt.title(title)
 
 def run_yolo_model(img_filename = None, plot_results = False):
     model_path = 'ultralytics_yolov5_master\WPdata_weightsWMterasaki.pt'
     yolomodel = attempt_load(model_path, map_location='cuda') # load model
 
     if img_filename is None:
-        img_file_paths = glob.glob('*.png') # get the images
+        img_file_paths = glob.glob('*.png') + glob.glob('*.jpg') # get the images
     else:
         img_file_paths = [img_filename]
 
@@ -67,11 +92,6 @@ def run_yolo_model(img_filename = None, plot_results = False):
 
     if plot_results:
 
-        import tkinter
-        import matplotlib
-        matplotlib.use('TkAgg')
-        import matplotlib.pyplot as plt
-
         print("SHOWING:", sorted_centers.shape[0], " ITEMS")
         cmap = matplotlib.colormaps['jet']
         s(img)
@@ -82,6 +102,7 @@ def run_yolo_model(img_filename = None, plot_results = False):
                 plt.plot(this_center[0]*(IMAGE_W/resize_W),this_center[1]*(IMAGE_H/resize_H),marker = 'o',color = cmap(i/sorted_centers.shape[0]))
             # plt.pause(0.05)
         plt.plot(center_of_plate[0]*(IMAGE_W/resize_W),center_of_plate[1]*(IMAGE_H/resize_H),marker = 'P',color = 'green')
+        plt.plot((IMAGE_W/2),(IMAGE_H/2),marker = 'P',color = 'cyan')
         plt.show()
 
     return input_sized_centers,input_sized_center_of_plate
