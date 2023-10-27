@@ -24,10 +24,10 @@ def s(img, title = None):
     if 'torch' in str(img.dtype):
         img = img.squeeze()
         if len(img.shape) > 2: # check RGB
-            if argmin(tensor(img.shape)) == 0: # check if CHW 
+            if np.argmin(torch.tensor(img.shape)) == 0: # check if CHW 
                 img = img.permute((1, 2, 0)) # change to HWC
         img = normalize_img(img)*255
-        img = img.to('cpu').to(uint8)
+        img = img.to('cpu').to(torch.uint8)
     else:
         img_shape = img.shape
         if np.argmin(img_shape) == 0:
@@ -57,6 +57,8 @@ def run_yolo_model(img_filename = None, plot_results = False):
     conf = out[0][:,4] # get the confidence values of the detected stuff
     temp = out[0][conf>0.6,:].cpu() ############# i think its x,y,w,h,conf,class0,class1
     conf2 = temp[:,4] # get the other confidence intervals
+
+    print('converting output')
 
     points = temp[:,0:2]
     kmeans = KMeans(n_clusters=96, random_state=0, n_init="auto").fit(points)
@@ -103,6 +105,7 @@ def run_yolo_model(img_filename = None, plot_results = False):
             # plt.pause(0.05)
         plt.plot(center_of_plate[0]*(IMAGE_W/resize_W),center_of_plate[1]*(IMAGE_H/resize_H),marker = 'P',color = 'green')
         plt.plot((IMAGE_W/2),(IMAGE_H/2),marker = 'P',color = 'cyan')
+        plt.savefig('output\calibration\calib_out.jpg',dpi = 500)
         plt.show()
 
     return input_sized_centers,input_sized_center_of_plate
