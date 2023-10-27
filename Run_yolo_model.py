@@ -55,6 +55,16 @@ def run_yolo_model(img_filename = None, plot_results = False):
     sorted_centers = centers[sort_idx] 
     center_of_plate = np.average(sorted_centers,axis=0)
 
+    normalized_centers = sorted_centers/resize_H
+    normalized_center_of_plate = center_of_plate/resize_H
+
+    input_sized_centers = normalized_centers
+    input_sized_centers[:,0] = input_sized_centers[:,0]*IMAGE_W
+    input_sized_centers[:,1] = input_sized_centers[:,1]*IMAGE_H
+    input_sized_center_of_plate = normalized_center_of_plate
+    input_sized_center_of_plate[0] = input_sized_center_of_plate[0]*IMAGE_W
+    input_sized_center_of_plate[1] = input_sized_center_of_plate[1]*IMAGE_H
+
     if plot_results:
 
         import tkinter
@@ -74,7 +84,7 @@ def run_yolo_model(img_filename = None, plot_results = False):
         plt.plot(center_of_plate[0]*(IMAGE_W/resize_W),center_of_plate[1]*(IMAGE_H/resize_H),marker = 'P',color = 'green')
         plt.show()
 
-    return sorted_centers,center_of_plate
+    return input_sized_centers,input_sized_center_of_plate
 
 if __name__ == "__main__":
 
