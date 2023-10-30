@@ -143,8 +143,33 @@ class CNCController:
 def jprint(input):
     print(json.dumps(input,indent=4))
     
+def run_calib(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_positions, final_move = True):
+    # take image
+    image_filename = camera.camera_control.simple_capture_data_single_image(s_camera_settings, plate_parameters=this_plate_parameters,output_dir=output_dir, image_file_format = 'jpg')
+    # run yolo model and get the locations of the well and center of the plate
+    individual_well_locations,center_location = run_yolo_model(img_filename=image_filename, plot_results = True)
 
+    # find the differnce between what was given and what is measured 
+    well_locations_delta = individual_well_locations[-1]-individual_well_locations[0]
+    pixels_per_mm = well_locations_delta/[69.7,42] 
+    center = [float(s_camera_settings['widefield'][1])/2,float(s_camera_settings['widefield'][2])/2]
+    center_delta = center-center_location
+    center_delta_in_mm = center_delta/pixels_per_mm
+    calibration_coordinates = dict()
+    calibration_coordinates['x_pos'] = center_delta_in_mm[0]
+    calibration_coordinates['y_pos'] = center_delta_in_mm[1]
+    calibration_coordinates['z_pos'] = s_terasaki_positions['calib_z_pos_mm'][0]
 
+    # adjust the position and return where the system should go to correct
+    measured_position = controller.get_current_position()
+    adjusted_position = measured_position.copy()
+    adjusted_position['x_pos'] = measured_position['x_pos'] + center_delta_in_mm[0]
+    adjusted_position['y_pos'] = measured_position['y_pos'] - center_delta_in_mm[1]
+
+    if final_move:
+        controller.move_XYZ(position = adjusted_position)
+    
+    return adjusted_position
 
 import atexit
 
@@ -163,7 +188,7 @@ if __name__ == "__main__":
     s_camera_settings = settings.get_settings.get_basic_camera_settings()
     s_todays_runs = settings.get_settings.get_todays_runs()
 
-    testing = True
+    testing = False
     # get all the experiments that are not defunct
     plate_index = [0,7,64,71]
     grid = [9,8] # rows, cols
@@ -200,36 +225,14 @@ if __name__ == "__main__":
             controller.move_XY_at_Z_travel(position = position,
                                         z_travel_height = z_travel_height)
             
-            image_filename = camera.camera_control.simple_capture_data_single_image(s_camera_settings, plate_parameters=this_plate_parameters,output_dir=output_dir, image_file_format = 'jpg')
-            individual_well_locations,center_location = run_yolo_model(img_filename=image_filename, plot_results = True)
+            # run the adjustment 3 times 
+            adjusted_position = run_calib(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_positions)
+            adjusted_position = run_calib(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_positions)
+            adjusted_position = run_calib(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_positions)
+            adjusted_position = run_calib(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_positions, final_move = False)
 
-            well_locations_delta = individual_well_locations[-1]-individual_well_locations[0]
-            pixels_per_mm = well_locations_delta/[69.7,42] 
-            center = [float(s_camera_settings['widefield'][1])/2,float(s_camera_settings['widefield'][2])/2]
-            center_delta = center-center_location
-            center_delta_in_mm = center_delta/pixels_per_mm
-            calibration_coordinates = dict()
-            calibration_coordinates['x_pos'] = center_delta_in_mm[0]
-            calibration_coordinates['y_pos'] = center_delta_in_mm[1]
-            calibration_coordinates['z_pos'] = s_terasaki_positions['calib_z_pos_mm'][0]
-
-            measured_position = controller.get_current_position()
-            adjusted_position = measured_position.copy()
-            adjusted_position['x_pos'] = measured_position['x_pos'] + center_delta_in_mm[0]
-            adjusted_position['y_pos'] = measured_position['y_pos'] - center_delta_in_mm[1]
-            controller.move_XYZ(position = adjusted_position)
-            image_filename = camera.camera_control.simple_capture_data_single_image(s_camera_settings,plate_parameters=this_plate_parameters, output_dir=output_dir, image_file_format = 'jpg')
-            individual_well_locations,center_location = run_yolo_model(img_filename=image_filename, plot_results = True)
-
-
-            new_position = controller.get_current_position()
-            new_position['x_pos'],new_position['y_pos'],new_position['z_pos'] = round(new_position['x_pos'],4), round(new_position['y_pos'],4), -100
-            controller.move_XYZ(position = new_position)
-            image_filename = camera.camera_control.simple_capture_data_single_image(s_camera_settings,plate_parameters=this_plate_parameters, output_dir=output_dir, image_file_format = 'jpg')
-            individual_well_locations,center_location = run_yolo_model(img_filename=image_filename, plot_results = True, i = this_plate_index)
-
-            print(new_position)
-            corner_points.append(new_position)
+            print(adjusted_position)
+            corner_points.append(adjusted_position)
 
             time.sleep(0.05)
             print('')
@@ -239,32 +242,19 @@ if __name__ == "__main__":
             print(i,out)
     else:
 
+        corner_points = dict()
         corner_points = np.asarray([[-42.668,-111.716,-100],
                             [-1111.444,-121.817,-100],
                             [-42.265,-1029.433,-100],
                             [-1110.465,-1038.979,-100]])
 
-    # dx = np.mean([corner_points[0,0] - corner_points[2,0], 
-    #                 corner_points[1,0] - corner_points[3,0]])
-    # dy = np.mean([corner_points[0,1] - corner_points[1,1], 
-    #             corner_points[2,1] - corner_points[3,1]])
-    # print('dx:', dx, 'dy:', dy) ########grid = [9,8] # rows, cols
-
-    # x = [corner_points[0,0],corner_points[-1,0]]
-    # y = [corner_points[0,1],corner_points[-1,1]]
-
-    # x = np.linspace(x[0],x[1],grid[1])
-    # y = np.linspace(y[0],y[1],grid[0])
-
-    # xv, yv = np.zeros(size = (9,8)), np.zeros(size = (9,8))
-
     out = []
 
-    starting_x = np.linspace(corner_points[0,0],corner_points[2,0],9)
-    ending_x = np.linspace(corner_points[1,0],corner_points[3,0],9)
+    starting_x = np.linspace(corner_points[0]['x_pos'],corner_points[2]['x_pos'],9)
+    ending_x = np.linspace(corner_points[1]['x_pos'],corner_points[3]['x_pos'],9)
 
-    starting_y = np.linspace(corner_points[0,1],corner_points[2,1],9)
-    ending_y = np.linspace(corner_points[1,1],corner_points[3,1],9)
+    starting_y = np.linspace(corner_points[0]['y_pos'],corner_points[2]['y_pos'],9)
+    ending_y = np.linspace(corner_points[1]['y_pos'],corner_points[3]['y_pos'],9)
 
     counter = 0
     plt.figure(1)
@@ -294,5 +284,21 @@ if __name__ == "__main__":
     mng = plt.get_current_fig_manager()
     mng.window.state('zoomed') #works fine on Windows!
     plt.show()
+
+    controller.set_up_grbl(home = True)
+    for this_plate_index in plate_index:
+    # get the experiment options
+        this_plate_parameters,this_plate_position = settings.get_settings.get_indexed_dict_parameters(s_plate_names_and_opts,s_plate_positions,this_plate_index)
+        print(this_plate_parameters)
+        print(this_plate_position)
+
+        # get the position of the experiment
+        # move above the plate
+        position = this_plate_position.copy()
+        position['x_pos'],position['y_pos'],position['z_pos'] = np.round(out[this_plate_index][0],4), np.round(out[this_plate_index][1],4), -100
+        controller.move_XY_at_Z_travel(position = position,
+                                z_travel_height = z_travel_height)
+        adjusted_position = run_calib(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_positions, final_move = False)
+
 
     print('eof')

@@ -36,7 +36,7 @@ def s(img, title = None):
     plt.imshow(img)
     plt.title(title)
 
-def run_yolo_model(img_filename = None, plot_results = False, i = 0):
+def run_yolo_model(img_filename = None, plot_results = False, i = 0, pause_block = False):
     model_path = 'ultralytics_yolov5_master\WPdata_weightsWMterasaki.pt'
     yolomodel = attempt_load(model_path, map_location='cuda') # load model
 
@@ -106,7 +106,13 @@ def run_yolo_model(img_filename = None, plot_results = False, i = 0):
         plt.plot(center_of_plate[0]*(IMAGE_W/resize_W),center_of_plate[1]*(IMAGE_H/resize_H),marker = 'P',color = 'green')
         plt.plot((IMAGE_W/2),(IMAGE_H/2),marker = 'P',color = 'cyan')
         plt.savefig('output\calibration\calib_out' + str(i) + '.jpg',dpi = 500)
-        plt.show()
+
+        if pause_block == True:
+            plt.show()
+        else:
+            plt.show(block=False)
+            plt.pause(3)
+            plt.close()
 
     return input_sized_centers,input_sized_center_of_plate
 
