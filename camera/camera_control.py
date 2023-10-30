@@ -221,7 +221,7 @@ def simple_capture_data(camera_settings, plate_parameters = None, testing = Fals
     # cv2.destroyAllWindows()
     cap.release()
 
-def simple_capture_data_single_image(camera_settings, plate_parameters = None, testing = True, output_dir = None, image_file_format = 'png'):
+def simple_capture_data_single_image(camera_settings, plate_parameters = None, testing = False, output_dir = None, image_file_format = 'png'):
 
     todays_date = datetime.date.today().strftime("%Y-%m-%d")
 

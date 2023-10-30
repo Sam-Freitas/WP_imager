@@ -8,6 +8,7 @@ import camera.camera_control
 
 from Run_yolo_model import run_yolo_model
 
+import pandas as pd
 import tkinter
 import matplotlib
 matplotlib.use('TkAgg')
@@ -143,11 +144,12 @@ class CNCController:
 def jprint(input):
     print(json.dumps(input,indent=4))
     
-def run_calib(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_positions, final_move = True):
+def run_calib(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_positions, adjust_with_movement = True, final_measurement = False, delete_prev_data = True):
     # take image
-    image_filename = camera.camera_control.simple_capture_data_single_image(s_camera_settings, plate_parameters=this_plate_parameters,output_dir=output_dir, image_file_format = 'jpg')
+    image_filename = camera.camera_control.simple_capture_data_single_image(s_camera_settings, plate_parameters=this_plate_parameters,
+                                output_dir=output_dir, image_file_format = 'jpg', testing = delete_prev_data)
     # run yolo model and get the locations of the well and center of the plate
-    individual_well_locations,center_location = run_yolo_model(img_filename=image_filename, plot_results = True)
+    individual_well_locations,center_location = run_yolo_model(img_filename=image_filename, plot_results = True, plate_index = this_plate_parameters['plate_index'])
 
     # find the differnce between what was given and what is measured 
     well_locations_delta = individual_well_locations[-1]-individual_well_locations[0]
@@ -166,8 +168,16 @@ def run_calib(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_posi
     adjusted_position['x_pos'] = measured_position['x_pos'] + center_delta_in_mm[0]
     adjusted_position['y_pos'] = measured_position['y_pos'] - center_delta_in_mm[1]
 
-    if final_move:
+    if adjust_with_movement:
         controller.move_XYZ(position = adjusted_position)
+    
+    if final_measurement:
+        move_down = measured_position.copy()
+        move_down['z_pos'] = -100
+        controller.move_XYZ(position = move_down)
+        image_filename = camera.camera_control.simple_capture_data_single_image(s_camera_settings, plate_parameters=this_plate_parameters,
+                            output_dir=output_dir, image_file_format = 'jpg', testing = delete_prev_data)
+        individual_well_locations,center_location = run_yolo_model(img_filename=image_filename, plot_results = True, plate_index = this_plate_parameters['plate_index'])
     
     return adjusted_position
 
@@ -221,15 +231,16 @@ if __name__ == "__main__":
             # get the position of the experiment
             # move above the plate
             position = this_plate_position.copy()
-            position['x_pos'],position['y_pos'],position['z_pos'] = round(position['x_pos'],4), round(position['y_pos'],4), -90
+            position['x_pos'],position['y_pos'],position['z_pos'] = round(position['x_pos'],4), round(position['y_pos'],4), -90 # just above the plate
             controller.move_XY_at_Z_travel(position = position,
                                         z_travel_height = z_travel_height)
             
             # run the adjustment 3 times 
-            adjusted_position = run_calib(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_positions)
-            adjusted_position = run_calib(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_positions)
-            adjusted_position = run_calib(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_positions)
-            adjusted_position = run_calib(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_positions, final_move = False)
+            adjusted_position = run_calib(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_positions) # image, measure, adjust
+            adjusted_position = run_calib(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_positions) # image, measure, adjust
+            adjusted_position = run_calib(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_positions) # image, measure, adjust
+            # image, measure, move all the way down, image again, report findings
+            adjusted_position = run_calib(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_positions, final_measurement = True, adjust_with_movement = False)
 
             print(adjusted_position)
             corner_points.append(adjusted_position)
@@ -278,12 +289,15 @@ if __name__ == "__main__":
             temp = [this_out_x[j],this_out_y[j]]
             out.append(temp)
             plt.plot(temp[0],temp[1],'ro')
-            plt.text(temp[0]+0.5,temp[1]+0.5, str(temp[0]) + '\n' + str(temp[1]))
-            plt.text(temp[0]-10,temp[1]-10, str(counter))
+            plt.text(temp[0]+0.5,temp[1]+0.5, str(temp[0]) + '\n' + str(temp[1]), fontsize=6)
+            plt.text(temp[0]-10,temp[1]-10, str(counter), fontsize=6)
             counter += 1
     mng = plt.get_current_fig_manager()
     mng.window.state('zoomed') #works fine on Windows!
-    plt.show()
+    plt.savefig('output\calibration\calib_out_PLATE_LOCATIONS.jpg',dpi = 500)
+    plt.show(block=False)
+    plt.pause(3)
+    plt.close()
 
     controller.set_up_grbl(home = True)
     for this_plate_index in plate_index:
@@ -298,7 +312,32 @@ if __name__ == "__main__":
         position['x_pos'],position['y_pos'],position['z_pos'] = np.round(out[this_plate_index][0],4), np.round(out[this_plate_index][1],4), -100
         controller.move_XY_at_Z_travel(position = position,
                                 z_travel_height = z_travel_height)
-        adjusted_position = run_calib(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_positions, final_move = False)
+        adjusted_position = run_calib(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_positions, adjust_with_movement = False, delete_prev_data = False)
 
+    out2 = np.round(np.asarray(out),4)
+
+    #############################################
+    ## this is for the settings plate postions
+    path_to_settings_folder = os.path.join(os.getcwd(), "settings")
+    rows = 9  # rows and columns
+    cols = 8
+    header = ['plate_index','row','column','x_pos','y_pos','z_pos']
+    df = pd.DataFrame(columns = header)
+
+    zo = -100
+
+    i = 0
+    j = 0
+    counter = 0
+
+    for r in range(rows):
+        i = 0
+        for c in range(cols):
+            df.loc[counter] = [counter,r,c,out2[counter,0],out2[counter,1],zo] #just xyz
+            counter = counter + 1
+            i = i +1
+        j = j+1
+
+    df.to_csv(os.path.join(path_to_settings_folder,'settings_plate_positions.csv'),index= False)
 
     print('eof')
