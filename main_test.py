@@ -13,6 +13,43 @@ def turn_everything_off_at_exit():
     cv2.destroyAllWindows()
     # lights.coolLed_control.turn_everything_off()
 
+def run_calib(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_positions, adjust_with_movement = True, final_measurement = False, delete_prev_data = True):
+    # take image
+    image_filename = camera.camera_control.simple_capture_data_single_image(s_camera_settings, plate_parameters=this_plate_parameters,
+                                output_dir=output_dir, image_file_format = 'jpg', testing = delete_prev_data)
+    # run yolo model and get the locations of the well and center of the plate
+    individual_well_locations,center_location = run_yolo_model(img_filename=image_filename, plot_results = True, plate_index = this_plate_parameters['plate_index'])
+
+    # find the differnce between what was given and what is measured 
+    well_locations_delta = individual_well_locations[-1]-individual_well_locations[0]
+    pixels_per_mm = well_locations_delta/[69.7,42] 
+    center = [float(s_camera_settings['widefield'][1])/2,float(s_camera_settings['widefield'][2])/2]
+    center_delta = center-center_location
+    center_delta_in_mm = center_delta/pixels_per_mm
+    calibration_coordinates = dict()
+    calibration_coordinates['x_pos'] = center_delta_in_mm[0]
+    calibration_coordinates['y_pos'] = center_delta_in_mm[1]
+    calibration_coordinates['z_pos'] = s_terasaki_positions['calib_z_pos_mm'][0]
+
+    # adjust the position and return where the system should go to correct
+    measured_position = controller.get_current_position()
+    adjusted_position = measured_position.copy()
+    adjusted_position['x_pos'] = measured_position['x_pos'] + center_delta_in_mm[0]
+    adjusted_position['y_pos'] = measured_position['y_pos'] - center_delta_in_mm[1]
+
+    if adjust_with_movement:
+        controller.move_XYZ(position = adjusted_position)
+    
+    if final_measurement:
+        move_down = measured_position.copy()
+        move_down['z_pos'] = -100
+        controller.move_XYZ(position = move_down)
+        image_filename = camera.camera_control.simple_capture_data_single_image(s_camera_settings, plate_parameters=this_plate_parameters,
+                            output_dir=output_dir, image_file_format = 'jpg', testing = delete_prev_data)
+        individual_well_locations,center_location = run_yolo_model(img_filename=image_filename, plot_results = True, plate_index = this_plate_parameters['plate_index'])
+    
+    return adjusted_position
+
 class CNCController:
     def __init__(self, port, baudrate):
         import re
@@ -156,7 +193,7 @@ if __name__ == "__main__":
 
     # read in settings from machines
     run_as_testing = False
-    home_setting = True ############################################################################## make sure this is true in production robot
+    home_setting = False ############################################################################## make sure this is true in production robot
 
     settings.get_settings.check_grbl_port(s_machines['grbl'][0], run_as_testing = False)
     controller = CNCController(port=s_machines['grbl'][0], baudrate=s_machines['grbl'][1])
@@ -197,16 +234,16 @@ if __name__ == "__main__":
         controller.move_XY_at_Z_travel(position = position,
                                        z_travel_height = z_travel_height)
         
-        # image the experiment 
-        # camera.camera_control.simple_capture_data(s_camera_settings, plate_parameters=this_plate_parameters, testing=run_as_testing, output_dir=output_dir)
-        # # turn on blue excitation light and capture a single image
-        # t = lights.labjackU3_control.turn_on_blue(d, return_time=True)
-        # camera.camera_control.capture_single_image_wait_N_seconds(s_camera_settings, timestart=t, excitation_amount = s_machines['labjack'][3], 
-        #                                                           plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir)
-        # lights.labjackU3_control.turn_off_blue(d)
-        # # image the experiment 
-        # camera.camera_control.simple_capture_data(s_camera_settings, plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir)
-        # lights.labjackU3_control.turn_off_blue(d)
+        # # # image the experiment 
+        camera.camera_control.simple_capture_data(s_camera_settings, plate_parameters=this_plate_parameters, testing=run_as_testing, output_dir=output_dir)
+        # # # turn on blue excitation light and capture a single image
+        t = lights.labjackU3_control.turn_on_blue(d, return_time=True)
+        camera.camera_control.capture_single_image_wait_N_seconds(s_camera_settings, timestart=t, excitation_amount = s_machines['labjack'][3], 
+                                                                  plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir)
+        lights.labjackU3_control.turn_off_blue(d)
+        # # # image the experiment 
+        camera.camera_control.simple_capture_data(s_camera_settings, plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir)
+        lights.labjackU3_control.turn_off_blue(d)
 
         time.sleep(0.05)
         print('')
@@ -243,7 +280,8 @@ if __name__ == "__main__":
         image_filename = camera.camera_control.simple_capture_data_single_image(s_camera_settings, plate_parameters=this_plate_parameters, output_dir=output_dir, image_file_format = 'jpg')
         # turn off red
         lights.labjackU3_control.turn_off_red(d)
-        individual_well_locations,center_location = run_yolo_model(img_filename=image_filename, plot_results = True)
+        adjusted_position = run_calib(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_positions)
+        individual_well_locations,center_location = run_yolo_model(img_filename=None, plot_results = True)
 
         ########### calibration attempt
         # get the dx dy of the measured well centers

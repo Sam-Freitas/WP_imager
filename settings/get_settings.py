@@ -119,18 +119,20 @@ def get_terasaki_positions():
 def convert_GRBL_settings(settings): # this converts grblHAL settings to readable dictionary 
 
     path = os.path.join(get_base_path(),'settings_grbl_base.txt')
-    df_descriptor = df = pd.read_csv(path, delimiter = ';',index_col=False,header = None)
+    df_descriptor = pd.read_csv(path, delimiter = '[=;]',index_col=False,header = None, engine = 'python')
+    df = df_descriptor.copy()
 
     new_settings = dict()
 
     for i,this_setting in enumerate(settings): # parse then covert the settings into readable format
         if 'ok' not in this_setting:
-            setting_number = this_setting[1:this_setting.index('=')]
+            setting_number = this_setting[:this_setting.index('=')]
             setting_set = this_setting[(this_setting.index('=') + 1):]
-            setting_descriptor = df_descriptor.values[i,1]
-            new_settings[setting_number] = [setting_set, setting_descriptor]
+            
+            loc_of_setting = df_descriptor[0].loc[df_descriptor[0] == setting_number].index[0]
+            df.iloc[loc_of_setting,1] = setting_set
 
-    df = pd.DataFrame(new_settings)
+    new_settings = df.to_dict()
 
     return df, new_settings
 
