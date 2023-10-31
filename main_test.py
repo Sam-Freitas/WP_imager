@@ -284,12 +284,13 @@ if __name__ == "__main__":
 
         # turn on red
         lights.labjackU3_control.turn_on_red(d)
-        # capture a single image for calibration
-        image_filename = camera.camera_control.simple_capture_data_single_image(s_camera_settings, plate_parameters=this_plate_parameters, output_dir=output_dir, image_file_format = 'jpg')
         # turn off red
         lights.labjackU3_control.turn_off_red(d)
         adjusted_position = run_calib(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_positions,calibration_model)
-        individual_well_locations,center_location = calibration_model.run_yolo_model(img_filename=None, save_results = True, show_results = True)
+
+        # capture a single image for calibration
+        image_filename = camera.camera_control.simple_capture_data_single_image(s_camera_settings, plate_parameters=this_plate_parameters, output_dir=output_dir, image_file_format = 'jpg')
+        individual_well_locations,center_location = calibration_model.run_yolo_model(img_filename=image_filename, save_results = True, show_results = True)
 
         ########### calibration attempt
         # get the dx dy of the measured well centers
@@ -313,12 +314,9 @@ if __name__ == "__main__":
         # # run the calibration script 
         # print('running Z calibration script -------------------------------------------------------------------------------------')
 
-        measured_position = controller.get_current_position()
-        
-        z_pos = position.copy()
+        z_pos = controller.get_current_position()
         z_pos['z_pos'] = z_travel_height
-        controller.move_XY_at_Z_travel(position = z_pos,
-                                    z_travel_height = z_travel_height)
+        controller.move_XYZ(position = z_pos)
 
         # fluorescently image each of the terasaki wells (96)
         for well_index,this_terasaki_well_xy in enumerate(zip(s_terasaki_positions['x_relative_pos_mm'].values(),s_terasaki_positions['y_relative_pos_mm'].values())):
@@ -327,12 +325,15 @@ if __name__ == "__main__":
             terasaki_well_coords = dict()
             # calculate the specific well location
             terasaki_well_coords['x_pos'] = this_plate_position['x_pos'] + this_terasaki_well_xy[0] + calibration_coordinates['x_pos'] 
+            terasaki_well_coords['x_pos'] += -2.4
             terasaki_well_coords['y_pos'] = this_plate_position['y_pos'] + this_terasaki_well_xy[1] + calibration_coordinates['y_pos'] + s_terasaki_positions['y_offset_to_fluor_mm'][0]
+            terasaki_well_coords['y_pos'] += -0.5
             terasaki_well_coords['z_pos'] = calibration_coordinates['z_pos']
             print(well_index, terasaki_well_coords)
             # move the fluorescent imaging head to that specific well
             controller.move_XYZ(position = terasaki_well_coords)
-            # camera.camera_control.simple_capture_data_fluor(s_camera_settings, plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir)
+
+            camera.camera_control.simple_capture_data_fluor(s_camera_settings, plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir)
 
             print('imaging')
             time.sleep(0.1)
