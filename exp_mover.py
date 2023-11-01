@@ -204,7 +204,7 @@ if __name__ == "__main__":
     s_grbl_settings_df,s_grbl_settings = settings.get_settings.convert_GRBL_settings(s_grbl_settings)
     z_travel_height = s_machines['grbl'][2]
 
-    controller.set_up_grbl(home = False)
+    controller.set_up_grbl(home = True)
 
     root = tk.Tk()
     root.title("                                                                          WP Imager ------ MOVE TO PLATE")
