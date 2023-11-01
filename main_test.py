@@ -1,9 +1,9 @@
 import os,time,glob,sys,time,tqdm,cv2, serial, json
 import numpy as np
 import lights.labjackU3_control
-# import lights.coolLed_control
+import lights.coolLed_control
 import settings.get_settings
-import movement.simple_stream
+# import movement.simple_stream
 import camera.camera_control
 
 from Run_yolo_model import yolo_model
@@ -197,8 +197,8 @@ if __name__ == "__main__":
     s_todays_runs = settings.get_settings.get_todays_runs()
 
     # read in settings from machines
-    run_as_testing = False
-    home_setting = True ############################################################################## make sure this is true in production robot
+    run_as_testing = True
+    home_setting = False ############################################################################## make sure this is true in production robot
 
     settings.get_settings.check_grbl_port(s_machines['grbl'][0], run_as_testing = False)
     controller = CNCController(port=s_machines['grbl'][0], baudrate=s_machines['grbl'][1])
@@ -210,6 +210,8 @@ if __name__ == "__main__":
     s_todays_runs = settings.get_settings.update_todays_runs(s_todays_runs, overwrite=True)
     d = lights.labjackU3_control.setup_labjack(verbose=True)    # test the blue and red lights
     lights.labjackU3_control.blink_led(d)
+    coolLED_port = s_machines['coolLed'][0] # test the fluorescent lights (if applicable)
+    lights.coolLed_control.test_coolLed_connection(coolLED_port, testing= False)
 
     # set up the calibration model (YOLO)
     calibration_model = yolo_model()
@@ -271,36 +273,37 @@ if __name__ == "__main__":
         print(this_plate_parameters)
         print(this_plate_position)
 
-        # adjust for imaging head y difference positions ----- not used anymore, move to plate and measure from images
-        # this_plate_position['y_pos'] = this_plate_position['y_pos']# + s_terasaki_positions['y_offset_to_fluor_mm'][0]
-
+        # get the position that the imaging head will be moved to 
         position = this_plate_position.copy()
         position['x_pos'],position['y_pos'],position['z_pos'] = round(position['x_pos'],4), round(position['y_pos'],4), round(position['z_pos'],4)
-        current_position = controller.get_current_position()
 
         # move the imaging head to the experiment
         controller.move_XY_at_Z_travel(position = position,
                                        z_travel_height = z_travel_height)
 
-        # turn on red
+        # turn on red for the calibration run
         lights.labjackU3_control.turn_on_red(d)
+        # this calibrates the imaging head to the center of the plate
+        if run_as_testing:
+            adjusted_position = controller.get_current_position()
+            individual_well_locations,center_location = calibration_model.run_yolo_model(img_filename=None, save_results = True, show_results = True)
+        else:
+            adjusted_position = run_calib(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_positions,calibration_model)
+            # capture a single image for calibration
+            image_filename = camera.camera_control.simple_capture_data_single_image(s_camera_settings, plate_parameters=this_plate_parameters, output_dir=output_dir, image_file_format = 'jpg')
+            individual_well_locations,center_location = calibration_model.run_yolo_model(img_filename=image_filename, save_results = True, show_results = True)
+
         # turn off red
         lights.labjackU3_control.turn_off_red(d)
-        adjusted_position = run_calib(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_positions,calibration_model)
-
-        # capture a single image for calibration
-        image_filename = camera.camera_control.simple_capture_data_single_image(s_camera_settings, plate_parameters=this_plate_parameters, output_dir=output_dir, image_file_format = 'jpg')
-        individual_well_locations,center_location = calibration_model.run_yolo_model(img_filename=image_filename, save_results = True, show_results = True)
 
         ########### calibration attempt
         # get the dx dy of the measured well centers
         well_locations_delta = individual_well_locations[-1]-individual_well_locations[0]
         # get measuring stick
         pixels_per_mm = well_locations_delta/[69.7,42]
-        
+        # find the realtion between the measured and where it supposed to be currently
         center = [float(s_camera_settings['widefield'][1])/2,float(s_camera_settings['widefield'][2])/2]
         center_delta = center-center_location
-
         center_delta_in_mm = center_delta/pixels_per_mm
 
         # calculate the calibration corner coordinates
@@ -309,11 +312,7 @@ if __name__ == "__main__":
         calibration_coordinates['y_pos'] = center_delta_in_mm[1]
         calibration_coordinates['z_pos'] = s_terasaki_positions['calib_z_pos_mm'][0]
 
-        # # move to the calibration side
-        # controller.move_XYZ(position = calibration_coordinates)
-        # # run the calibration script 
-        # print('running Z calibration script -------------------------------------------------------------------------------------')
-
+        # move up the imaging head so it doesnt crash into the plate (very important)
         z_pos = controller.get_current_position()
         z_pos['z_pos'] = z_travel_height
         controller.move_XYZ(position = z_pos)
@@ -333,7 +332,15 @@ if __name__ == "__main__":
             # move the fluorescent imaging head to that specific well
             controller.move_XYZ(position = terasaki_well_coords)
 
+            if run_as_testing:
+                this_plate_parameters['fluorescence_UV']
+
+            lights.coolLed_control.turn_specified_on(coolLED_port, uv = int(this_plate_parameters['fluorescence_UV']) > 0, uv_intensity = int(this_plate_parameters['fluorescence_UV']),
+                                                                    blue = int(this_plate_parameters['fluorescence_BLUE']) > 0, blue_intensity = int(this_plate_parameters['fluorescence_BLUE']),
+                                                                    green = int(this_plate_parameters['fluorescence_GREEN']) > 0, green_intensity = int(this_plate_parameters['fluorescence_GREEN']),
+                                                                    red = int(this_plate_parameters['fluorescence_RED']) > 0, red_intensity = int(this_plate_parameters['fluorescence_RED']))
             camera.camera_control.simple_capture_data_fluor(s_camera_settings, plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir)
+            lights.coolLed_control.turn_everything_off(coolLED_port)
 
             print('imaging')
             time.sleep(0.1)

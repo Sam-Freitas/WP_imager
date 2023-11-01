@@ -39,11 +39,14 @@ def test_coolLed_connection(port, testing = False):
 
     return(return_val)
 
-def stream_TX(port):
+def test_lights(port):
     # with contect opens file/connection and closes it if function(with) scope is left
     with serial.Serial(port, BAUD_RATE) as ser:
         print('Reading coolLed settings:')
         ser.reset_input_buffer()
+        ser.reset_output_buffer()
+        time.sleep(0.1)
+
         ser.write(str.encode("CSS?\r\n"))
         time.sleep(0.5)   # Wait 
         out = ser.readline() 
@@ -79,7 +82,66 @@ def stream_TX(port):
         
         print('End of commands')
 
-def turn_everything_off():
+def turn_specified_on(port, uv = False, blue = False, green = False, red = False, uv_intensity = 25, blue_intensity = 25, green_intensity = 25, red_intensity = 25):
+
+    with serial.Serial(port, BAUD_RATE) as ser:
+
+        ser.reset_input_buffer()
+        ser.reset_output_buffer()
+        time.sleep(0.02)
+
+        print('Reading coolLed settings:') # read in the settings from the current system 
+        ser.write(str.encode("CSS?\r\n"))
+        time.sleep(0.01)   # Wait 
+        out = ser.readline() 
+        response = out.strip().decode('utf-8')
+        print("Returned settings:", response)
+
+        # print('turn off lights before slecting:') 
+        ser.write(str.encode("CSSAXF000BXN000CXN000DXN000\r\n")) # make sure that the lights are turned off
+        time.sleep(0.01)   # Wait 
+        out = ser.readline() 
+        response = out.strip().decode('utf-8')
+
+        command = "CSS"  ### CSS (all) A (orBCD channel) S (orX selected) N (orF on) 050 (50 intensity)
+
+        if red:
+            intensity_str = "{:03d}".format(red_intensity)
+            command = command + "ASN" + intensity_str
+        if uv:
+            intensity_str = "{:03d}".format(uv_intensity)
+            command = command + "BSN" + intensity_str
+        if blue:
+            intensity_str = "{:03d}".format(blue_intensity)
+            command = command + "CSN" + intensity_str
+        if green:
+            intensity_str = "{:03d}".format(green_intensity)
+            command = command + "DSN" + intensity_str
+
+        print("Writing coolLed settings:", command)
+        ser.write(str.encode(command + "\r\n")) ### CSS (all) A (orBCD channel) S (orX selected) N (orF on) 050 (50 intensity)
+        time.sleep(0.01)   # Wait 
+        out = ser.readline() 
+        response = out.strip().decode('utf-8')
+        print(response)
+
+def turn_everything_off(port):
+
+    with serial.Serial(port, BAUD_RATE) as ser:
+
+        # print('Reading coolLed settings:')
+        ser.reset_input_buffer()
+        ser.reset_output_buffer()
+        time.sleep(0.1)
+
+        print('coolLED off:')
+        ser.write(str.encode("CSSAXF000BXN000CXN000DXN000\r\n"))
+        time.sleep(0.5)   # Wait 
+        out = ser.readline() 
+        response = out.strip().decode('utf-8')
+        print(response)
+        
+def force_turn_everything_off():
 
     import pandas as pd
     s_machines = pd.read_csv('settings\settings_machines.txt', delimiter = '\t',index_col=False).to_dict()
@@ -96,8 +158,16 @@ def turn_everything_off():
 if __name__ == "__main__":
 
     # GRBL_port_path = '/dev/tty.usbserial-A906L14X'
-    GRBL_port_path = 'COM4'
+    port_path = 'COM4'
 
-    stream_TX(GRBL_port_path)
+    turn_everything_off(port_path)
+
+    for i in range(10):
+        turn_specified_on(port_path, red = True)
+        turn_specified_on(port_path, green = True)
+        turn_specified_on(port_path, blue = True)
+        turn_specified_on(port_path, uv = True)
+
+    turn_everything_off(port_path)
 
     print('EOF')
