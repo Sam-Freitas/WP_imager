@@ -324,9 +324,9 @@ if __name__ == "__main__":
             terasaki_well_coords = dict()
             # calculate the specific well location
             terasaki_well_coords['x_pos'] = this_plate_position['x_pos'] + this_terasaki_well_xy[0] + calibration_coordinates['x_pos'] 
-            terasaki_well_coords['x_pos'] += -2.4
+            terasaki_well_coords['x_pos'] += 0.85
             terasaki_well_coords['y_pos'] = this_plate_position['y_pos'] + this_terasaki_well_xy[1] + calibration_coordinates['y_pos'] + s_terasaki_positions['y_offset_to_fluor_mm'][0]
-            terasaki_well_coords['y_pos'] += -0.5
+            terasaki_well_coords['y_pos'] += 1.5
             terasaki_well_coords['z_pos'] = calibration_coordinates['z_pos']
             print(well_index, terasaki_well_coords)
             # move the fluorescent imaging head to that specific well
@@ -335,10 +335,10 @@ if __name__ == "__main__":
             if run_as_testing:
                 this_plate_parameters['fluorescence_UV']
 
-            lights.coolLed_control.turn_specified_on(coolLED_port, uv = int(this_plate_parameters['fluorescence_UV']) > 0, uv_intensity = int(this_plate_parameters['fluorescence_UV']),
-                                                                    blue = int(this_plate_parameters['fluorescence_BLUE']) > 0, blue_intensity = int(this_plate_parameters['fluorescence_BLUE']),
-                                                                    green = int(this_plate_parameters['fluorescence_GREEN']) > 0, green_intensity = int(this_plate_parameters['fluorescence_GREEN']),
-                                                                    red = int(this_plate_parameters['fluorescence_RED']) > 0, red_intensity = int(this_plate_parameters['fluorescence_RED']))
+            # lights.coolLed_control.turn_specified_on(coolLED_port, uv = int(this_plate_parameters['fluorescence_UV']) > 0, uv_intensity = int(this_plate_parameters['fluorescence_UV']),
+            #                                                         blue = int(this_plate_parameters['fluorescence_BLUE']) > 0, blue_intensity = int(this_plate_parameters['fluorescence_BLUE']),
+            #                                                         green = int(this_plate_parameters['fluorescence_GREEN']) > 0, green_intensity = int(this_plate_parameters['fluorescence_GREEN']),
+            #                                                         red = int(this_plate_parameters['fluorescence_RED']) > 0, red_intensity = int(this_plate_parameters['fluorescence_RED']))
             camera.camera_control.simple_capture_data_fluor(s_camera_settings, plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir)
             lights.coolLed_control.turn_everything_off(coolLED_port)
 
