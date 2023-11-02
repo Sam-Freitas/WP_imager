@@ -197,8 +197,8 @@ if __name__ == "__main__":
     s_todays_runs = settings.get_settings.get_todays_runs()
 
     # read in settings from machines
-    run_as_testing = True
-    home_setting = False ############################################################################## make sure this is true in production robot
+    run_as_testing = False
+    home_setting = True ############################################################################## make sure this is true in production robot
 
     settings.get_settings.check_grbl_port(s_machines['grbl'][0], run_as_testing = False)
     controller = CNCController(port=s_machines['grbl'][0], baudrate=s_machines['grbl'][1])

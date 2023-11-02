@@ -158,7 +158,7 @@ def force_turn_everything_off():
 if __name__ == "__main__":
 
     # GRBL_port_path = '/dev/tty.usbserial-A906L14X'
-    port_path = 'COM4'
+    port_path = 'COM6'
 
     turn_everything_off(port_path)
 

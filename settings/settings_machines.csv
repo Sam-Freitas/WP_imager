@@ -1,5 +1,5 @@
 Explanation,labjack,grbl,coolLed
-COM_port,COM1,COM5,COM4
+COM_port,COM1,COM5,COM6
 baud_rate,NONE,115200,9600
 travel_height,NONE,-50,NONE
 excitation_amount,9,NONE,NONE

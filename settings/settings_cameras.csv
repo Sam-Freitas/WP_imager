@@ -1,5 +1,5 @@
 Explanation,widefield,fluorescence
-camera_port,0,1
+camera_port,1,0
 pixel_width,5472,2560
 pixel_height,3640,2560
 max_framerate,6,10
