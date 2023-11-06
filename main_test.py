@@ -8,6 +8,8 @@ import camera.camera_control
 
 from Run_yolo_model import yolo_model
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 def turn_everything_off_at_exit():
     lights.labjackU3_control.turn_off_everything()
     cv2.destroyAllWindows()
@@ -54,6 +56,57 @@ def run_calib(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_posi
         individual_well_locations,center_location = calibration_model.run_yolo_model(img_filename=image_filename, plot_results = True, plate_index = this_plate_parameters['plate_index'])
     
     return adjusted_position
+
+def run_calib_terasaki(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_positions, calibration_model, adjust_with_movement = True, final_measurement = False, delete_prev_data = True):
+
+    image_filename = camera.camera_control.simple_capture_data_fluor_single_image(s_camera_settings, plate_parameters=this_plate_parameters,
+                                output_dir=output_dir, image_file_format = 'jpg', testing = delete_prev_data)
+
+    img = cv2.imread(image_filename)
+    IMAGE_H,IMAGE_W,_ = img.shape
+    resize_H,resize_W = 704,704 # get image shape and shape to be transformed into
+    small_size = [84,106] 
+
+    base = np.zeros(shape=(resize_H,resize_W,3), dtype='uint8')
+    base[int((resize_H/2)-(small_size[1]/2)):int((resize_H/2)+(small_size[1]/2)),int((resize_W/2)-(small_size[0]/2)):int((resize_W/2)+(small_size[0]/2)),:] = cv2.resize(img,(small_size[0],small_size[1]))
+
+    img_in = base.copy()
+    img_in = cv2.resize(img_in,(resize_H,resize_W))
+    img_in = torch.permute(torch.tensor(img_in),(2,0,1)).to(torch.float32)/255
+    img_in = img_in.to(device).unsqueeze(0) # make the image into the correct form
+
+    out = calibration_model.only_model(img_in) ########## x,y,w,h,conf,class0,class1
+
+    conf = out[0][:,4] # get the confidence values of the detected stuff
+    temp = out[0][conf>0.2,:].cpu() ############# i think its x,y,w,h,conf,class0,class1
+    conf2 = temp[:,4] # get the other confidence intervals
+
+    center_of_well = np.array(np.average(temp[:,0:2], axis=0, weights=conf2))
+    center_of_image = [resize_H/2,resize_W/2]
+
+    # Calculate pixels per mm based on well location data
+    center_delta = center_of_image - center_of_well
+    pixels_per_mm = [64,52] # row col
+    center_delta_in_mm = center_delta / pixels_per_mm
+
+    # Create calibration coordinates dictionary
+    calibration_coordinates = {
+        'x_pos': center_delta_in_mm[0],
+        'y_pos': center_delta_in_mm[1],
+        'z_pos': s_terasaki_positions['calib_z_pos_mm'][0]
+    }
+
+    # Adjust position based on calibration
+    measured_position = controller.get_current_position()
+    adjusted_position = measured_position.copy()
+    adjusted_position['x_pos'] += center_delta_in_mm[0]
+    adjusted_position['y_pos'] -= center_delta_in_mm[1]
+
+    if adjust_with_movement:
+        controller.move_XYZ(position = adjusted_position)
+
+
+    return 1
 
 class CNCController:
     def __init__(self, port, baudrate):

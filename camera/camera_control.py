@@ -133,7 +133,6 @@ def capture_single_image_wait_N_seconds(camera_settings,timestart = None, excita
     # cv2.destroyAllWindows()
     cap.release()
 
-
 def simple_capture_data(camera_settings, plate_parameters = None, testing = False, output_dir = None):
 
     todays_date = datetime.date.today().strftime("%Y-%m-%d")
@@ -399,6 +398,95 @@ def simple_capture_data_fluor(camera_settings, plate_parameters = None, testing 
     # Release the camera
     # cv2.destroyAllWindows()
     cap.release()
+
+def simple_capture_data_fluor_single_image(camera_settings, plate_parameters = None, testing = False, output_dir = None, image_file_format = 'png'):
+
+    todays_date = datetime.date.today().strftime("%Y-%m-%d")
+
+    if output_dir == None:
+        output_dir = os.path.join(os.getcwd(),'output','calibration')
+    else:
+        output_dir = os.path.join(output_dir,'calibration')
+    
+    os.makedirs(output_dir,exist_ok=True)
+    if testing:
+        del_dir_contents(output_dir, recursive=testing)
+
+    camera_id = camera_settings['fluorescence'][0]
+    camera_id = 0 #####################################################################################S
+    cam_width = float(camera_settings['fluorescence'][1])
+    cam_height = float(camera_settings['fluorescence'][2])
+    cam_framerate = camera_settings['fluorescence'][3]
+    time_between_images_seconds = float(camera_settings['fluorescence'][4])
+    time_of_single_burst_seconds = camera_settings['fluorescence'][5]
+    number_of_images_per_burst = float(camera_settings['fluorescence'][6])
+    img_file_format = camera_settings['fluorescence'][7]
+    img_pixel_depth = camera_settings['fluorescence'][8]
+    img_color = camera_settings['fluorescence'][9]
+
+    # Define the text and font settings
+    text = plate_parameters['experiment_name'] + '--' + plate_parameters['plate_name'] + '--' + todays_date
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    font_scale = 4
+    font_color1 = (255, 255, 255)  # white color
+    thickness1 = 15
+    font_color2 = (0, 0, 0)  # black color for outline
+    thickness2 = 50
+
+    # Calculate the position for placing the text
+    text_size = cv2.getTextSize(text, font, font_scale, thickness1)[0]
+    text_x = (cam_width - text_size[0]) // 2  # Center horizontally
+    text_y = 250  # 250 pixels from the top
+    text_x2 = text_x-200
+    text_y2 = 500
+
+    # time_between_images_seconds = 2 # this is just for testing 
+    img_file_format = 'png' # slow and lossless but smaller 
+    # # img_file_format = 'jpg' # fast but lossy small files
+    # # img_file_format = 'bmp' # fastest and lossess huge files
+
+    # Open the camera0
+    cap = cv2.VideoCapture(int(camera_id))
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH,int(cam_width))
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT,int(cam_height))
+    cap.set(cv2.CAP_PROP_FPS,int(cam_framerate))
+
+    if not cap.isOpened():
+        print("Error: Unable to open camera.")
+        exit()
+
+    clear_camera_image_buffer(cap)
+
+    num_images = 1
+    # Capture a series of images
+    start_time = time.time()
+    ret, frame = cap.read()
+    if not ret:
+        print("Error: Unable to capture frame.")
+    
+    current_time_for_filename = datetime.datetime.now().strftime("%Y-%m-%d (%H-%M-%S-%f)")
+    image_name = current_time_for_filename + '.' + img_file_format
+    image_filename = os.path.join(output_dir, image_name)
+
+    cv2.imwrite(image_filename, frame[:,:,-1])#, [int(cv2.IMWRITE_PNG_COMPRESSION), 5])
+    # print(f"\nCaptured image {i+1}/{num_images}")
+
+    # Put the text on the image white with a black background
+    cv2.putText(frame, text, (int(text_x), int(text_y)), font, font_scale, font_color2, thickness2) # black 
+    cv2.putText(frame, text, (int(text_x), int(text_y)), font, font_scale, font_color1, thickness1) # white
+    cv2.putText(frame, current_time_for_filename, (int(text_x2), int(text_y2)), font, font_scale, font_color2, thickness2) # black 
+    cv2.putText(frame, current_time_for_filename, (int(text_x2), int(text_y2)), font, font_scale, font_color1, thickness1) # white
+
+    imshow_resize("img", frame, resize_size=[640,480])
+
+    # capture_images_for_time(cap,time_between_images_seconds, show_images=True,move_to = [1920,520], start_time = start_time)
+    # time.sleep(1)
+
+    # Release the camera
+    # cv2.destroyAllWindows()
+    cap.release()
+
+    return image_filename
 
 if __name__ == "__main__":
 

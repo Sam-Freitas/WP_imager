@@ -40,7 +40,13 @@ class yolo_model:
     def __init__(self):
         self.model_path = 'ultralytics_yolov5_master\WPdata_weightsWMterasaki.pt'
         self.yolomodel = attempt_load(self.model_path, map_location='cuda') # load model
-        
+
+    def only_model(self,img):
+
+        out = self.yolomodel(img)[0] # run the model
+
+        return out
+
     def run_yolo_model(self, img_filename = None, save_results = True, show_results = True, plate_index = 0, pause_block = False):
         # model_path = 'ultralytics_yolov5_master\WPdata_weightsWMterasaki.pt'
         # yolomodel = attempt_load(model_path, map_location='cuda') # load model
@@ -116,7 +122,7 @@ class yolo_model:
 
             if show_results:
                 if pause_block == True:
-                    plt.show()
+                    plt.show(block = True)
                 else:
                     plt.show(block=False)
                     plt.pause(3)
@@ -128,7 +134,7 @@ if __name__ == "__main__":
 
     model = yolo_model()
 
-    yolo_model.run_yolo_model(save_results = True, show_results = True, plate_index = 0, pause_block = True)
+    model.run_yolo_model(save_results = True, show_results = True, plate_index = 0, pause_block = True)
     print('eof')
 # for i in range(points.shape[0]):
 #     plt.plot(points[i][0]*(IMAGE_W/resize_W),points[i][1]*(IMAGE_H/resize_H),'bo')
