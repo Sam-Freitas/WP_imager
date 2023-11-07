@@ -1,14 +1,16 @@
-import os,time,glob,sys,time,tqdm,cv2, serial, json
+import os,time,glob,sys,time,tqdm,cv2, serial, json, torch
 import numpy as np
 import lights.labjackU3_control
 import lights.coolLed_control
 import settings.get_settings
 # import movement.simple_stream
 import camera.camera_control
+import atexit
 
 from Run_yolo_model import yolo_model
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+import matplotlib.pyplot as plt
 
 def turn_everything_off_at_exit():
     lights.labjackU3_control.turn_off_everything()
@@ -84,17 +86,15 @@ def run_calib_terasaki(s_camera_settings,this_plate_parameters,output_dir,s_tera
     center_of_well = np.array(np.average(temp[:,0:2], axis=0, weights=conf2))
     center_of_image = [resize_H/2,resize_W/2]
 
+    # plt.imshow(base)
+    # plt.plot(center_of_image[0],center_of_image[1],'gx')
+    # plt.plot(center_of_well[0],center_of_well[1],'r+')
+    # plt.show()
+
     # Calculate pixels per mm based on well location data
     center_delta = center_of_image - center_of_well
-    pixels_per_mm = [64,52] # row col
+    pixels_per_mm = [12.5,10.1] # row col
     center_delta_in_mm = center_delta / pixels_per_mm
-
-    # Create calibration coordinates dictionary
-    calibration_coordinates = {
-        'x_pos': center_delta_in_mm[0],
-        'y_pos': center_delta_in_mm[1],
-        'z_pos': s_terasaki_positions['calib_z_pos_mm'][0]
-    }
 
     # Adjust position based on calibration
     measured_position = controller.get_current_position()
@@ -104,9 +104,10 @@ def run_calib_terasaki(s_camera_settings,this_plate_parameters,output_dir,s_tera
 
     if adjust_with_movement:
         controller.move_XYZ(position = adjusted_position)
+        image_filename = camera.camera_control.simple_capture_data_fluor_single_image(s_camera_settings, plate_parameters=this_plate_parameters,
+                                output_dir=output_dir, image_file_format = 'jpg', testing = delete_prev_data)
 
-
-    return 1
+    return adjusted_position, center_delta_in_mm
 
 class CNCController:
     def __init__(self, port, baudrate):
@@ -231,8 +232,6 @@ class CNCController:
 
 def jprint(input):
     print(json.dumps(input,indent=4))
-    
-import atexit
 
 if __name__ == "__main__":
 
@@ -383,7 +382,19 @@ if __name__ == "__main__":
             terasaki_well_coords['z_pos'] = calibration_coordinates['z_pos']
             print(well_index, terasaki_well_coords)
             # move the fluorescent imaging head to that specific well
-            controller.move_XYZ(position = terasaki_well_coords)
+
+            if well_index == 0: # if the first one get a bse measurement for all the rest
+                controller.move_XYZ(position = terasaki_well_coords)
+                lights.labjackU3_control.turn_on_red(d)
+                adjusted_position, base_center_delta_in_mm = run_calib_terasaki(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_positions,calibration_model)
+                lights.labjackU3_control.turn_off_everything(d)
+            else: # otherswise measure then report finding and then adjust from the inital base
+                terasaki_well_coords['x_pos']   += base_center_delta_in_mm[0]
+                terasaki_well_coords['y_pos'] += base_center_delta_in_mm[1]
+                controller.move_XYZ(position = terasaki_well_coords)
+                lights.labjackU3_control.turn_on_red(d)
+                adjusted_position, center_delta_in_mm = run_calib_terasaki(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_positions,calibration_model)
+                lights.labjackU3_control.turn_off_everything(d)
 
             if run_as_testing:
                 this_plate_parameters['fluorescence_UV']
