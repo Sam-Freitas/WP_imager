@@ -7,7 +7,7 @@ import settings.get_settings
 import camera.camera_control
 import atexit
 
-from Run_yolo_model import yolo_model
+from Run_yolo_model import yolo_model, sort_rows
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 import matplotlib.pyplot as plt
@@ -191,15 +191,18 @@ class CNCController:
 
         if round(float(current_position['z_pos']),1) != float(z_travel_height):
             #### go to z travel height
-            command = "g0 z" + str(z_travel_height) + " " + "\n"
+            # command = "G0 z" + str(z_travel_height) + " " + "\n"
+            command = "G1 z" + str(z_travel_height) + " F2500" #+ "\n"
             response, out = CNCController.send_command(self,command)
         
         print('moving to XY')
-        command = 'G0 ' + 'X' + str(position['x_pos']) + ' ' + 'Y' + str(position['y_pos']) 
+        # command = 'G0 ' + 'X' + str(position['x_pos']) + ' ' + 'Y' + str(position['y_pos']) 
+        command = 'G1 ' + 'X' + str(position['x_pos']) + ' ' + 'Y' + str(position['y_pos']) + ' F2500'
         response, out = CNCController.send_command(self,command)
         ##### move z
         print('moving to Z')
-        command = 'G0 ' + 'Z' + str(position['z_pos']) 
+        # command = 'G0 ' + 'Z' + str(position['z_pos']) 
+        command = 'G1 ' + 'Z' + str(position['z_pos']) + ' F2500'
         response, out = CNCController.send_command(self,command)
 
         return CNCController.get_current_position(self)
@@ -208,7 +211,8 @@ class CNCController:
 
         ##### move xyz
         print('moving to XYZ')
-        command = 'G0 ' + 'X' + str(position['x_pos']) + ' ' + 'Y' + str(position['y_pos']) + ' ' + 'Z' + str(position['z_pos']) 
+        # command = 'G0 ' + 'X' + str(position['x_pos']) + ' ' + 'Y' + str(position['y_pos']) + ' ' + 'Z' + str(position['z_pos']) 
+        command = 'G1 ' + 'X' + str(position['x_pos']) + ' ' + 'Y' + str(position['y_pos']) + ' ' + 'Z' + str(position['z_pos']) + ' F2500'
         response, out = CNCController.send_command(self,command)
 
         return CNCController.get_current_position(self)
@@ -343,6 +347,7 @@ if __name__ == "__main__":
             individual_well_locations,center_location = calibration_model.run_yolo_model(img_filename=None, save_results = True, show_results = True)
         else:
             adjusted_position = run_calib(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_positions,calibration_model)
+            adjusted_position = run_calib(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_positions,calibration_model)
             # capture a single image for calibration
             image_filename = camera.camera_control.simple_capture_data_single_image(s_camera_settings, plate_parameters=this_plate_parameters, output_dir=output_dir, image_file_format = 'jpg')
             individual_well_locations,center_location = calibration_model.run_yolo_model(img_filename=image_filename, save_results = True, show_results = True)
@@ -354,7 +359,7 @@ if __name__ == "__main__":
         # get the dx dy of the measured well centers
         well_locations_delta = individual_well_locations[-1]-individual_well_locations[0]
         # get measuring stick
-        pixels_per_mm = well_locations_delta/[69.7,42]
+        pixels_per_mm = well_locations_delta/[69.8,41.95]
         # find the realtion between the measured and where it supposed to be currently
         center = [float(s_camera_settings['widefield'][1])/2,float(s_camera_settings['widefield'][2])/2]
         center_delta = center-center_location
@@ -371,6 +376,10 @@ if __name__ == "__main__":
         z_pos['z_pos'] = z_travel_height
         controller.move_XYZ(position = z_pos)
 
+        lights.labjackU3_control.turn_on_red(d)
+
+        centers = (sort_rows(individual_well_locations)-center_location)/pixels_per_mm
+
         # fluorescently image each of the terasaki wells (96)
         for well_index,this_terasaki_well_xy in enumerate(zip(s_terasaki_positions['x_relative_pos_mm'].values(),s_terasaki_positions['y_relative_pos_mm'].values())):
             # get plate parameters
@@ -378,10 +387,10 @@ if __name__ == "__main__":
             terasaki_well_coords = dict()
             # calculate the specific well location
             terasaki_well_coords['x_pos'] = adjusted_position['x_pos'] + calibration_coordinates['x_pos'] 
-            terasaki_well_coords['x_pos'] += this_terasaki_well_xy[0]
+            terasaki_well_coords['x_pos'] += centers[well_index,0] #this_terasaki_well_xy[0]
             terasaki_well_coords['x_pos'] += 0.85
             terasaki_well_coords['y_pos'] = adjusted_position['y_pos'] + calibration_coordinates['y_pos'] + s_terasaki_positions['y_offset_to_fluor_mm'][0]
-            terasaki_well_coords['y_pos'] += this_terasaki_well_xy[1]
+            terasaki_well_coords['y_pos'] += centers[well_index,1] #this_terasaki_well_xy[1]
             terasaki_well_coords['y_pos'] += 1.5
             terasaki_well_coords['z_pos'] = calibration_coordinates['z_pos']
             print(well_index, terasaki_well_coords)
@@ -393,7 +402,7 @@ if __name__ == "__main__":
                 terasaki_adjusted_position, center_delta_in_mm = run_calib_terasaki(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_positions,calibration_model)
                 lights.labjackU3_control.turn_off_everything(d)
             else: # otherswise measure then report finding and then adjust from the inital base
-                # terasaki_well_coords['x_pos']   += center_delta_in_mm[0]
+                # terasaki_well_coords['x_pos'] += center_delta_in_mm[0]
                 # terasaki_well_coords['y_pos'] += center_delta_in_mm[1]
                 controller.move_XYZ(position = terasaki_well_coords)
                 lights.labjackU3_control.turn_on_red(d)

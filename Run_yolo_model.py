@@ -36,6 +36,30 @@ def s(img, title = None):
     plt.imshow(img)
     plt.title(title)
 
+def sort_rows(centers):
+
+    num_cols = 12
+    num_row = 8 # separate all the wells into columns 
+    x_cols = np.asarray([centers[:,0],np.zeros(shape=(96,))+1]).T
+    kmeans2 = KMeans(n_clusters = num_cols, random_state = 0, n_init = "auto").fit(x_cols)    
+    col_labels = kmeans2.labels_
+    x_each_col = kmeans2.cluster_centers_[:,0] # sort each of the columsn into ascending x values
+    col_idx = np.argsort(x_each_col)[::-1]
+
+    sorted_centers = np.zeros(shape = centers.shape)
+    for each_col_label in np.unique(col_labels): # from each of those x columns sort the points by y
+
+        associated_label = col_idx[each_col_label]
+        this_idx = col_labels==associated_label
+        these_points = centers[this_idx,:]
+        sort_by_y_idx = np.argsort(these_points[:,1])
+        these_points = these_points[sort_by_y_idx,:]
+
+        sorted_centers[np.arange(col_idx[col_idx==each_col_label]*num_row,
+            (col_idx[col_idx==each_col_label]+1)*num_row),:] = these_points
+
+    return sorted_centers
+
 class yolo_model:
     def __init__(self):
         self.model_path = 'ultralytics_yolov5_master\WPdata_weightsWMterasaki.pt'
@@ -80,31 +104,31 @@ class yolo_model:
         # this is the weighted average of the cluster centers with weight being the confidence score
         centers = np.array([np.average(points[labels == i], axis=0, weights=confidences[labels == i]) for i in np.unique(labels)])
 
-        num_cols = 12
-        num_row = 8 # separate all the wells into columns 
-        x_cols = np.asarray([centers[:,0],np.zeros(shape=(96,))+1]).T
-        kmeans2 = KMeans(n_clusters = num_cols, random_state = 0, n_init = "auto").fit(x_cols)    
-        col_labels = kmeans2.labels_
-        x_each_col = kmeans2.cluster_centers_[:,0] # sort each of the columsn into ascending x values
-        col_idx = np.argsort(x_each_col)
+        # num_cols = 12
+        # num_row = 8 # separate all the wells into columns 
+        # x_cols = np.asarray([centers[:,0],np.zeros(shape=(96,))+1]).T
+        # kmeans2 = KMeans(n_clusters = num_cols, random_state = 0, n_init = "auto").fit(x_cols)    
+        # col_labels = kmeans2.labels_
+        # x_each_col = kmeans2.cluster_centers_[:,0] # sort each of the columsn into ascending x values
+        # col_idx = np.argsort(x_each_col)
 
-        sorted_centers = np.zeros(shape = centers.shape)
-        for each_col_label in np.unique(col_labels): # from each of those x columns sort the points by y
+        # sorted_centers = np.zeros(shape = centers.shape)
+        # for each_col_label in np.unique(col_labels): # from each of those x columns sort the points by y
 
-            associated_label = col_idx[each_col_label]
-            this_idx = col_labels==associated_label
-            these_points = centers[this_idx,:]
-            sort_by_y_idx = np.argsort(these_points[:,1])
-            these_points = these_points[sort_by_y_idx,:]
+        #     associated_label = col_idx[each_col_label]
+        #     this_idx = col_labels==associated_label
+        #     these_points = centers[this_idx,:]
+        #     sort_by_y_idx = np.argsort(these_points[:,1])
+        #     these_points = these_points[sort_by_y_idx,:]
 
-            sorted_centers[np.arange(col_idx[col_idx==each_col_label]*num_row,
-                (col_idx[col_idx==each_col_label]+1)*num_row),:] = these_points
+        #     sorted_centers[np.arange(col_idx[col_idx==each_col_label]*num_row,
+        #         (col_idx[col_idx==each_col_label]+1)*num_row),:] = these_points
 
-        # centers_sum = np.sum(centers,axis=1)
-        # sort_idx = np.argsort(centers_sum)
+        centers_sum = np.sum(centers,axis=1)
+        sort_idx = np.argsort(centers_sum)
 
-        # # sort the centers by sortrows (????)
-        # sorted_centers = centers[sort_idx] 
+        # sort the centers by sortrows (????)
+        sorted_centers = centers[sort_idx] 
         center_of_plate = np.average(sorted_centers,axis=0)
 
         normalized_centers = sorted_centers/resize_H
