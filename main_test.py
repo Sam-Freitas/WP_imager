@@ -117,7 +117,7 @@ class CNCController:
 
     def wait_for_movement_completion(self,cleaned_line):
 
-        print("waiting on: " + str(cleaned_line))
+        # print("waiting on: " + str(cleaned_line))
 
         if ('$X' not in cleaned_line) and ('$$' not in cleaned_line) and ('?' not in cleaned_line):
             idle_counter = 0
@@ -137,9 +137,11 @@ class CNCController:
                         idle_counter += 1
                     else:
                         if grbl_response != '':
-                            print(grbl_response)
+                            pass
+                            # print(grbl_response)
                 if idle_counter == 1 or idle_counter == 2:
-                    print(grbl_response)
+                    # print(grbl_response)
+                    pass
                 if idle_counter > 5:
                     break
                 if 'alarm' in grbl_response.lower():
@@ -375,9 +377,9 @@ if __name__ == "__main__":
             this_plate_parameters['well_name'] = s_terasaki_positions['name'][well_index]
             terasaki_well_coords = dict()
             # calculate the specific well location
-            terasaki_well_coords['x_pos'] = this_plate_position['x_pos'] + this_terasaki_well_xy[0] + calibration_coordinates['x_pos'] 
+            terasaki_well_coords['x_pos'] = adjusted_position['x_pos'] + this_terasaki_well_xy[0] + calibration_coordinates['x_pos'] 
             terasaki_well_coords['x_pos'] += 0.85
-            terasaki_well_coords['y_pos'] = this_plate_position['y_pos'] + this_terasaki_well_xy[1] + calibration_coordinates['y_pos'] + s_terasaki_positions['y_offset_to_fluor_mm'][0]
+            terasaki_well_coords['y_pos'] = adjusted_position['y_pos'] + this_terasaki_well_xy[1] + calibration_coordinates['y_pos'] + s_terasaki_positions['y_offset_to_fluor_mm'][0]
             terasaki_well_coords['y_pos'] += 1.5
             terasaki_well_coords['z_pos'] = calibration_coordinates['z_pos']
             print(well_index, terasaki_well_coords)
@@ -386,11 +388,11 @@ if __name__ == "__main__":
             if well_index == 0: # if the first one get a bse measurement for all the rest
                 controller.move_XYZ(position = terasaki_well_coords)
                 lights.labjackU3_control.turn_on_red(d)
-                adjusted_position, base_center_delta_in_mm = run_calib_terasaki(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_positions,calibration_model)
+                adjusted_position, center_delta_in_mm = run_calib_terasaki(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_positions,calibration_model)
                 lights.labjackU3_control.turn_off_everything(d)
             else: # otherswise measure then report finding and then adjust from the inital base
-                terasaki_well_coords['x_pos']   += base_center_delta_in_mm[0]
-                terasaki_well_coords['y_pos'] += base_center_delta_in_mm[1]
+                terasaki_well_coords['x_pos']   += center_delta_in_mm[0]
+                terasaki_well_coords['y_pos'] += center_delta_in_mm[1]
                 controller.move_XYZ(position = terasaki_well_coords)
                 lights.labjackU3_control.turn_on_red(d)
                 adjusted_position, center_delta_in_mm = run_calib_terasaki(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_positions,calibration_model)

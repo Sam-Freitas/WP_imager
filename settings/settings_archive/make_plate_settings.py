@@ -88,24 +88,24 @@ df.iloc[0,7] = y_offset_to_fluor_mm
 df.to_csv(os.path.join(path_to_settings_folder,'settings_terasaki_positions.csv'),index= False)
 
 
-#############################################
-## this is for the settings plate postions
-header = ['plate_index','row','column','x_pos','y_pos','z_pos']
-df = pd.DataFrame(columns = header)
+# #############################################
+# ## this is for the settings plate postions
+# header = ['plate_index','row','column','x_pos','y_pos','z_pos']
+# df = pd.DataFrame(columns = header)
 
-i = 0
-j = 0
-counter = 0
+# i = 0
+# j = 0
+# counter = 0
 
-for r in range(rows):
-    i = 0
-    for c in range(cols):
-        df.loc[counter] = [counter,r,c,round(xo+(dx*i),4),round(yo+(dy*j),4),zo] #just xyz
-        counter = counter + 1
-        i = i +1
-    j = j+1
+# for r in range(rows):
+#     i = 0
+#     for c in range(cols):
+#         df.loc[counter] = [counter,r,c,round(xo+(dx*i),4),round(yo+(dy*j),4),zo] #just xyz
+#         counter = counter + 1
+#         i = i +1
+#     j = j+1
 
-df.to_csv(os.path.join(path_to_settings_folder,'settings_plate_positions.csv'),index= False)
+# df.to_csv(os.path.join(path_to_settings_folder,'settings_plate_positions.csv'),index= False)
 
 # # #############################################
 # # ## this is for the settings plate names and opts
