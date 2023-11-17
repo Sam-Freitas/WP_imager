@@ -305,6 +305,7 @@ if __name__ == "__main__":
                 plate_index_fluor.append(this_plate_index)
 
     lights.labjackU3_control.turn_on_red(d)
+    lights.coolLed_control.turn_everything_off(coolLED_port)
     controller.set_up_grbl(home = home_setting)
     # # # run lifespan imaging experiments
     for this_plate_index in plate_index:
@@ -404,6 +405,7 @@ if __name__ == "__main__":
         except:
             use_adjusted_centers = False
             print('Couldnt find all wells reverting to default')
+        use_adjusted_centers = False
 
         # fluorescently image each of the terasaki wells (96)
         for well_index,this_terasaki_well_xy in enumerate(zip(s_terasaki_positions['x_relative_pos_mm'].values(),s_terasaki_positions['y_relative_pos_mm'].values())):
@@ -417,9 +419,9 @@ if __name__ == "__main__":
                 terasaki_well_coords['y_pos'] = adjusted_position['y_pos'] + calibration_coordinates['y_pos'] + s_terasaki_positions['y_offset_to_fluor_mm'][0]
 
                 terasaki_well_coords['x_pos'] += centers[well_index,0] #this_terasaki_well_xy[0]
-                terasaki_well_coords['x_pos'] += 0.85
+                terasaki_well_coords['x_pos'] += -0.85
                 terasaki_well_coords['y_pos'] += centers[well_index,1] #this_terasaki_well_xy[1]
-                terasaki_well_coords['y_pos'] += 1.5
+                terasaki_well_coords['y_pos'] += -2.5
             else:
                 terasaki_well_coords['x_pos'] = adjusted_position['x_pos']
                 terasaki_well_coords['y_pos'] = adjusted_position['y_pos'] + s_terasaki_positions['y_offset_to_fluor_mm'][0]
@@ -430,7 +432,7 @@ if __name__ == "__main__":
             print(well_index, terasaki_well_coords)
             # move the fluorescent imaging head to that specific well  
 
-            if use_adjusted_centers: # if the first one get a bse measurement for all the rest
+            if use_adjusted_centers: # if the fir st one get a bse measurement for all the rest
                 controller.move_XYZ(position = terasaki_well_coords)
                 lights.labjackU3_control.turn_on_red(d)
                 terasaki_adjusted_position, center_delta_in_mm = run_calib_terasaki(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_positions,calibration_model)
@@ -449,10 +451,7 @@ if __name__ == "__main__":
                                                                     green = int(this_plate_parameters['fluorescence_GREEN']) > 0, green_intensity = int(this_plate_parameters['fluorescence_GREEN']),
                                                                     red = int(this_plate_parameters['fluorescence_RED']) > 0, red_intensity = int(this_plate_parameters['fluorescence_RED']))
             camera.camera_control.simple_capture_data_fluor(s_camera_settings, plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir)
-            lights.coolLed_control.turn_everything_off(coolLED_port)
-
-            print('imaging')
-            time.sleep(0.1)
+        lights.coolLed_control.turn_everything_off(coolLED_port)
 
     # shut everything down 
     controller.set_up_grbl(home = True)

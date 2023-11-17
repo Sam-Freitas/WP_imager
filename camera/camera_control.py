@@ -365,7 +365,7 @@ def simple_capture_data_fluor(camera_settings, plate_parameters = None, testing 
         print("Error: Unable to open camera.")
         exit()
 
-    clear_camera_image_buffer(cap)
+    clear_camera_image_buffer(cap, N = 25)
 
     num_images = int(number_of_images_per_burst)
     # Capture a series of images
