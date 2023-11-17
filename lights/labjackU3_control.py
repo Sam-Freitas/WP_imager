@@ -85,6 +85,10 @@ if __name__ == "__main__":
     print("pass")
     d = setup_labjack()
     turn_off_everything(d) 
+ 
+    turn_on_red(d)
+    
+    turn_off_everything(d)
 
     # set_DAC(d,0,0)
     # set_DAC(d,1,0)

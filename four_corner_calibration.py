@@ -28,7 +28,7 @@ class CNCController:
 
     def wait_for_movement_completion(self,cleaned_line):
 
-        print("waiting on: " + str(cleaned_line))
+        # print("waiting on: " + str(cleaned_line))
 
         if ('$X' not in cleaned_line) and ('$$' not in cleaned_line) and ('?' not in cleaned_line):
             idle_counter = 0
@@ -48,9 +48,11 @@ class CNCController:
                         idle_counter += 1
                     else:
                         if grbl_response != '':
-                            print(grbl_response)
+                            pass
+                            # print(grbl_response)
                 if idle_counter == 1 or idle_counter == 2:
-                    print(grbl_response)
+                    # print(grbl_response)
+                    pass
                 if idle_counter > 5:
                     break
                 if 'alarm' in grbl_response.lower():
@@ -100,15 +102,18 @@ class CNCController:
 
         if round(float(current_position['z_pos']),1) != float(z_travel_height):
             #### go to z travel height
-            command = "g0 z" + str(z_travel_height) + " " + "\n"
+            # command = "G0 z" + str(z_travel_height) + " " + "\n"
+            command = "G1 z" + str(z_travel_height) + " F2500" #+ "\n"
             response, out = CNCController.send_command(self,command)
         
         print('moving to XY')
-        command = 'G0 ' + 'X' + str(position['x_pos']) + ' ' + 'Y' + str(position['y_pos']) 
+        # command = 'G0 ' + 'X' + str(position['x_pos']) + ' ' + 'Y' + str(position['y_pos']) 
+        command = 'G1 ' + 'X' + str(position['x_pos']) + ' ' + 'Y' + str(position['y_pos']) + ' F2500'
         response, out = CNCController.send_command(self,command)
         ##### move z
         print('moving to Z')
-        command = 'G0 ' + 'Z' + str(position['z_pos']) 
+        # command = 'G0 ' + 'Z' + str(position['z_pos']) 
+        command = 'G1 ' + 'Z' + str(position['z_pos']) + ' F2500'
         response, out = CNCController.send_command(self,command)
 
         return CNCController.get_current_position(self)
@@ -117,7 +122,8 @@ class CNCController:
 
         ##### move xyz
         print('moving to XYZ')
-        command = 'G0 ' + 'X' + str(position['x_pos']) + ' ' + 'Y' + str(position['y_pos']) + ' ' + 'Z' + str(position['z_pos']) 
+        # command = 'G0 ' + 'X' + str(position['x_pos']) + ' ' + 'Y' + str(position['y_pos']) + ' ' + 'Z' + str(position['z_pos']) 
+        command = 'G1 ' + 'X' + str(position['x_pos']) + ' ' + 'Y' + str(position['y_pos']) + ' ' + 'Z' + str(position['z_pos']) + ' F2500'
         response, out = CNCController.send_command(self,command)
 
         return CNCController.get_current_position(self)
@@ -178,7 +184,7 @@ def run_calib(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_posi
     
     if final_measurement:
         move_down = measured_position.copy()
-        move_down['z_pos'] = -100
+        move_down['z_pos'] = -106.5
         controller.move_XYZ(position = move_down)
         image_filename = camera.camera_control.simple_capture_data_single_image(s_camera_settings, plate_parameters=this_plate_parameters,
                             output_dir=output_dir, image_file_format = 'jpg', testing = delete_prev_data)
@@ -238,7 +244,7 @@ if __name__ == "__main__":
             # get the position of the experiment
             # move above the plate
             position = this_plate_position.copy()
-            position['x_pos'],position['y_pos'],position['z_pos'] = round(position['x_pos'],4), round(position['y_pos'],4), -90 # just above the plate
+            position['x_pos'],position['y_pos'],position['z_pos'] = round(position['x_pos'],4), round(position['y_pos'],4), round(position['z_pos'],4) # just above the plate
             controller.move_XY_at_Z_travel(position = position,
                                         z_travel_height = z_travel_height)
             
@@ -316,7 +322,7 @@ if __name__ == "__main__":
         # get the position of the experiment
         # move above the plate
         position = this_plate_position.copy()
-        position['x_pos'],position['y_pos'],position['z_pos'] = np.round(out[this_plate_index][0],4), np.round(out[this_plate_index][1],4), -100
+        position['x_pos'],position['y_pos'],position['z_pos'] = np.round(out[this_plate_index][0],4), np.round(out[this_plate_index][1],4), -106.5
         controller.move_XY_at_Z_travel(position = position,
                                 z_travel_height = z_travel_height)
         adjusted_position = run_calib(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_positions,calibration_model, adjust_with_movement = False, delete_prev_data = False)
@@ -331,7 +337,7 @@ if __name__ == "__main__":
     header = ['plate_index','row','column','x_pos','y_pos','z_pos']
     df = pd.DataFrame(columns = header)
 
-    zo = -100
+    zo = -106.5
 
     i = 0
     j = 0

@@ -40,7 +40,7 @@ class CNCController:
 
     def wait_for_movement_completion(self,cleaned_line):
 
-        print("waiting on: " + str(cleaned_line))
+        # print("waiting on: " + str(cleaned_line))
 
         if ('$X' not in cleaned_line) and ('$$' not in cleaned_line) and ('?' not in cleaned_line):
             idle_counter = 0
@@ -60,9 +60,11 @@ class CNCController:
                         idle_counter += 1
                     else:
                         if grbl_response != '':
-                            print(grbl_response)
+                            pass
+                            # print(grbl_response)
                 if idle_counter == 1 or idle_counter == 2:
-                    print(grbl_response)
+                    # print(grbl_response)
+                    pass
                 if idle_counter > 5:
                     break
                 if 'alarm' in grbl_response.lower():
@@ -112,15 +114,18 @@ class CNCController:
 
         if round(float(current_position['z_pos']),1) != float(z_travel_height):
             #### go to z travel height
-            command = "g0 z" + str(z_travel_height) + " " + "\n"
+            # command = "G0 z" + str(z_travel_height) + " " + "\n"
+            command = "G1 z" + str(z_travel_height) + " F2500" #+ "\n"
             response, out = CNCController.send_command(self,command)
         
         print('moving to XY')
-        command = 'G0 ' + 'X' + str(position['x_pos']) + ' ' + 'Y' + str(position['y_pos']) 
+        # command = 'G0 ' + 'X' + str(position['x_pos']) + ' ' + 'Y' + str(position['y_pos']) 
+        command = 'G1 ' + 'X' + str(position['x_pos']) + ' ' + 'Y' + str(position['y_pos']) + ' F2500'
         response, out = CNCController.send_command(self,command)
         ##### move z
         print('moving to Z')
-        command = 'G0 ' + 'Z' + str(position['z_pos']) 
+        # command = 'G0 ' + 'Z' + str(position['z_pos']) 
+        command = 'G1 ' + 'Z' + str(position['z_pos']) + ' F2500'
         response, out = CNCController.send_command(self,command)
 
         return CNCController.get_current_position(self)
@@ -129,7 +134,8 @@ class CNCController:
 
         ##### move xyz
         print('moving to XYZ')
-        command = 'G0 ' + 'X' + str(position['x_pos']) + ' ' + 'Y' + str(position['y_pos']) + ' ' + 'Z' + str(position['z_pos']) 
+        # command = 'G0 ' + 'X' + str(position['x_pos']) + ' ' + 'Y' + str(position['y_pos']) + ' ' + 'Z' + str(position['z_pos']) 
+        command = 'G1 ' + 'X' + str(position['x_pos']) + ' ' + 'Y' + str(position['y_pos']) + ' ' + 'Z' + str(position['z_pos']) + ' F2500'
         response, out = CNCController.send_command(self,command)
 
         return CNCController.get_current_position(self)
@@ -192,7 +198,7 @@ def button_click(row, col):
     this_plate_parameters = get_settings_from_index(index)
 
     controller.move_XY_at_Z_travel(position=position, z_travel_height=z_travel_height)
-    image_filename = camera.camera_control.simple_capture_data_single_image(s_camera_settings, plate_parameters=this_plate_parameters, output_dir=output_dir, image_file_format = 'jpg')
+    # image_filename = camera.camera_control.simple_capture_data_single_image(s_camera_settings, plate_parameters=this_plate_parameters, output_dir=output_dir, image_file_format = 'jpg')
 
 if __name__ == "__main__":
     # atexit.register(exit_function)
@@ -203,6 +209,9 @@ if __name__ == "__main__":
     response, s_grbl_settings = controller.send_command("$$"+ "\n")
     s_grbl_settings_df,s_grbl_settings = settings.get_settings.convert_GRBL_settings(s_grbl_settings)
     z_travel_height = s_machines['grbl'][2]
+
+    d = lights.labjackU3_control.setup_labjack(verbose=True)
+    lights.labjackU3_control.turn_on_red(d)
 
     controller.set_up_grbl(home = True)
 

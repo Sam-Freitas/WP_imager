@@ -6,11 +6,13 @@ import os
 import settings.get_settings
 from tkinter import messagebox, PhotoImage
 import atexit, json
+import pathlib
 
 ### plate name, experiment name, lifepsan, healthspan, fluor timing, uv, blue, green, red
 DEFAULT_VALUES = ['NONE','NONE',1,0,100,0,0,0,0]
 
-path_to_settings_folder = path_to_settings_folder = os.path.join(os.getcwd(), "settings")
+path_to_file = pathlib.Path(__file__).parent.resolve() 
+path_to_settings_folder = path_to_settings_folder = os.path.join(path_to_file, "settings")
 
 BUTTON_W = 10  # Set the size of the buttons
 BUTTON_H = 5

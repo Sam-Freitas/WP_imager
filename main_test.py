@@ -8,6 +8,7 @@ import camera.camera_control
 import atexit
 
 from Run_yolo_model import yolo_model, sort_rows
+from wand.image import Image
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 import matplotlib.pyplot as plt
@@ -51,7 +52,7 @@ def run_calib(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_posi
     
     if final_measurement:
         move_down = measured_position.copy()
-        move_down['z_pos'] = -100
+        move_down['z_pos'] = -106.5
         controller.move_XYZ(position = move_down)
         image_filename = camera.camera_control.simple_capture_data_single_image(s_camera_settings, plate_parameters=this_plate_parameters,
                             output_dir=output_dir, image_file_format = 'jpg', testing = delete_prev_data)
@@ -83,7 +84,12 @@ def run_calib_terasaki(s_camera_settings,this_plate_parameters,output_dir,s_tera
     temp = out[0][conf>0.2,:].cpu() ############# i think its x,y,w,h,conf,class0,class1
     conf2 = temp[:,4] # get the other confidence intervals
 
-    center_of_well = np.array(np.average(temp[:,0:2], axis=0, weights=conf2))
+    size_of_detection = (temp[:,2]*temp[:,3]).unsqueeze(1) # get the weighting for the new detections 
+    weighted_size_conf = size_of_detection*conf2.unsqueeze(1)
+    weighted_size_conf = (weighted_size_conf/weighted_size_conf.max()).squeeze()
+    weighted_size_conf = weighted_size_conf*weighted_size_conf # new weighting ------> confidence*((w*h)^2)
+
+    center_of_well = np.array(np.average(temp[:,0:2], axis=0, weights=weighted_size_conf))
     center_of_image = [resize_H/2,resize_W/2]
 
     # plt.imshow(base)
@@ -236,6 +242,19 @@ class CNCController:
     def close_connection(self):
         self.ser.close()
 
+def correct_barrel_distortion(img_path, a = 0.0, b = 0.0, c = 0.0, d = 0.0):
+
+    with Image(filename = img_path) as img:
+        args = (a,b,c,d)
+        img.distort("barrel",args)
+        img_out = np.asarray(img)
+
+    img_name = os.path.basename(img_path)[:-4] + '_modified' + os.path.basename(img_path)[-4:]
+    new_img_path = os.path.join(os.path.split(img_path)[0],img_name)
+    cv2.imwrite(new_img_path,img_out)
+ 
+    return new_img_path
+
 def jprint(input):
     print(json.dumps(input,indent=4))
 
@@ -350,6 +369,7 @@ if __name__ == "__main__":
             adjusted_position = run_calib(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_positions,calibration_model)
             # capture a single image for calibration
             image_filename = camera.camera_control.simple_capture_data_single_image(s_camera_settings, plate_parameters=this_plate_parameters, output_dir=output_dir, image_file_format = 'jpg')
+            image_filename = correct_barrel_distortion(image_filename, a = 0.0, b = 0.0, c = -0.03, d = 1.05)
             individual_well_locations,center_location = calibration_model.run_yolo_model(img_filename=image_filename, save_results = True, show_results = True)
 
         # turn off red
@@ -378,23 +398,37 @@ if __name__ == "__main__":
 
         lights.labjackU3_control.turn_on_red(d)
 
-        centers = (sort_rows(individual_well_locations)-center_location)/pixels_per_mm
+        try:
+            use_adjusted_centers = True
+            centers = (sort_rows(individual_well_locations)-center_location)/pixels_per_mm
+        except:
+            use_adjusted_centers = False
+            print('Couldnt find all wells reverting to default')
 
         # fluorescently image each of the terasaki wells (96)
         for well_index,this_terasaki_well_xy in enumerate(zip(s_terasaki_positions['x_relative_pos_mm'].values(),s_terasaki_positions['y_relative_pos_mm'].values())):
             # get plate parameters
             this_plate_parameters['well_name'] = s_terasaki_positions['name'][well_index]
             terasaki_well_coords = dict()
-            # calculate the specific well location
-            terasaki_well_coords['x_pos'] = adjusted_position['x_pos'] + calibration_coordinates['x_pos'] 
-            terasaki_well_coords['x_pos'] += centers[well_index,0] #this_terasaki_well_xy[0]
-            terasaki_well_coords['x_pos'] += 0.85
-            terasaki_well_coords['y_pos'] = adjusted_position['y_pos'] + calibration_coordinates['y_pos'] + s_terasaki_positions['y_offset_to_fluor_mm'][0]
-            terasaki_well_coords['y_pos'] += centers[well_index,1] #this_terasaki_well_xy[1]
-            terasaki_well_coords['y_pos'] += 1.5
+
+            if use_adjusted_centers:
+                # calculate the specific well location
+                terasaki_well_coords['x_pos'] = adjusted_position['x_pos'] + calibration_coordinates['x_pos'] 
+                terasaki_well_coords['y_pos'] = adjusted_position['y_pos'] + calibration_coordinates['y_pos'] + s_terasaki_positions['y_offset_to_fluor_mm'][0]
+
+                terasaki_well_coords['x_pos'] += centers[well_index,0] #this_terasaki_well_xy[0]
+                terasaki_well_coords['x_pos'] += 0.85
+                terasaki_well_coords['y_pos'] += centers[well_index,1] #this_terasaki_well_xy[1]
+                terasaki_well_coords['y_pos'] += 1.5
+            else:
+                terasaki_well_coords['x_pos'] = adjusted_position['x_pos']
+                terasaki_well_coords['y_pos'] = adjusted_position['y_pos'] + s_terasaki_positions['y_offset_to_fluor_mm'][0]
+                terasaki_well_coords['x_pos'] += this_terasaki_well_xy[0] + -0.85
+                terasaki_well_coords['y_pos'] += this_terasaki_well_xy[1] + -2.5
+
             terasaki_well_coords['z_pos'] = calibration_coordinates['z_pos']
             print(well_index, terasaki_well_coords)
-            # move the fluorescent imaging head to that specific well
+            # move the fluorescent imaging head to that specific well  
 
             if well_index == 0: # if the first one get a bse measurement for all the rest
                 controller.move_XYZ(position = terasaki_well_coords)
@@ -402,8 +436,6 @@ if __name__ == "__main__":
                 terasaki_adjusted_position, center_delta_in_mm = run_calib_terasaki(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_positions,calibration_model)
                 lights.labjackU3_control.turn_off_everything(d)
             else: # otherswise measure then report finding and then adjust from the inital base
-                # terasaki_well_coords['x_pos'] += center_delta_in_mm[0]
-                # terasaki_well_coords['y_pos'] += center_delta_in_mm[1]
                 controller.move_XYZ(position = terasaki_well_coords)
                 lights.labjackU3_control.turn_on_red(d)
                 terasaki_adjusted_position, center_delta_in_mm = run_calib_terasaki(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_positions,calibration_model)
