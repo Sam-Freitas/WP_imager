@@ -407,6 +407,16 @@ if __name__ == "__main__":
             print('Couldnt find all wells reverting to default')
         use_adjusted_centers = False
 
+        lights.coolLed_control.turn_specified_on(coolLED_port, 
+            uv = int(this_plate_parameters['fluorescence_UV']) > 0, 
+            uv_intensity = int(this_plate_parameters['fluorescence_UV']),
+            blue = int(this_plate_parameters['fluorescence_BLUE']) > 0, 
+            blue_intensity = int(this_plate_parameters['fluorescence_BLUE']),
+            green = int(this_plate_parameters['fluorescence_GREEN']) > 0, 
+            green_intensity = int(this_plate_parameters['fluorescence_GREEN']),
+            red = int(this_plate_parameters['fluorescence_RED']) > 0, 
+            red_intensity = int(this_plate_parameters['fluorescence_RED']))
+
         # fluorescently image each of the terasaki wells (96)
         for well_index,this_terasaki_well_xy in enumerate(zip(s_terasaki_positions['x_relative_pos_mm'].values(),s_terasaki_positions['y_relative_pos_mm'].values())):
             # get plate parameters
@@ -446,10 +456,6 @@ if __name__ == "__main__":
             if run_as_testing:
                 this_plate_parameters['fluorescence_UV']
 
-            lights.coolLed_control.turn_specified_on(coolLED_port, uv = int(this_plate_parameters['fluorescence_UV']) > 0, uv_intensity = int(this_plate_parameters['fluorescence_UV']),
-                                                                    blue = int(this_plate_parameters['fluorescence_BLUE']) > 0, blue_intensity = int(this_plate_parameters['fluorescence_BLUE']),
-                                                                    green = int(this_plate_parameters['fluorescence_GREEN']) > 0, green_intensity = int(this_plate_parameters['fluorescence_GREEN']),
-                                                                    red = int(this_plate_parameters['fluorescence_RED']) > 0, red_intensity = int(this_plate_parameters['fluorescence_RED']))
             camera.camera_control.simple_capture_data_fluor(s_camera_settings, plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir)
         lights.coolLed_control.turn_everything_off(coolLED_port)
 

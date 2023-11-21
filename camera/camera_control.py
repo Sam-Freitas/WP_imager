@@ -350,7 +350,7 @@ def simple_capture_data_fluor(camera_settings, plate_parameters = None, testing 
     text_x2 = text_x-200
     text_y2 = 500
 
-    # time_between_images_seconds = 2 # this is just for testing 
+    time_between_images_seconds = 1 # this is just for testing 
     img_file_format = 'png' # slow and lossless but smaller 
     # # img_file_format = 'jpg' # fast but lossy small files
     # # img_file_format = 'bmp' # fastest and lossess huge files
@@ -365,7 +365,7 @@ def simple_capture_data_fluor(camera_settings, plate_parameters = None, testing 
         print("Error: Unable to open camera.")
         exit()
 
-    clear_camera_image_buffer(cap, N = 25)
+    clear_camera_image_buffer(cap, N = 3)
 
     num_images = int(number_of_images_per_burst)
     # Capture a series of images
