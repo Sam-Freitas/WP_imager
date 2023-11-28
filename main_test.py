@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 def turn_everything_off_at_exit():
     lights.labjackU3_control.turn_off_everything()
     cv2.destroyAllWindows()
-    # lights.coolLed_control.turn_everything_off()
+    lights.coolLed_control.turn_everything_off('COM6')
 
 def run_calib(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_positions, calibration_model, adjust_with_movement = True, final_measurement = False, delete_prev_data = True):
     # take image
@@ -404,7 +404,7 @@ if __name__ == "__main__":
             centers = (sort_rows(individual_well_locations)-center_location)/pixels_per_mm
         except:
             use_adjusted_centers = False
-            print('Couldnt find all wells reverting to default')
+            print('Couldnt find all wells reverting to d efault')
         use_adjusted_centers = False
 
         lights.coolLed_control.turn_specified_on(coolLED_port, 
