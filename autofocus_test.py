@@ -306,40 +306,16 @@ if __name__ == "__main__":
 
     lights.labjackU3_control.turn_on_red(d)
     lights.coolLed_control.turn_everything_off(coolLED_port)
+    time.sleep(0.1)
+    lights.coolLed_control.turn_everything_off(coolLED_port)
     controller.set_up_grbl(home = home_setting)
-    # # # run lifespan imaging experiments
-    for this_plate_index in plate_index:
-        # get the experiment options
-        this_plate_parameters,this_plate_position = settings.get_settings.get_indexed_dict_parameters(s_plate_names_and_opts,s_plate_positions,this_plate_index)
-        print(this_plate_parameters)
-        print(this_plate_position)
-
-        # get the position of the experiment
-        position = this_plate_position.copy()
-        position['x_pos'],position['y_pos'],position['z_pos'] = round(position['x_pos'],4), round(position['y_pos'],4), round(position['z_pos'],4)
-
-        # move the imaging module to the position
-        controller.move_XY_at_Z_travel(position = position,
-                                       z_travel_height = z_travel_height)
-        
-        # # # image the experiment 
-        camera.camera_control.simple_capture_data(s_camera_settings, plate_parameters=this_plate_parameters, testing=run_as_testing, output_dir=output_dir)
-        # # # turn on blue excitation light and capture a single image
-        t = lights.labjackU3_control.turn_on_blue(d, return_time=True)
-        camera.camera_control.capture_single_image_wait_N_seconds(s_camera_settings, timestart=t, excitation_amount = s_machines['labjack'][3], 
-                                                                  plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir)
-        lights.labjackU3_control.turn_off_blue(d)
-        # # # image the experiment 
-        camera.camera_control.simple_capture_data(s_camera_settings, plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir)
-        lights.labjackU3_control.turn_off_blue(d)
-
-        time.sleep(0.05)
-        print('')
+    # # # run lifespan imaging experiments ###################################################################
 
     # blink the red light as a confirmation of finish
     lights.labjackU3_control.turn_on_red(d)
     time.sleep(0.5)
     lights.labjackU3_control.turn_off_everything(d)
+    time.sleep(0.1)
     # reset and home the machine
     if len(plate_index) != 0: # if there are no plate lifespan then no need to home twice
         controller.set_up_grbl(home = home_setting)
@@ -407,15 +383,35 @@ if __name__ == "__main__":
             print('Couldnt find all wells reverting to d efault')  
         use_adjusted_centers = False
 
-        lights.coolLed_control.turn_specified_on(coolLED_port, 
-            uv = int(this_plate_parameters['fluorescence_UV']) > 0, 
-            uv_intensity = int(this_plate_parameters['fluorescence_UV']),
-            blue = int(this_plate_parameters['fluorescence_BLUE']) > 0, 
-            blue_intensity = int(this_plate_parameters['fluorescence_BLUE']),
-            green = int(this_plate_parameters['fluorescence_GREEN']) > 0, 
-            green_intensity = int(this_plate_parameters['fluorescence_GREEN']),
-            red = int(this_plate_parameters['fluorescence_RED']) > 0, 
-            red_intensity = int(this_plate_parameters['fluorescence_RED']))
+        lights.coolLed_control.turn_specified_on(coolLED_port, #############
+            uv = True, 
+            uv_intensity = 100,
+            blue = True, #########################################################
+            blue_intensity = 100,
+            green = True, 
+            green_intensity = 100,
+            red = True, ###########################################################
+            red_intensity = 100
+            )
+
+        starting_z_pos = -83.0                      ##############################################
+        ending_z_pos = -75.0
+        delta_z_movement = -0.25 ##################################################################################################
+        this_output_dir = os.path.join(os.getcwd(),'output','autofocus_calibration')
+        os.makedirs(this_output_dir,exist_ok = True)
+        z_positions = np.linspace(ending_z_pos,starting_z_pos,1+int(np.abs((starting_z_pos-ending_z_pos)/delta_z_movement)))
+        np.savetxt(os.path.join(this_output_dir,'zpos.csv'),z_positions,delimiter = ',', fmt = '%f')
+
+        cap = cv2.VideoCapture(int(s_camera_settings['fluorescence'][0]))
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH,int(s_camera_settings['fluorescence'][1]))
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT,int(s_camera_settings['fluorescence'][2]))
+        cap.set(cv2.CAP_PROP_FPS,int(s_camera_settings['fluorescence'][3]))
+
+        if not cap.isOpened():
+            print("Error: Unable to open camera.") ##########################where DIFFERENT
+            exit()
+
+        camera.camera_control.clear_camera_image_buffer(cap, N = 3)
 
         # fluorescently image each of the terasaki wells (96)
         for well_index,this_terasaki_well_xy in enumerate(zip(s_terasaki_positions['x_relative_pos_mm'].values(),s_terasaki_positions['y_relative_pos_mm'].values())):
@@ -453,11 +449,34 @@ if __name__ == "__main__":
                 # terasaki_adjusted_position, center_delta_in_mm = run_calib_terasaki(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_positions,calibration_model)
                 lights.labjackU3_control.turn_off_everything(d)
 
-            if run_as_testing:
-                this_plate_parameters['fluorescence_UV']
+            temp_position = terasaki_well_coords.copy()
 
-            camera.camera_control.simple_capture_data_fluor(s_camera_settings, plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir)
+            camera.camera_control.clear_camera_image_buffer(cap, N = 10)
+
+            for i,this_z_position in enumerate(z_positions):
+
+                temp_position['z_pos'] = this_z_position
+                controller.move_XYZ(position = temp_position)
+
+                this_image_filename = os.path.join(this_output_dir,this_plate_parameters['well_name'] + '_' + str(i) +'_.png')
+
+                if i == 0:
+                    ret, frame = cap.read()
+                    time.sleep(1)
+                    ret, frame = cap.read()
+                else:
+                    ret, frame = cap.read()
+                if not ret:
+                    print("Error: Unable to capture frame.")
+                    break
+                cv2.imwrite(this_image_filename, frame[:,:,-1])#, [int(cv2.IMWRITE_PNG_COMPRESSION), 5])
+                # frames.append(frame)
+
+            print('loop')
+
+            # camera.camera_control.simple_capture_data_fluor(s_camera_settings, plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir)
         lights.coolLed_control.turn_everything_off(coolLED_port)
+        break
 
     # shut everything down 
     controller.set_up_grbl(home = True)

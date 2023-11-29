@@ -130,8 +130,8 @@ def turn_everything_off(port):
     with serial.Serial(port, BAUD_RATE) as ser:
 
         # print('Reading coolLed settings:')
-        ser.reset_input_buffer()
-        ser.reset_output_buffer()
+        # ser.reset_input_buffer()
+        # ser.reset_output_buffer()
         time.sleep(0.1)
 
         print('coolLED off:')
@@ -162,12 +162,25 @@ if __name__ == "__main__":
 
     turn_everything_off(port_path)
 
-    for i in range(10):
-        turn_specified_on(port_path, red = True)
-        turn_specified_on(port_path, green = True)
-        turn_specified_on(port_path, blue = True)
-        turn_specified_on(port_path, uv = True)
+    # for i in range(10):
+    #     turn_specified_on(port_path, red = True)
+    #     turn_specified_on(port_path, green = True)
+    #     turn_specified_on(port_path, blue = True)
+    #     turn_specified_on(port_path, uv = True)
 
+    turn_specified_on(port_path, #############
+            uv = True, 
+            uv_intensity = 100,
+            blue = True, #########################################################
+            blue_intensity = 100,
+            green = True, 
+            green_intensity = 100,
+            red = True, ###########################################################
+            red_intensity = 100
+            )
+
+    turn_everything_off(port_path)
+    time.sleep(0.1)
     turn_everything_off(port_path)
 
     print('EOF')
