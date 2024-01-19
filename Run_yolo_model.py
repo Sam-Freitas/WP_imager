@@ -36,11 +36,11 @@ def s(img, title = None):
     plt.imshow(img)
     plt.title(title)
 
-def sort_rows(centers):
+def sort_rows(centers, num_cols = 12, num_row = 8):
 
-    num_cols = 12
-    num_row = 8 # separate all the wells into columns 
-    x_cols = np.asarray([centers[:,0],np.zeros(shape=(96,))+1]).T
+    total_wells = int(num_cols*num_row)
+     # separate all the wells into columns 
+    x_cols = np.asarray([centers[:,0],np.zeros(shape=(total_wells,))+1]).T
     kmeans2 = KMeans(n_clusters = num_cols, random_state = 0, n_init = "auto").fit(x_cols)    
     col_labels = kmeans2.labels_
     x_each_col = kmeans2.cluster_centers_[:,0] # sort each of the columsn into ascending x values

@@ -116,6 +116,15 @@ def get_terasaki_positions():
 
     return df
 
+def get_wm_positions():
+    
+    print('Getting WorMotel positions')
+    path = os.path.join(get_base_path(),'settings_WM_positions.csv')
+    df = pd.read_csv(path, delimiter = ',',index_col=False)
+    df = df.to_dict()
+
+    return df
+
 def convert_GRBL_settings(settings): # this converts grblHAL settings to readable dictionary 
 
     path = os.path.join(get_base_path(),'settings_grbl_base.txt')
