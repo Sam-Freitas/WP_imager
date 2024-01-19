@@ -19,7 +19,7 @@ def del_dir_contents(path_to_dir):
         os.remove(f)
 
 
-img_file_type = "jpg"
+img_file_type = "png"
 imgs_dir = r"C:\Users\LabPC2\Documents\GitHub\WP_imager\camera\captured_images"  # os.path.join(os.getcwd(),'captured_images')
 imgs = natsorted(glob.glob(os.path.join(imgs_dir, "*." + img_file_type)))
 

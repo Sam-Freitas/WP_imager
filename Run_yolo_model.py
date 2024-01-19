@@ -71,7 +71,7 @@ class yolo_model:
 
         return out
 
-    def run_yolo_model(self, img_filename = None, save_results = True, show_results = True, plate_index = 0, pause_block = False):
+    def run_yolo_model(self, img_filename = None, save_results = True, show_results = True, plate_index = 0, pause_block = False, n_wells = 96):
         # model_path = 'ultralytics_yolov5_master\WPdata_weightsWMterasaki.pt'
         # yolomodel = attempt_load(model_path, map_location='cuda') # load model
 
@@ -96,7 +96,7 @@ class yolo_model:
         print('converting output')
 
         points = temp[:,0:2]
-        kmeans = KMeans(n_clusters=96, random_state=0, n_init="auto").fit(points)
+        kmeans = KMeans(n_clusters=n_wells, random_state=0, n_init="auto").fit(points)
         cluster_centers = kmeans.cluster_centers_ # get the center of the clusters to find the locations of the wells
 
         labels = kmeans.labels_ # get each label for the individual wells

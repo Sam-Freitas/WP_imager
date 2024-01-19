@@ -24,6 +24,24 @@ def norm_5_to_95(img):
 
     return img3
 
+def norm_0_to_95(img):
+
+    img_mean = np.mean(img)
+    img_std = np.std(img)
+
+    img2 = img-(img_mean + (2*img_std))
+
+    img_mean2 = np.mean(img2)
+    img_std2 = np.std(img2)
+
+    img3 = img2/(np.abs(img_mean2) + np.abs(2*img_std2))
+
+    num = 5
+    img3 = np.clip(img3,img3.min(),num)
+    img3 = norm(img3)
+
+    return img3
+
 def s(img, title = None):
     matplotlib.use('TkAgg')
     if 'torch' in str(img.dtype):
@@ -54,35 +72,15 @@ os.makedirs(output_dir, exist_ok=True)
 img_paths = natsorted(glob.glob(os.path.join(path_to_dir,'*' + file_format)))
 width, height = imagesize.get(img_paths[0])
 
-stack = np.zeros((len(img_paths),width,height), dtype = np.float64)
-mean_img = np.zeros((width,height), dtype = np.float64)
-stack_resized = np.zeros(shape=(len(img_paths),width,height), dtype = np.float64)#640,640), dtype = np.float64)
-
-for i,this_img_path in enumerate(tqdm.tqdm(img_paths)):
-
-    stack[i,::] = cv2.imread(this_img_path,0)
-    # stack_resized[i,::] = cv2.resize(stack[i,::], (width,height))
-    mean_img += stack[i,::]
-
-mean_img = mean_img/len(img_paths)
-# median_img = np.median(stack_resized,0)
-# median_img = cv2.resize(median_img,(width,height))
-
-# # temp = stack_resized-
-# temp = stack - mean_img
-# temp[temp<0] = 0
-# temp = temp.astype(np.uint8)
-
-# mean_img_large = cv2.resize(mean_img,(width,height))
-
 for i,this_img in enumerate(tqdm.tqdm(stack)):
 
-    out_name = os.path.split(img_paths[i])[-1]
+    img = cv2.imread(this_img,-1) # or make grayscale with 0 instead of -1
 
-    a = this_img - mean_img
-    a[a<0] = 0
-    a = normalize_img(a)*255
-    cv2.imwrite(os.path.join(output_dir,out_name),a.astype(np.uint8))
+
+    img2 = norm_0_to_95(img2)
+    # img2 = norm(clahe.apply(img2.astype(np.uint8)))
+    # # img2 = norm(img2)
+    img2 = (img2*255).astype(np.uint8)
 
     # a = this_img - median_img
     # a[a<0] = 0
