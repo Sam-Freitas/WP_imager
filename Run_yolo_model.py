@@ -95,6 +95,18 @@ class yolo_model:
 
         print('converting output')
 
+        determining_which_plate_type = torch.sum(out.squeeze()[:,-2::].cpu(),axis = 0).numpy()
+
+        if np.argmax(determining_which_plate_type) == 0: # wormotel use 0.75 as the confidense interval
+            n_wells = 240
+            print('----------------------------WORMOTEL DETECTED----------------------------')
+        elif np.argmax(determining_which_plate_type) == 1: # terasaki use 0.6 as the confidense interval
+            n_wells = 96
+            print('----------------------------TERASAKI DETECTED----------------------------')
+        else:
+            n_wells = 96
+            print('----------------------------ERROR DEFAULING TO 96 TERASAKI----------------------------')
+
         points = temp[:,0:2]
         kmeans = KMeans(n_clusters=n_wells, random_state=0, n_init="auto").fit(points)
         cluster_centers = kmeans.cluster_centers_ # get the center of the clusters to find the locations of the wells
@@ -103,31 +115,11 @@ class yolo_model:
         confidences = temp[:, 4]
         # this is the weighted average of the cluster centers with weight being the confidence score
         centers = np.array([np.average(points[labels == i], axis=0, weights=confidences[labels == i]) for i in np.unique(labels)])
-
-        # num_cols = 12
-        # num_row = 8 # separate all the wells into columns 
-        # x_cols = np.asarray([centers[:,0],np.zeros(shape=(96,))+1]).T
-        # kmeans2 = KMeans(n_clusters = num_cols, random_state = 0, n_init = "auto").fit(x_cols)    
-        # col_labels = kmeans2.labels_
-        # x_each_col = kmeans2.cluster_centers_[:,0] # sort each of the columsn into ascending x values
-        # col_idx = np.argsort(x_each_col)
-
-        # sorted_centers = np.zeros(shape = centers.shape)
-        # for each_col_label in np.unique(col_labels): # from each of those x columns sort the points by y
-
-        #     associated_label = col_idx[each_col_label]
-        #     this_idx = col_labels==associated_label
-        #     these_points = centers[this_idx,:]
-        #     sort_by_y_idx = np.argsort(these_points[:,1])
-        #     these_points = these_points[sort_by_y_idx,:]
-
-        #     sorted_centers[np.arange(col_idx[col_idx==each_col_label]*num_row,
-        #         (col_idx[col_idx==each_col_label]+1)*num_row),:] = these_points
-
+        
         centers_sum = np.sum(centers,axis=1)
         sort_idx = np.argsort(centers_sum)
 
-        # sort the centers by sortrows (????)
+        # sort the centers from top left to bottom right
         sorted_centers = centers[sort_idx] 
         center_of_plate = np.average(sorted_centers,axis=0)
 
@@ -171,7 +163,7 @@ class yolo_model:
                     plt.pause(3)
                     plt.close()
 
-        return input_sized_centers,input_sized_center_of_plate
+        return input_sized_centers,input_sized_center_of_plate,n_wells
 
 if __name__ == "__main__":
 

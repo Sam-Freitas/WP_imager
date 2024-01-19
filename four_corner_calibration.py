@@ -155,7 +155,7 @@ def run_calib(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_posi
     image_filename = camera.camera_control.simple_capture_data_single_image(s_camera_settings, plate_parameters=this_plate_parameters,
                                 output_dir=output_dir, image_file_format = 'jpg', testing = delete_prev_data)
     # run yolo model and get the locations of the well and center of the plate
-    individual_well_locations,center_location = calibration_model.run_yolo_model(img_filename=image_filename, save_results = True, show_results = True, plate_index = this_plate_parameters['plate_index'])
+    individual_well_locations,center_location,n_wells = calibration_model.run_yolo_model(img_filename=image_filename, save_results = True, show_results = True, plate_index = this_plate_parameters['plate_index'])
 
     # Calculate pixels per mm based on well location data
     well_locations_delta = individual_well_locations[-1] - individual_well_locations[0]
@@ -188,7 +188,7 @@ def run_calib(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_posi
         controller.move_XYZ(position = move_down)
         image_filename = camera.camera_control.simple_capture_data_single_image(s_camera_settings, plate_parameters=this_plate_parameters,
                             output_dir=output_dir, image_file_format = 'jpg', testing = delete_prev_data)
-        individual_well_locations,center_location = calibration_model.run_yolo_model(img_filename=image_filename, show_results = True, save_results=True, plate_index = this_plate_parameters['plate_index'])
+        individual_well_locations,center_location,n_wells = calibration_model.run_yolo_model(img_filename=image_filename, show_results = True, save_results=True, plate_index = this_plate_parameters['plate_index'])
     
     return adjusted_position
 

@@ -23,23 +23,19 @@ def run_calib(s_camera_settings,this_plate_parameters,output_dir, calibration_mo
     image_filename = camera.camera_control.simple_capture_data_single_image(s_camera_settings, plate_parameters=this_plate_parameters,
                                 output_dir=output_dir, image_file_format = 'jpg', testing = delete_prev_data)
     # run yolo model and get the locations of the well and center of the plate
-    individual_well_locations,center_location = calibration_model.run_yolo_model(img_filename=image_filename, save_results = True, show_results = True, plate_index = this_plate_parameters['plate_index'])
+    individual_well_locations,center_location,n_wells = calibration_model.run_yolo_model(img_filename=image_filename, save_results = True, show_results = True, plate_index = this_plate_parameters['plate_index'])
 
     # Calculate pixels per mm based on well location data
     well_locations_delta = individual_well_locations[-1] - individual_well_locations[0]
-    pixels_per_mm = well_locations_delta / [69.7, 42]
+    if n_wells == 96:
+        pixels_per_mm = well_locations_delta / [69.7, 42]
+    if n_wells == 240:
+        pixels_per_mm = well_locations_delta / [85.5, 49.5]
 
     # Calculate center and its delta in mm
     center = [float(s_camera_settings['widefield'][1]) / 2, float(s_camera_settings['widefield'][2]) / 2]
     center_delta = center - center_location
     center_delta_in_mm = center_delta / pixels_per_mm
-
-    # # Create calibration coordinates dictionary
-    # calibration_coordinates = {
-    #     'x_pos': center_delta_in_mm[0],
-    #     'y_pos': center_delta_in_mm[1],
-    #     'z_pos': s_terasaki_positions['calib_z_pos_mm'][0]
-    # }
 
     # Adjust position based on calibration
     measured_position = controller.get_current_position()
@@ -269,6 +265,7 @@ if __name__ == "__main__":
     s_plate_names_and_opts = settings.get_settings.get_plate_names_and_opts()
     s_plate_positions = settings.get_settings.get_plate_positions()
     s_terasaki_positions = settings.get_settings.get_terasaki_positions()
+    s_wm_positions = settings.get_settings.get_wm_positions()
     s_machines = settings.get_settings.get_machine_settings()
     s_camera_settings = settings.get_settings.get_basic_camera_settings()
     s_todays_runs = settings.get_settings.get_todays_runs()
@@ -371,7 +368,7 @@ if __name__ == "__main__":
             # capture a single image for calibration
             image_filename = camera.camera_control.simple_capture_data_single_image(s_camera_settings, plate_parameters=this_plate_parameters, output_dir=output_dir, image_file_format = 'jpg')
             image_filename = correct_barrel_distortion(image_filename, a = 0.0, b = 0.0, c = -0.03, d = 1.05)
-            individual_well_locations,center_location = calibration_model.run_yolo_model(img_filename=image_filename, save_results = True, show_results = True)
+            individual_well_locations,center_location,n_wells = calibration_model.run_yolo_model(img_filename=image_filename, save_results = True, show_results = True)
 
         # turn off red
         lights.labjackU3_control.turn_off_red(d)
@@ -380,7 +377,16 @@ if __name__ == "__main__":
         # get the dx dy of the measured well centers
         well_locations_delta = individual_well_locations[-1]-individual_well_locations[0]
         # get measuring stick
-        pixels_per_mm = well_locations_delta/[69.8,41.95] #[85.5,49.5]
+
+        # determine if the plate is a terasaki or wm and use the correct settings
+        if n_wells==96:
+            pixels_per_mm = well_locations_delta/[69.8,41.95] #[85.5,49.5]
+            s_positions = s_terasaki_positions.copy()
+        elif n_wells==240:
+            pixels_per_mm = well_locations_delta/[85.5,49.5]
+            s_positions = s_wm_positions.copy()
+        else:
+            pixels_per_mm = well_locations_delta/[69.8,41.95] #default to terasaki
         # find the realtion between the measured and where it supposed to be currently
         center = [float(s_camera_settings['widefield'][1])/2,float(s_camera_settings['widefield'][2])/2]
         center_delta = center-center_location
@@ -399,12 +405,12 @@ if __name__ == "__main__":
 
         lights.labjackU3_control.turn_on_red(d)
 
-        try:
-            use_adjusted_centers = True
-            centers = (sort_rows(individual_well_locations)-center_location)/pixels_per_mm
-        except:
-            use_adjusted_centers = False
-            print('Couldnt find all wells reverting to d efault')  
+        # try:
+        #     use_adjusted_centers = True
+        #     centers = (sort_rows(individual_well_locations)-center_location)/pixels_per_mm
+        # except:
+        #     use_adjusted_centers = False
+        #     print('Couldnt find all wells reverting to d efault')  
         use_adjusted_centers = False
 
         lights.coolLed_control.turn_specified_on(coolLED_port, 
@@ -418,25 +424,25 @@ if __name__ == "__main__":
             red_intensity = int(this_plate_parameters['fluorescence_RED']))
 
         # fluorescently image each of the terasaki wells (96)
-        for well_index,this_terasaki_well_xy in enumerate(zip(s_terasaki_positions['x_relative_pos_mm'].values(),s_terasaki_positions['y_relative_pos_mm'].values())):
+        for well_index,this_well_location_xy in enumerate(zip(s_positions['x_relative_pos_mm'].values(),s_positions['y_relative_pos_mm'].values())):
             # get plate parameters
-            this_plate_parameters['well_name'] = s_terasaki_positions['name'][well_index]
+            this_plate_parameters['well_name'] = s_positions['name'][well_index]
             this_well_coords = dict()
 
             if use_adjusted_centers:
                 # calculate the specific well location
                 this_well_coords['x_pos'] = adjusted_position['x_pos'] + calibration_coordinates['x_pos'] 
-                this_well_coords['y_pos'] = adjusted_position['y_pos'] + calibration_coordinates['y_pos'] + s_terasaki_positions['y_offset_to_fluor_mm'][0]
+                this_well_coords['y_pos'] = adjusted_position['y_pos'] + calibration_coordinates['y_pos'] + s_positions['y_offset_to_fluor_mm'][0]
 
-                this_well_coords['x_pos'] += centers[well_index,0] #this_terasaki_well_xy[0]
+                this_well_coords['x_pos'] += centers[well_index,0] #this_well_location_xy[0]
                 this_well_coords['x_pos'] += -0.85
-                this_well_coords['y_pos'] += centers[well_index,1] #this_terasaki_well_xy[1]
+                this_well_coords['y_pos'] += centers[well_index,1] #this_well_location_xy[1]
                 this_well_coords['y_pos'] += -2.5
             else:
                 this_well_coords['x_pos'] = adjusted_position['x_pos']
-                this_well_coords['y_pos'] = adjusted_position['y_pos'] + s_terasaki_positions['y_offset_to_fluor_mm'][0]
-                this_well_coords['x_pos'] += this_terasaki_well_xy[0] + -0.85
-                this_well_coords['y_pos'] += this_terasaki_well_xy[1] + -2.5
+                this_well_coords['y_pos'] = adjusted_position['y_pos'] + s_positions['y_offset_to_fluor_mm'][0]
+                this_well_coords['x_pos'] += this_well_location_xy[0] + -0.85
+                this_well_coords['y_pos'] += this_well_location_xy[1] + -2.5
 
             this_well_coords['z_pos'] = calibration_coordinates['z_pos']
             print(well_index, this_well_coords)
