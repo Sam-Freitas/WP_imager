@@ -435,13 +435,13 @@ if __name__ == "__main__":
                 this_well_coords['y_pos'] = adjusted_position['y_pos'] + calibration_coordinates['y_pos'] + s_positions['y_offset_to_fluor_mm'][0]
 
                 this_well_coords['x_pos'] += centers[well_index,0] #this_well_location_xy[0]
-                this_well_coords['x_pos'] += -0.85
+                this_well_coords['x_pos'] += -0.15
                 this_well_coords['y_pos'] += centers[well_index,1] #this_well_location_xy[1]
                 this_well_coords['y_pos'] += -2.5
             else:
                 this_well_coords['x_pos'] = adjusted_position['x_pos']
                 this_well_coords['y_pos'] = adjusted_position['y_pos'] + s_positions['y_offset_to_fluor_mm'][0]
-                this_well_coords['x_pos'] += this_well_location_xy[0] + -0.85
+                this_well_coords['x_pos'] += this_well_location_xy[0] + -0.15
                 this_well_coords['y_pos'] += this_well_location_xy[1] + -2.5
 
             this_well_coords['z_pos'] = calibration_coordinates['z_pos']
