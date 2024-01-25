@@ -488,6 +488,84 @@ def simple_capture_data_fluor_single_image(camera_settings, plate_parameters = N
 
     return image_filename
 
+
+def capture_fluor_img_return_img(camera_settings, cap = None, return_cap = False):
+
+    if cap is None:
+        cap_release = True
+
+        camera_id = camera_settings['fluorescence'][0]
+        camera_id = 0 #####################################################################################S
+        cam_width = float(camera_settings['fluorescence'][1])
+        cam_height = float(camera_settings['fluorescence'][2])
+        cam_framerate = camera_settings['fluorescence'][3]
+        time_between_images_seconds = float(camera_settings['fluorescence'][4])
+        time_of_single_burst_seconds = camera_settings['fluorescence'][5]
+        number_of_images_per_burst = float(camera_settings['fluorescence'][6])
+        img_file_format = camera_settings['fluorescence'][7]
+        img_pixel_depth = camera_settings['fluorescence'][8]
+        img_color = camera_settings['fluorescence'][9]
+
+        # Open the camera0
+        cap = cv2.VideoCapture(int(camera_id))
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH,int(cam_width))
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT,int(cam_height))
+        cap.set(cv2.CAP_PROP_FPS,int(cam_framerate))
+
+        if not cap.isOpened():
+            print("Error: Unable to open camera.")
+            exit()
+
+        clear_camera_image_buffer(cap)
+        if return_cap:
+            cap_release = False
+    else:
+        cap_release = False
+
+    num_images = 1
+    # Capture a series of images
+    ret, frame = cap.read()
+    if not ret:
+        print("Error: Unable to capture frame.")
+
+    if cap_release:
+        cap.release()
+
+    if return_cap:
+        return frame, cap
+    else:
+        return frame 
+
+def crop_center_numpy_return(img_array, n):
+
+    # Get the dimensions of the image
+    height, width = img_array.shape
+
+    # Calculate the cropping coordinates
+    left = (width - n) // 2
+    top = (height - n) // 2
+    right = (width + n) // 2
+    bottom = (height + n) // 2
+
+    left, top, right, bottom = int(left), int(top), int(right), int(bottom)
+
+    # Crop the image using NumPy array slicing
+    cropped_array = img_array[top:bottom, left:right]
+
+    return cropped_array
+
+def put_frame_in_large_img(extent_y, extent_x, pixels_per_mm, FOV, delta_x, delta_y, i, img_data):
+    row_start = int(row * pixels_per_mm * delta_x)
+    row_end = row_start + int(pixels_per_mm * FOV)
+    col_start = int(col * pixels_per_mm * delta_y)
+    col_end = col_start + int(pixels_per_mm * FOV)
+
+    temp_large_img = np.zeros((int(extent_y * pixels_per_mm), int(extent_x * pixels_per_mm)))
+    temp_large_img[row_start:row_end, col_start:col_end] = img_data
+
+    return temp_large_img
+
+
 if __name__ == "__main__":
 
     print('pass')
