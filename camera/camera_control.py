@@ -516,7 +516,7 @@ def capture_fluor_img_return_img(camera_settings, cap = None, return_cap = False
             print("Error: Unable to open camera.")
             exit()
 
-        clear_camera_image_buffer(cap)
+        clear_camera_image_buffer(capn = int(cam_framerate))
         if return_cap:
             cap_release = False
     else:
@@ -565,6 +565,24 @@ def put_frame_in_large_img(extent_y, extent_x, pixels_per_mm, FOV, delta_x, delt
 
     return temp_large_img
 
+def average_arrays_ignore_zeros(out_array, array2):
+    # still has an error where the values are halved each time because its averaged between zero
+    # Create masks for zero values in each array (only works for float values)
+    mask1 = (out_array != 0)
+    mask2 = (array2 != 0)
+
+    # Combine masks to find non-zero values in either arrays
+    mask_or = np.logical_or(mask1, mask2)
+    mask_and = np.logical_and(mask1, mask2)
+
+    nonoverlapping_mask = np.logical_xor(mask_or,mask_and)
+    overlapping_mask = np.logical_xor(mask_or,nonoverlapping_mask)
+
+    # Calculate the average for non-zero values
+    out_array[nonoverlapping_mask] = out_array[nonoverlapping_mask] + array2[nonoverlapping_mask]
+    out_array[overlapping_mask] = (out_array[overlapping_mask] + array2[overlapping_mask]) / 2 
+
+    return out_array
 
 if __name__ == "__main__":
 
