@@ -5,6 +5,7 @@ import lights.coolLed_control
 import settings.get_settings
 import movement.simple_stream
 import camera.camera_control
+import analysis.fluor_postprocess
 
 from Run_yolo_model import yolo_model
 

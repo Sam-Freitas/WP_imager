@@ -1,88 +1,71 @@
-import numpy as np
-import cv2, pathlib, os, glob, matplotlib, imagesize, tqdm
-from natsort import natsorted
-matplotlib.use('TkAgg')
+import cv2, os, tqdm, glob, time, datetime
 import matplotlib.pyplot as plt
+import numpy as np
+import scipy
+import camera.camera_control
 
-def normalize_img(input_img):
-    input_img = input_img - input_img.min()
-    input_img = input_img/input_img.max()
-    return input_img
+def align_frames(frames):
 
-def norm_5_to_95(img):
+    images_loaded = np.asarray(frames)
+        
+    a = np.mean(images_loaded, axis = 0) # get the average image taken of the stack (for illumination correction)
 
-    img_mean = np.mean(img)
-    img_std = np.std(img)
+    # binary_img = a > 0
+    center = [ np.average(indices) for indices in np.where(a > 0) ] # find where the actual center of the frame is 
+    center_int = [int(np.round(point)) for point in center]
 
-    img2 = img-(img_mean + (2*img_std))
+    out = scipy.ndimage.gaussian_filter(a,100)
+    out = 1-(out/np.max(out))
+    out = camera.camera_control.crop_center_numpy_return(out,pixels_per_mm*FOV, center = center_int)
 
-    img_mean2 = np.mean(img2)
-    img_std2 = np.std(img2)
+    # counter = 1
+    # for i in range(img_num):
+    #     for j in range(img_num):
+    #         plt.subplot(img_num,img_num,counter)
+    #         plt.imshow(camera.camera_control.crop_center_numpy_return(images_loaded[counter-1],pixels_per_mm*FOV)*(out+1))
+    #         counter += 1
 
-    img3 = img2/(np.abs(img_mean2) + np.abs(2*img_std2))
-    img3 = (np.clip(img3,-1,1)+1)/2
+    y_images = x_images = int(np.sqrt(images_loaded.shape[0]))
 
-    return img3
+    # the term row and col are not exact as the system might have overlapping images, this is just nomeclature if there was zero overlap
+    images = []
+    images_cropped = []
+    counter = 0
+    for row in range(y_images): # rows
+        if row % 2:
+            cols = range(x_images-1,-1,-1) # odd flag
+        else:
+            cols = range(0,x_images) # even flag (includes zero)
 
-def norm_0_to_95(img):
+        for col in cols:
+            print(row,col)
 
-    img_mean = np.mean(img)
-    img_std = np.std(img)
+            frame = images_loaded[counter] 
 
-    img2 = img-(img_mean + (2*img_std))
+            images.append(frame)
+            img_data_cropped = camera.camera_control.crop_center_numpy_return(images_loaded[counter],pixels_per_mm*FOV, center = center_int)
+            img_data_cropped = img_data_cropped*(out+1)
+            images_cropped.append(img_data_cropped)
+            temp_large_img = camera.camera_control.put_frame_in_large_img(extent_y,extent_x,pixels_per_mm,FOV,delta_x,delta_y, counter, img_data_cropped, row, col)
 
-    img_mean2 = np.mean(img2)
-    img_std2 = np.std(img2)
+            # for overlapping images (still needs work)
+            if (row == 0) and (col == 0):
+                large_img = temp_large_img
+            else:
+                large_img = camera.camera_control.average_arrays_ignore_zeros(large_img, temp_large_img)
+            
+            camera.camera_control.imshow_resize('img',large_img.astype(np.uint8), resize_size = [640,640])
+            counter += 1
+            cv2.imwrite('square_test.bmp', large_img.astype(np.uint8))
+            
+    cv2.imwrite('square_test.bmp', large_img.astype(np.uint8))
+    # np.save('test.npy',np.asarray(images))
 
-    img3 = img2/(np.abs(img_mean2) + np.abs(2*img_std2))
-
-    num = 5
-    img3 = np.clip(img3,img3.min(),num)
-    img3 = norm(img3)
-
-    return img3
-
-def s(img, title = None):
-    matplotlib.use('TkAgg')
-    if 'torch' in str(img.dtype):
-        img = img.squeeze()
-        if len(img.shape) > 2: # check RGB
-            if np.argmin(torch.tensor(img.shape)) == 0: # check if CHW 
-                img = img.permute((1, 2, 0)) # change to HWC
-        img = normalize_img(img)*255
-        img = img.to('cpu').to(torch.uint8)
-    else:
-        img_shape = img.shape
-        if len(img_shape) > 2:
-            if np.argmin(img_shape) == 0:
-                img = np.moveaxis(img,0,-1)
-    plt.figure()
-    plt.imshow(img)
-    plt.title(title)
-
-current_path = pathlib.Path(__file__).parent.resolve()
-path_to_dir = r'output\GLS371_testing\t_1\2023-11-22\fluorescent_data'
-file_format = '.png'
-
-output_dir = os.path.join(current_path,'output')
-# output_dir2 = os.path.join(current_path,'output_median')
-os.makedirs(output_dir, exist_ok=True)
-# os.makedirs(output_dir2, exist_ok=True)
-
-img_paths = natsorted(glob.glob(os.path.join(path_to_dir,'*' + file_format)))
-width, height = imagesize.get(img_paths[0])
-
-for i,this_img in enumerate(tqdm.tqdm(stack)):
-
-    img = cv2.imread(this_img,-1) # or make grayscale with 0 instead of -1
+    return images, img_data_cropped, large_img
+    
+    
 
 
-    img2 = norm_0_to_95(img2)
-    # img2 = norm(clahe.apply(img2.astype(np.uint8)))
-    # # img2 = norm(img2)
-    img2 = (img2*255).astype(np.uint8)
+if __name__ == "__main__":
 
-    # a = this_img - median_img
-    # a[a<0] = 0
-    # a = (a/a.max())*255
-    # cv2.imwrite(os.path.join(output_dir2,out_name),a.astype(np.uint8))
+    print('pass')

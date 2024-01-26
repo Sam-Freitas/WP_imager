@@ -538,16 +538,25 @@ def capture_fluor_img_return_img(camera_settings, cap = None, return_cap = False
     else:
         return frame 
 
-def crop_center_numpy_return(img_array, n):
+def crop_center_numpy_return(img_array, n, center=None):
 
     # Get the dimensions of the image
     height, width = img_array.shape
 
-    # Calculate the cropping coordinates
-    left = (width - n) // 2
-    top = (height - n) // 2
-    right = (width + n) // 2
-    bottom = (height + n) // 2
+    # If center is provided, calculate cropping coordinates
+    if center is not None:
+        # center = np.array(center)
+        left = center[1] - n // 2
+        top = center[0] - n // 2
+        right = center[1] + n // 2
+        bottom = center[0] + n // 2
+
+    else:
+        # Calculate the cropping coordinates for geometric center
+        left = (width - n) // 2
+        top = (height - n) // 2
+        right = (width + n) // 2
+        bottom = (height + n) // 2
 
     left, top, right, bottom = int(left), int(top), int(right), int(bottom)
 
