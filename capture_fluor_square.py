@@ -219,7 +219,7 @@ if __name__ == "__main__":
     starting_location_xyz = [-500,-300,-103] # center of where you want to measure [-191.4,-300,-86]
     pixels_per_mm = 1453.5353/5.0
     pixels_per_mm = 980/5
-    pixels_per_mm = 196
+    pixels_per_mm = 192
 
     FOV = 5
 
@@ -302,9 +302,9 @@ if __name__ == "__main__":
             
             camera.camera_control.imshow_resize('img',large_img.astype(np.uint8), resize_size = [640,640])
             counter += 1
-            cv2.imwrite('square_test.bmp', large_img.astype(np.uint8))
+            # cv2.imwrite('square_test.bmp', large_img.astype(np.uint8))
 
-    images, img_data_cropped, large_img = analysis.fluor_postprocess.align_frames(images)
+    images, img_data_cropped, large_img = analysis.fluor_postprocess.align_frames(images,pixels_per_mm,FOV,extent_x,extent_y,delta_x,delta_y)
             
     cv2.imwrite('square_test ' + str(int(pixels_per_mm)) + '.bmp', large_img.astype(np.uint8))
     np.save('test.npy',np.asarray(images))

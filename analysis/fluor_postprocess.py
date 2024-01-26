@@ -4,7 +4,7 @@ import numpy as np
 import scipy
 import camera.camera_control
 
-def align_frames(frames):
+def align_frames(frames,pixels_per_mm,FOV,extent_x,extent_y,delta_x,delta_y):
 
     images_loaded = np.asarray(frames)
         
