@@ -303,6 +303,8 @@ if __name__ == "__main__":
             camera.camera_control.imshow_resize('img',large_img.astype(np.uint8), resize_size = [640,640])
             counter += 1
             cv2.imwrite('square_test.bmp', large_img.astype(np.uint8))
+
+    images, img_data_cropped, large_img = analysis.fluor_postprocess.align_frames(images)
             
     cv2.imwrite('square_test ' + str(int(pixels_per_mm)) + '.bmp', large_img.astype(np.uint8))
     np.save('test.npy',np.asarray(images))
