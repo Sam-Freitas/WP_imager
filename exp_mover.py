@@ -31,6 +31,10 @@ s_machines = settings.get_settings.get_machine_settings()
 s_camera_settings = settings.get_settings.get_basic_camera_settings()
 
 output_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),'output')
+def turn_everything_off_at_exit():
+    lights.labjackU3_control.turn_off_everything()
+    cv2.destroyAllWindows()
+    lights.coolLed_control.turn_everything_off('COM6')
 
 class CNCController:
     def __init__(self, port, baudrate):
@@ -201,7 +205,7 @@ def button_click(row, col):
     # image_filename = camera.camera_control.simple_capture_data_single_image(s_camera_settings, plate_parameters=this_plate_parameters, output_dir=output_dir, image_file_format = 'jpg')
 
 if __name__ == "__main__":
-    # atexit.register(exit_function)
+    atexit.register(turn_everything_off_at_exit)
     # Create the main window
 
     settings.get_settings.check_grbl_port(s_machines['grbl'][0], run_as_testing = False)

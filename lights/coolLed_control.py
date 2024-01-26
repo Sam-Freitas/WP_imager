@@ -162,11 +162,11 @@ if __name__ == "__main__":
 
     turn_everything_off(port_path)
 
-    # for i in range(10):
-    #     turn_specified_on(port_path, red = True)
-    #     turn_specified_on(port_path, green = True)
-    #     turn_specified_on(port_path, blue = True)
-    #     turn_specified_on(port_path, uv = True)
+    for i in range(10):
+        turn_specified_on(port_path, red = True)
+        turn_specified_on(port_path, green = True)
+        turn_specified_on(port_path, blue = True)
+        turn_specified_on(port_path, uv = True)
 
     turn_specified_on(port_path, #############
             uv = True, 

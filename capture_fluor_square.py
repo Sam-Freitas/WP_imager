@@ -215,16 +215,18 @@ if __name__ == "__main__":
 
     # calibration_model = yolo_model()
 
-    starting_location_xyz = [-191.4,-300,-86] # center of where you want to measure
+    starting_location_xyz = [-500,-300,-103] # center of where you want to measure [-191.4,-300,-86]
     pixels_per_mm = 1453.5353/5.0
+    pixels_per_mm = 980/5
+    pixels_per_mm = 196
 
     FOV = 5
 
     extent_x = 20 #mm
     extent_y = 20 #mm
 
-    delta_x = -2.5 # mm # start at the top left and snake across and down
-    delta_y = 2.5 # mm this difference is to move across x and down y to make the image processing easier
+    delta_x = -5 # mm # start at the top left and snake across and down
+    delta_y = 5 # mm this difference is to move across x and down y to make the image processing easier
 
     y_images = int( ((extent_y-FOV)/np.abs(delta_y)) + 1 ) # left to right
     x_images = int( ((extent_x-FOV)/np.abs(delta_x)) + 1 ) # up and down ########## I know that this is a wrong name but total image = x_image*y_images and i cant think of a better term right now
@@ -297,13 +299,15 @@ if __name__ == "__main__":
             else:
                 large_img = camera.camera_control.average_arrays_ignore_zeros(large_img, temp_large_img)
             
+            camera.camera_control.imshow_resize('img',large_img.astype(np.uint8), resize_size = [640,640])
             counter += 1
             cv2.imwrite('square_test.bmp', large_img.astype(np.uint8))
             
-    cv2.imwrite('square_test.bmp', large_img.astype(np.uint8))
+    cv2.imwrite('square_test ' + str(int(pixels_per_mm)) + '.bmp', large_img.astype(np.uint8))
+    np.save('test.npy',np.asarray(images))
 
     lights.labjackU3_control.turn_off_everything(d)
     lights.coolLed_control.turn_everything_off(coolLED_port)
 
 
-    print('eof')
+    print('eof') 
