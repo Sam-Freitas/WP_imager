@@ -110,7 +110,7 @@ def run_calib_terasaki(s_camera_settings,this_plate_parameters,output_dir,s_tera
                                 output_dir=output_dir, image_file_format = 'jpg', testing = delete_prev_data)
 
     return adjusted_position, center_delta_in_mm
-
+  
 class CNCController:
     def __init__(self, port, baudrate):
         import re
@@ -438,7 +438,7 @@ if __name__ == "__main__":
                 this_well_coords['x_pos'] += -0.15
                 this_well_coords['y_pos'] += centers[well_index,1] #this_well_location_xy[1]
                 this_well_coords['y_pos'] += -2.5
-            else:
+            else:  
                 this_well_coords['x_pos'] = adjusted_position['x_pos']
                 this_well_coords['y_pos'] = adjusted_position['y_pos'] + s_positions['y_offset_to_fluor_mm'][0]
                 this_well_coords['x_pos'] += this_well_location_xy[0] + -0.15

@@ -1,7 +1,7 @@
 import os,time,glob,sys,time,tqdm,cv2, serial, json
 import numpy as np
 import lights.labjackU3_control
-# import lights.coolLed_control
+import lights.coolLed_control
 import settings.get_settings
 import movement.simple_stream
 import camera.camera_control
@@ -215,13 +215,13 @@ if __name__ == "__main__":
 
     # calibration_model = yolo_model()
 
-    starting_location_xyz = [-190.0,-150.0,-81.5] # center of where you want to measure
-    pixels_per_mm = 1374.0/5.0
+    starting_location_xyz = [-191.4,-300,-86] # center of where you want to measure
+    pixels_per_mm = 1453.5353/5.0
 
-    FOV = 5.0
+    FOV = 5
 
-    extent_x = 10 #mm
-    extent_y = 10 #mm
+    extent_x = 20 #mm
+    extent_y = 20 #mm
 
     delta_x = -2.5 # mm # start at the top left and snake across and down
     delta_y = 2.5 # mm this difference is to move across x and down y to make the image processing easier
@@ -230,13 +230,18 @@ if __name__ == "__main__":
     x_images = int( ((extent_x-FOV)/np.abs(delta_x)) + 1 ) # up and down ########## I know that this is a wrong name but total image = x_image*y_images and i cant think of a better term right now
 
     starting_location = dict()
-    starting_location['x_pos'],starting_location['y_pos'],starting_location['z_pos'] = round(starting_location_xyz[0],4), round(starting_location_xyz[1],4), round(starting_location_xyz[2],4) 
+    starting_location['x_pos'] = round(starting_location_xyz[0],4)
+    starting_location['y_pos'] = round(starting_location_xyz[1],4)
+    starting_location['z_pos'] = round(starting_location_xyz[2],4)
 
     settings.get_settings.check_grbl_port(s_machines['grbl'][0], run_as_testing = False)
     controller = CNCController(port=s_machines['grbl'][0], baudrate=s_machines['grbl'][1])
     response, s_grbl_settings = controller.send_command("$$"+ "\n")
     s_grbl_settings_df,s_grbl_settings = settings.get_settings.convert_GRBL_settings(s_grbl_settings)
     z_travel_height = s_machines['grbl'][2]
+
+    coolLED_port = s_machines['coolLed'][0] # test the fluorescent lights (if applicable)
+    lights.coolLed_control.turn_everything_off(coolLED_port)
 
     # run setup test to make sure everything works or throw error
     s_todays_runs = settings.get_settings.update_todays_runs(s_todays_runs, overwrite=True)
@@ -248,18 +253,20 @@ if __name__ == "__main__":
     lights.labjackU3_control.turn_off_everything(d)
 
     lights.coolLed_control.turn_specified_on(coolLED_port, 
-        uv = int(this_plate_parameters['fluorescence_UV']) > 0, 
-        uv_intensity = int(this_plate_parameters['fluorescence_UV']),
-        blue = int(this_plate_parameters['fluorescence_BLUE']) > 0, 
-        blue_intensity = int(this_plate_parameters['fluorescence_BLUE']),
-        green = int(this_plate_parameters['fluorescence_GREEN']) > 0, 
-        green_intensity = int(this_plate_parameters['fluorescence_GREEN']),
-        red = int(this_plate_parameters['fluorescence_RED']) > 0, 
-        red_intensity = int(this_plate_parameters['fluorescence_RED']))
+        uv = False, 
+        uv_intensity = 100,
+        blue = True, 
+        blue_intensity = 100,
+        green = False, 
+        green_intensity = 100,
+        red = False, 
+        red_intensity = 100)
 
     large_img = np.zeros((int(extent_y*pixels_per_mm),int(extent_x*pixels_per_mm)))
+    controller.move_XY_at_Z_travel(starting_location, z_travel_height)
     
     # the term row and col are not exact as the system might have overlapping images, this is just nomeclature if there was zero overlap
+    images = []
     counter = 0
     for row in range(y_images): # rows
         if row % 2:
@@ -268,31 +275,35 @@ if __name__ == "__main__":
             cols = range(0,x_images) # even flag (includes zero)
 
         for col in cols:
-            print(row,cols)
+            print(row,col)
             this_location = starting_location.copy() # move the system to the specified part of the scan
             this_location['x_pos'] = this_location['x_pos'] + (delta_x * col)
             this_location['y_pos'] = this_location['y_pos'] + (delta_y * row)
-            this_location['y_pos'] = -81.5
+            jprint(this_location)
 
             controller.move_XYZ(position = this_location)
-
-            jprint(this_location)
 
             if (row == 0) and (col == 0):
                 frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, return_cap = True)
             else:
                 frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, cap = cap,return_cap = True)
-            
-            img_data_cropped = camera.camera_control.crop_center_numpy_return(frame,pixels_per_mm*FOV)
-            temp_large_img = camera.camera_control.put_frame_in_large_img(extent_y,extent_x,pixels_per_mm,FOV,delta_x,delta_y, counter, img_data_cropped)
+            images.append(frame)
+            img_data_cropped = camera.camera_control.crop_center_numpy_return(frame,pixels_per_mm*FOV)+1
+            temp_large_img = camera.camera_control.put_frame_in_large_img(extent_y,extent_x,pixels_per_mm,FOV,delta_x,delta_y, counter, img_data_cropped, row, col)
 
             # for overlapping images (still needs work)
             if (row == 0) and (col == 0):
                 large_img = temp_large_img
             else:
-                large_img = average_arrays_ignore_zeros(large_img, temp_large_img)
+                large_img = camera.camera_control.average_arrays_ignore_zeros(large_img, temp_large_img)
             
             counter += 1
+            cv2.imwrite('square_test.bmp', large_img.astype(np.uint8))
             
+    cv2.imwrite('square_test.bmp', large_img.astype(np.uint8))
+
+    lights.labjackU3_control.turn_off_everything(d)
+    lights.coolLed_control.turn_everything_off(coolLED_port)
+
 
     print('eof')

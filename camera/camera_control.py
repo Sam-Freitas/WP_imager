@@ -1,5 +1,6 @@
 import cv2, os, tqdm, glob, time, datetime
 import matplotlib.pyplot as plt
+from numpy import zeros, logical_and, logical_or, logical_xor
 
 # cv2 imshow but resized to a size that can fit in a normal monitor size
 def imshow_resize(frame_name = "img", frame = 0, resize_size = [640,480], default_ratio = 1.3333, 
@@ -516,15 +517,16 @@ def capture_fluor_img_return_img(camera_settings, cap = None, return_cap = False
             print("Error: Unable to open camera.")
             exit()
 
-        clear_camera_image_buffer(capn = int(cam_framerate))
         if return_cap:
             cap_release = False
     else:
         cap_release = False
 
+    clear_camera_image_buffer(cap)
     num_images = 1
     # Capture a series of images
     ret, frame = cap.read()
+    frame = frame[:,:,-1]
     if not ret:
         print("Error: Unable to capture frame.")
 
@@ -554,13 +556,13 @@ def crop_center_numpy_return(img_array, n):
 
     return cropped_array
 
-def put_frame_in_large_img(extent_y, extent_x, pixels_per_mm, FOV, delta_x, delta_y, i, img_data):
-    row_start = int(row * pixels_per_mm * delta_x)
+def put_frame_in_large_img(extent_y, extent_x, pixels_per_mm, FOV, delta_x, delta_y, i, img_data, row, col):
+    row_start = int(row * pixels_per_mm * abs(delta_x))
     row_end = row_start + int(pixels_per_mm * FOV)
-    col_start = int(col * pixels_per_mm * delta_y)
+    col_start = int(col * pixels_per_mm * abs(delta_y))
     col_end = col_start + int(pixels_per_mm * FOV)
 
-    temp_large_img = np.zeros((int(extent_y * pixels_per_mm), int(extent_x * pixels_per_mm)))
+    temp_large_img = zeros((int(extent_y * pixels_per_mm), int(extent_x * pixels_per_mm)))
     temp_large_img[row_start:row_end, col_start:col_end] = img_data
 
     return temp_large_img
@@ -572,11 +574,11 @@ def average_arrays_ignore_zeros(out_array, array2):
     mask2 = (array2 != 0)
 
     # Combine masks to find non-zero values in either arrays
-    mask_or = np.logical_or(mask1, mask2)
-    mask_and = np.logical_and(mask1, mask2)
+    mask_or = logical_or(mask1, mask2)
+    mask_and = logical_and(mask1, mask2)
 
-    nonoverlapping_mask = np.logical_xor(mask_or,mask_and)
-    overlapping_mask = np.logical_xor(mask_or,nonoverlapping_mask)
+    nonoverlapping_mask = logical_xor(mask_or,mask_and)
+    overlapping_mask = logical_xor(mask_or,nonoverlapping_mask)
 
     # Calculate the average for non-zero values
     out_array[nonoverlapping_mask] = out_array[nonoverlapping_mask] + array2[nonoverlapping_mask]
