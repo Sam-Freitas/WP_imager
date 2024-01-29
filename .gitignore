@@ -1,5 +1,7 @@
 *.jpg
 *.pt
+*.npy
+*.bmp
 output/
 
 __pycache__/

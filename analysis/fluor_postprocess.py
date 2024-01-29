@@ -56,9 +56,9 @@ def align_frames(frames,pixels_per_mm,FOV,extent_x,extent_y,delta_x,delta_y):
             
             camera.camera_control.imshow_resize('img',large_img.astype(np.uint8), resize_size = [640,640])
             counter += 1
-            cv2.imwrite('square_test.bmp', large_img.astype(np.uint8))
+            # cv2.imwrite('square_test.bmp', large_img.astype(np.uint8))
             
-    cv2.imwrite('square_test.bmp', large_img.astype(np.uint8))
+    # cv2.imwrite('square_test.bmp', large_img.astype(np.uint8))
     # np.save('test.npy',np.asarray(images))
 
     return images, img_data_cropped, large_img

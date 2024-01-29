@@ -222,7 +222,7 @@ if __name__ == "__main__":
     pixels_per_mm = 192
 
     FOV = 5
-
+  
     extent_x = 20 #mm
     extent_y = 20 #mm
 
@@ -302,7 +302,7 @@ if __name__ == "__main__":
             
             camera.camera_control.imshow_resize('img',large_img.astype(np.uint8), resize_size = [640,640])
             counter += 1
-            # cv2.imwrite('square_test.bmp', large_img.astype(np.uint8))
+            cv2.imwrite('square_test.bmp', large_img.astype(np.uint8))
 
     images, img_data_cropped, large_img = analysis.fluor_postprocess.align_frames(images,pixels_per_mm,FOV,extent_x,extent_y,delta_x,delta_y)
             
