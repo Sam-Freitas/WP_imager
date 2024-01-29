@@ -4,6 +4,34 @@ import numpy as np
 import scipy
 import camera.camera_control
 
+def align_slivers(slice1,slice2):
+    
+    slice2_aligned = []
+    return slice2
+
+def match_intensities(img1,img2):
+
+    a = scipy.ndimage.gaussian_filter(img1,10) # large img
+    b = scipy.ndimage.gaussian_filter(img2,10) # temp large img
+
+    overlap = np.logical_and(a,b)
+
+    img1_idx = np.logical_and(img1,overlap)
+    img2_idx = np.logical_and(img2,overlap)
+
+    img1_values = img1[img1_idx]
+    img2_values = img2[img2_idx]
+
+    img1_mean = np.mean(img1_values)
+    img2_mean = np.mean(img2_values)
+    print(img1_mean)
+    print(img2_mean)
+
+    scaler = img1_mean/img2_mean
+    img2_sclaed = img2*scaler
+
+    return img2_sclaed
+
 def align_frames(frames,pixels_per_mm,FOV,extent_x,extent_y,delta_x,delta_y):
 
     images_loaded = np.asarray(frames)
@@ -14,17 +42,10 @@ def align_frames(frames,pixels_per_mm,FOV,extent_x,extent_y,delta_x,delta_y):
     center = [ np.average(indices) for indices in np.where(a > 0) ] # find where the actual center of the frame is 
     center_int = [int(np.round(point)) for point in center]
 
-    out = scipy.ndimage.gaussian_filter(a,100)
-    out = 1-(out/np.max(out))
+    out = scipy.ndimage.gaussian_filter(a,100) # get the instensities of the images for the illuminance normalizations
     out = camera.camera_control.crop_center_numpy_return(out,pixels_per_mm*FOV, center = center_int)
-
-    # counter = 1
-    # for i in range(img_num):
-    #     for j in range(img_num):
-    #         plt.subplot(img_num,img_num,counter)
-    #         plt.imshow(camera.camera_control.crop_center_numpy_return(images_loaded[counter-1],pixels_per_mm*FOV)*(out+1))
-    #         counter += 1
-
+    out = 1-(out/np.max(out))
+    
     y_images = x_images = int(np.sqrt(images_loaded.shape[0]))
 
     # the term row and col are not exact as the system might have overlapping images, this is just nomeclature if there was zero overlap
@@ -52,6 +73,7 @@ def align_frames(frames,pixels_per_mm,FOV,extent_x,extent_y,delta_x,delta_y):
             if (row == 0) and (col == 0):
                 large_img = temp_large_img
             else:
+                temp_large_img = match_intensities(large_img,temp_large_img)
                 large_img = camera.camera_control.average_arrays_ignore_zeros(large_img, temp_large_img)
             
             camera.camera_control.imshow_resize('img',large_img.astype(np.uint8), resize_size = [640,640])
