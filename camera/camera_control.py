@@ -1,6 +1,8 @@
 import cv2, os, tqdm, glob, time, datetime
 import matplotlib.pyplot as plt
-from numpy import zeros, logical_and, logical_or, logical_xor
+# from numpy import zeros, logical_and, logical_or, logical_xor
+import numpy as np
+
 
 # cv2 imshow but resized to a size that can fit in a normal monitor size
 def imshow_resize(frame_name = "img", frame = 0, resize_size = [640,480], default_ratio = 1.3333, 
@@ -537,63 +539,6 @@ def capture_fluor_img_return_img(camera_settings, cap = None, return_cap = False
         return frame, cap
     else:
         return frame 
-
-def crop_center_numpy_return(img_array, n, center=None):
-
-    # Get the dimensions of the image
-    height, width = img_array.shape
-
-    # If center is provided, calculate cropping coordinates
-    if center is not None:
-        # center = np.array(center)
-        left = center[1] - n // 2
-        top = center[0] - n // 2
-        right = center[1] + n // 2
-        bottom = center[0] + n // 2
-
-    else:
-        # Calculate the cropping coordinates for geometric center
-        left = (width - n) // 2
-        top = (height - n) // 2
-        right = (width + n) // 2
-        bottom = (height + n) // 2
-
-    left, top, right, bottom = int(left), int(top), int(right), int(bottom)
-
-    # Crop the image using NumPy array slicing
-    cropped_array = img_array[top:bottom, left:right]
-
-    return cropped_array
-
-def put_frame_in_large_img(extent_y, extent_x, pixels_per_mm, FOV, delta_x, delta_y, i, img_data, row, col):
-    row_start = int(row * pixels_per_mm * abs(delta_x))
-    row_end = row_start + int(pixels_per_mm * FOV)
-    col_start = int(col * pixels_per_mm * abs(delta_y))
-    col_end = col_start + int(pixels_per_mm * FOV)
-
-    temp_large_img = zeros((int(extent_y * pixels_per_mm), int(extent_x * pixels_per_mm)))
-    temp_large_img[row_start:row_end, col_start:col_end] = img_data
-
-    return temp_large_img
-
-def average_arrays_ignore_zeros(out_array, array2):
-    # still has an error where the values are halved each time because its averaged between zero
-    # Create masks for zero values in each array (only works for float values)
-    mask1 = (out_array != 0)
-    mask2 = (array2 != 0)
-
-    # Combine masks to find non-zero values in either arrays
-    mask_or = logical_or(mask1, mask2)
-    mask_and = logical_and(mask1, mask2)
-
-    nonoverlapping_mask = logical_xor(mask_or,mask_and)
-    overlapping_mask = logical_xor(mask_or,nonoverlapping_mask)
-
-    # Calculate the average for non-zero values
-    out_array[nonoverlapping_mask] = out_array[nonoverlapping_mask] + array2[nonoverlapping_mask]
-    out_array[overlapping_mask] = (out_array[overlapping_mask] + array2[overlapping_mask]) / 2 
-
-    return out_array
 
 if __name__ == "__main__":
 

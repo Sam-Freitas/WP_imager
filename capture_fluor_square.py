@@ -287,18 +287,18 @@ if __name__ == "__main__":
             controller.move_XYZ(position = this_location)
 
             if (row == 0) and (col == 0):
-                frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, return_cap = True)
+                frame, cap = analysis.fluor_postprocess.capture_fluor_img_return_img(s_camera_settings, return_cap = True)
             else:
-                frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, cap = cap,return_cap = True)
+                frame, cap = analysis.fluor_postprocess.capture_fluor_img_return_img(s_camera_settings, cap = cap,return_cap = True)
             images.append(frame)
-            img_data_cropped = camera.camera_control.crop_center_numpy_return(frame,pixels_per_mm*FOV)+1
-            temp_large_img = camera.camera_control.put_frame_in_large_img(extent_y,extent_x,pixels_per_mm,FOV,delta_x,delta_y, counter, img_data_cropped, row, col)
+            img_data_cropped = analysis.fluor_postprocess.crop_center_numpy_return(frame,pixels_per_mm*FOV)+1
+            temp_large_img = analysis.fluor_postprocess.put_frame_in_large_img(extent_y,extent_x,pixels_per_mm,FOV,delta_x,delta_y, counter, img_data_cropped, row, col)
 
             # for overlapping images (still needs work)
             if (row == 0) and (col == 0):
                 large_img = temp_large_img
             else:
-                large_img = camera.camera_control.average_arrays_ignore_zeros(large_img, temp_large_img)
+                large_img = analysis.fluor_postprocess.average_arrays_ignore_zeros(large_img, temp_large_img)
             
             camera.camera_control.imshow_resize('img',large_img.astype(np.uint8), resize_size = [640,640])
             counter += 1
