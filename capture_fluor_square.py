@@ -304,7 +304,7 @@ if __name__ == "__main__":
             counter += 1
             cv2.imwrite('square_test.bmp', large_img.astype(np.uint8))
 
-    images, img_data_cropped, large_img = analysis.fluor_postprocess.align_frames(images,pixels_per_mm,FOV,extent_x,extent_y,delta_x,delta_y)
+    images, img_data_cropped, large_img = analysis.fluor_postprocess.align_frames_register(images,pixels_per_mm,FOV,extent_x,extent_y,delta_x,delta_y, overlap = 0.5)
             
     cv2.imwrite('square_test ' + str(int(pixels_per_mm)) + '.bmp', large_img.astype(np.uint8))
     np.save('test.npy',np.asarray(images))

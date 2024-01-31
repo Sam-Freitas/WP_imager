@@ -3,9 +3,20 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 from scipy.ndimage import label, find_objects, measurements
+from skimage.measure import find_contours
 from skimage.registration import phase_cross_correlation
 import camera.camera_control
 
+def normalize_to_smallest_nonzero(input_array):
+
+    meansured_min = np.min(input_array[np.nonzero(input_array)])
+    meansured_max = np.max(input_array[np.nonzero(input_array)])
+
+    out = (input_array - meansured_min) / (meansured_max-meansured_min)
+    out = np.clip(out,0,1)
+
+    return out
+    
 def largest_blob(binary_image):
     # Label connected components in the binary image
     labeled_array, num_features = label(binary_image)
@@ -96,6 +107,32 @@ def imshow_n_imgs(imgs):
 
     plt.show()
 
+def find_blob_bounding_box(binary_image):
+    # Find contours of the binary blob
+    contours = find_contours(binary_image, 0.5, fully_connected='high', positive_orientation='high')
+
+    if len(contours) == 0:
+        raise ValueError("No blob found in the binary image.")
+
+    # Get the bounding box coordinates
+    min_row, min_col = np.min(contours[0], axis=0) 
+    max_row, max_col = np.max(contours[0], axis=0)
+
+    # Crop the original image to the bounding box
+    # cropped_image = binary_image[min_row[0]:max_row[0], min_col[1]:max_col[1]]
+
+    # Return bounding box coordinates and cropped image
+    bounding_box_coords = {'min_row': int(min_row), 'min_col': int(min_col), 'max_row': int(max_row), 'max_col': int(max_col)}
+
+    return bounding_box_coords
+
+def crop_blob(img,coords):
+
+    # Crop the original image to the bounding box
+    cropped_image = img[coords['min_row']:coords['max_row'], coords['min_col']:coords['max_col']]
+    
+    return cropped_image
+
 def average_arrays_ignore_zeros(out_array, array2, register_to_out_array=False):
     # Create masks for zero values in each array (only works for float values)
     mask1 = (out_array != 0)
@@ -109,10 +146,14 @@ def average_arrays_ignore_zeros(out_array, array2, register_to_out_array=False):
     overlapping_mask = np.logical_xor(mask_or, nonoverlapping_mask)
 
     if register_to_out_array:
+        # coords = find_blob_bounding_box(mask_or)
+
         bw_1 = out_array>(np.mean(out_array[np.nonzero(out_array)]))#   + np.std(out_array[np.nonzero(out_array)])    )
         bw_2 =    array2>(np.mean(   array2[np.nonzero(array2)])   )#+      np.std(   array2[np.nonzero(array2)]))
+
         # Register array2 to out_array using skimage's register_translation
         shift, error, diffphase = phase_cross_correlation(out_array*bw_1*(1*overlapping_mask),array2*bw_2*(1*overlapping_mask))
+        # shift, error, diffphase = phase_cross_correlation(reg1,reg2)
         shifted_array2 = scipy.ndimage.shift(array2,shift)  # Replace out_array with registered array2
 
         mask2 = (shifted_array2 > 1)
@@ -209,12 +250,15 @@ def align_frames(frames,pixels_per_mm,FOV,extent_x,extent_y,delta_x,delta_y):
                 temp_large_img = match_intensities(large_img,temp_large_img)
                 large_img = average_arrays_ignore_zeros(large_img, temp_large_img, register_to_out_array = False) # , register_to_out_array = F)
             
-            imshow_resize('img',large_img.astype(np.uint8), resize_size = [640,640])
+            camera.camera_control.imshow_resize('img',large_img.astype(np.uint8), resize_size = [640,640])
             counter += 1
 
     return images, img_data_cropped, large_img
     
 def align_frames_register(frames,pixels_per_mm,FOV,extent_x,extent_y,delta_x,delta_y,overlap = 1):
+
+    #####
+    # https://scikit-image.org/docs/stable/auto_examples/registration/plot_masked_register_translation.html#sphx-glr-auto-examples-registration-plot-masked-register-translation-py
 
     images_loaded = np.asarray(frames)
 
@@ -262,7 +306,7 @@ def align_frames_register(frames,pixels_per_mm,FOV,extent_x,extent_y,delta_x,del
                 temp_large_img = match_intensities(large_img,temp_large_img)
                 large_img = average_arrays_ignore_zeros(large_img, temp_large_img, register_to_out_array = True) # , register_to_out_array = F)
             
-            cv2.imwrite('test.bmp',np.clip(large_img,0,255).astype(np.uint8))
+            # cv2.imwrite('test.bmp',np.clip(large_img,0,255).astype(np.uint8))
             camera.camera_control.imshow_resize('img',large_img.astype(np.uint8), resize_size = [640,640])
             counter += 1
 
