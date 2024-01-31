@@ -126,14 +126,21 @@ def find_blob_bounding_box(binary_image):
 
     return bounding_box_coords
 
-def crop_blob(img,coords):
+def crop_image_from_mask(original_image_array, mask_image_array):
+    # Ensure the mask is binary (0 or 1)
+    mask_array = (mask_image_array > 0).astype(np.uint8)
 
-    # Crop the original image to the bounding box
-    cropped_image = img[coords['min_row']:coords['max_row'], coords['min_col']:coords['max_col']]
-    
+    # Find bounding box coordinates of the mask
+    non_zero_indices = np.nonzero(mask_array)
+    min_row, min_col = np.min(non_zero_indices[0]), np.min(non_zero_indices[1])
+    max_row, max_col = np.max(non_zero_indices[0]), np.max(non_zero_indices[1])
+
+    # Crop the original image based on the bounding box
+    cropped_image = original_image_array[min_row:max_row + 1, min_col:max_col + 1]
+
     return cropped_image
 
-def average_arrays_ignore_zeros(out_array, array2, register_to_out_array=False):
+def average_arrays_ignore_zeros(out_array, array2, register_to_out_array=False, counter = 0):
     # Create masks for zero values in each array (only works for float values)
     mask1 = (out_array != 0)
     mask2 = (array2 != 0)
@@ -148,11 +155,21 @@ def average_arrays_ignore_zeros(out_array, array2, register_to_out_array=False):
     if register_to_out_array:
         # coords = find_blob_bounding_box(mask_or)
 
-        bw_1 = out_array>(np.mean(out_array[np.nonzero(out_array)]))#   + np.std(out_array[np.nonzero(out_array)])    )
-        bw_2 =    array2>(np.mean(   array2[np.nonzero(array2)])   )#+      np.std(   array2[np.nonzero(array2)]))
+        t1 = crop_image_from_mask(out_array,overlapping_mask)
+        t2 = crop_image_from_mask(array2,overlapping_mask)
+
+        t1 = normalize_to_smallest_nonzero(t1)
+        t2 = normalize_to_smallest_nonzero(t2)
+
+        out_array_temp = crop_image_from_mask(out_array,overlapping_mask)
+        array2_temp = crop_image_from_mask(array2,overlapping_mask)
+
+        bw_1 = t1>(np.mean(t1[np.nonzero(t1)])   + np.std(t1[np.nonzero(t1)])    )
+        bw_2 =    t2>(np.mean(   t2[np.nonzero(t2)])   +      np.std(   t2[np.nonzero(t2)]))
 
         # Register array2 to out_array using skimage's register_translation
-        shift, error, diffphase = phase_cross_correlation(out_array*bw_1*(1*overlapping_mask),array2*bw_2*(1*overlapping_mask))
+        # shift, error, diffphase = phase_cross_correlation(out_array*bw_1*(1*overlapping_mask),array2*bw_2*(1*overlapping_mask))
+        shift, error, diffphase = phase_cross_correlation(out_array_temp*bw_1,array2_temp*bw_2)
         # shift, error, diffphase = phase_cross_correlation(reg1,reg2)
         shifted_array2 = scipy.ndimage.shift(array2,shift)  # Replace out_array with registered array2
 
@@ -304,7 +321,9 @@ def align_frames_register(frames,pixels_per_mm,FOV,extent_x,extent_y,delta_x,del
                 large_img = temp_large_img
             else:
                 temp_large_img = match_intensities(large_img,temp_large_img)
-                large_img = average_arrays_ignore_zeros(large_img, temp_large_img, register_to_out_array = True) # , register_to_out_array = F)
+                start_time = time.time()
+                large_img = average_arrays_ignore_zeros(large_img, temp_large_img, register_to_out_array = True, counter = counter) # , register_to_out_array = F)
+                print('elapsed:', time.time()-start_time)
             
             # cv2.imwrite('test.bmp',np.clip(large_img,0,255).astype(np.uint8))
             camera.camera_control.imshow_resize('img',large_img.astype(np.uint8), resize_size = [640,640])
