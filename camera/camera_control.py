@@ -524,7 +524,7 @@ def capture_fluor_img_return_img(camera_settings, cap = None, return_cap = False
     else:
         cap_release = False
 
-    clear_camera_image_buffer(cap, N = 10)
+    clear_camera_image_buffer(cap, N = 3)
     num_images = 1
     # Capture a series of images
     ret, frame = cap.read()
