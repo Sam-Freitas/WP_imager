@@ -287,9 +287,9 @@ if __name__ == "__main__":
             controller.move_XYZ(position = this_location)
 
             if (row == 0) and (col == 0):
-                frame, cap = analysis.fluor_postprocess.capture_fluor_img_return_img(s_camera_settings, return_cap = True)
+                frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, return_cap = True)
             else:
-                frame, cap = analysis.fluor_postprocess.capture_fluor_img_return_img(s_camera_settings, cap = cap,return_cap = True)
+                frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, cap = cap,return_cap = True)
             images.append(frame)
             img_data_cropped = analysis.fluor_postprocess.crop_center_numpy_return(frame,pixels_per_mm*FOV)+1
             temp_large_img = analysis.fluor_postprocess.put_frame_in_large_img(extent_y,extent_x,pixels_per_mm,FOV,delta_x,delta_y, counter, img_data_cropped, row, col)
