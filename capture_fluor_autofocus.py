@@ -217,20 +217,15 @@ if __name__ == "__main__":
     # calibration_model = yolo_model()
 
     starting_location_xyz = [-500,-300,-103] # center of where you want to measure [-191.4,-300,-86]
-    pixels_per_mm = 1453.5353/5.0
-    pixels_per_mm = 980/5
     pixels_per_mm = 192
 
     FOV = 5
   
-    extent_x = 35 #mm
-    extent_y = 35 #mm
+    autofocus_min_max = [5,-5] # remember that down (towards sample) is negative
+    autofocus_delta_z = 0.5 # mm 
+    autofocus_steps = int(abs(np.diff(autofocus_min_max) / autofocus_delta_z)) + 1
 
-    delta_x = -5 # mm # start at the top left and snake across and down
-    delta_y = 5 # mm this difference is to move across x and down y to make the image processing easier
-
-    y_images = int( ((extent_y-FOV)/np.abs(delta_y)) + 1 ) # left to right
-    x_images = int( ((extent_x-FOV)/np.abs(delta_x)) + 1 ) # up and down ########## I know that this is a wrong name but total image = x_image*y_images and i cant think of a better term right now
+    z_positions = np.linspace(starting_location_xyz[2]+autofocus_min_max[0],starting_location_xyz[2]+autofocus_min_max[1],num = autofocus_steps)
 
     starting_location = dict()
     starting_location['x_pos'] = round(starting_location_xyz[0],4)
@@ -267,50 +262,23 @@ if __name__ == "__main__":
 
     large_img = np.zeros((int(extent_y*pixels_per_mm),int(extent_x*pixels_per_mm)))
     controller.move_XY_at_Z_travel(starting_location, z_travel_height)
-    
-    # the term row and col are not exact as the system might have overlapping images, this is just nomeclature if there was zero overlap
+
     images = []
-    counter = 0
-    for row in range(y_images): # rows
-        if row % 2:
-            cols = range(x_images-1,-1,-1) # odd flag
+    for counter,z_pos in enumerate(z_positions):
+        print(i)
+        this_position = starting_location.copy()
+        this_location['z_pos'] = z_pos
+
+        controller.move_XYZ(position = this_location)
+            
+        if (row == 0) and (col == 0):
+            frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, return_cap = True)
         else:
-            cols = range(0,x_images) # even flag (includes zero)
-
-        for col in cols:
-            print(row,col)
-            this_location = starting_location.copy() # move the system to the specified part of the scan
-            this_location['x_pos'] = this_location['x_pos'] + (delta_x * col)
-            this_location['y_pos'] = this_location['y_pos'] + (delta_y * row)
-            jprint(this_location)
-
-            controller.move_XYZ(position = this_location)
-
-            if (row == 0) and (col == 0):
-                frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, return_cap = True)
-            else:
-                frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, cap = cap,return_cap = True)
-            images.append(frame)
-            img_data_cropped = analysis.fluor_postprocess.crop_center_numpy_return(frame,pixels_per_mm*FOV)+1
-            temp_large_img = analysis.fluor_postprocess.put_frame_in_large_img(extent_y,extent_x,pixels_per_mm,FOV,delta_x,delta_y, counter, img_data_cropped, row, col)
-
-            # for overlapping images (still needs work)
-            if (row == 0) and (col == 0):
-                large_img = temp_large_img
-            else:
-                large_img = analysis.fluor_postprocess.average_arrays_ignore_zeros(large_img, temp_large_img)
+            frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, cap = cap,return_cap = True)
+        images.append(frame)
             
-            camera.camera_control.imshow_resize('img',large_img.astype(np.uint8), resize_size = [640,640])
-            counter += 1
-            cv2.imwrite('square_test.bmp', large_img.astype(np.uint8))
-
-    lights.labjackU3_control.turn_off_everything(d)
-    lights.coolLed_control.turn_everything_off(coolLED_port)
-    images, img_data_cropped, large_img = analysis.fluor_postprocess.align_frames_register(images,pixels_per_mm,FOV,extent_x,extent_y,delta_x,delta_y, overlap = 0.25)
-            
-    large_img_norm = analysis.fluor_postprocess.normalize_to_smallest_nonzero(large_img)*255
-    cv2.imwrite('square_test ' + str(int(pixels_per_mm)) + '.bmp', large_img_norm.astype(np.uint8))
-    np.save('test.npy',np.asarray(images))
+    # cv2.imwrite('square_test ' + str(int(pixels_per_mm)) + '.bmp', large_img_norm.astype(np.uint8))
+    np.save('autofocus_stack.npy',np.asarray(images))
 
     lights.labjackU3_control.turn_off_everything(d)
     lights.coolLed_control.turn_everything_off(coolLED_port)

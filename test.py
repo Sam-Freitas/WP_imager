@@ -16,6 +16,9 @@ matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import scipy
 
+
+########################################## this is for testing the capturing and registering fluor squares ONLY
+
 print('data processing')
 
 starting_location_xyz = [-500,-300,-103] # center of where you want to measure [-191.4,-300,-86]
@@ -23,8 +26,8 @@ pixels_per_mm = 1453.5353/5.0
 pixels_per_mm = 980/5
 pixels_per_mm = 192
 FOV = 5
-extent_x = 20 #mm
-extent_y = 20 #mm
+extent_x = 35 #mm
+extent_y = 35 #mm
 delta_x = -5 # mm # start at the top left and snake across and down
 delta_y = 5 # mm this difference is to move across x and down y to make the image processing easier
 y_images = int( ((extent_y-FOV)/np.abs(delta_y)) + 1 ) # left to right
@@ -34,8 +37,8 @@ starting_location['x_pos'] = round(starting_location_xyz[0],4)
 starting_location['y_pos'] = round(starting_location_xyz[1],4)
 starting_location['z_pos'] = round(starting_location_xyz[2],4)
 
-images = np.load(r"Y:\Users\Sam Freitas\test.npy") # use with extent = 20
-# images = np.load(r"Y:\Users\Sam Freitas\images_before.npy") # use with extend = 35
+# images = np.load(r"Y:\Users\Sam Freitas\test.npy") # use with extent = 20
+images = np.load(r"Y:\Users\Sam Freitas\images_before.npy") # use with extend = 35
 # large_img_initial = cv2.imread(r"Y:\Users\Sam Freitas\square_test.bmp")
 
 # # # large_img = np.zeros((int(extent_y*pixels_per_mm),int(extent_x*pixels_per_mm)))
