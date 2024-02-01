@@ -225,6 +225,8 @@ if __name__ == "__main__":
     autofocus_delta_z = 0.5 # mm 
     autofocus_steps = int(abs(np.diff(autofocus_min_max) / autofocus_delta_z)) + 1
 
+    z_limit = [-5,-108]
+
     z_positions = np.linspace(starting_location_xyz[2]+autofocus_min_max[0],starting_location_xyz[2]+autofocus_min_max[1],num = autofocus_steps)
 
     starting_location = dict()
@@ -269,13 +271,19 @@ if __name__ == "__main__":
         this_position = starting_location.copy()
         this_location['z_pos'] = z_pos
 
-        controller.move_XYZ(position = this_location)
-            
-        if (row == 0) and (col == 0):
-            frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, return_cap = True)
-        else:
-            frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, cap = cap,return_cap = True)
-        images.append(frame)
+        if z_pos < z_limit[0] and z_pos > z_limit[1]:
+
+            controller.move_XYZ(position = this_location)
+                
+            if (row == 0) and (col == 0):
+                frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, return_cap = True)
+            else:
+                frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, cap = cap,return_cap = True)
+            images.append(frame)
+
+    a = np.mean(images, axis = 0) # get the average image taken of the stack (for illumination correction)
+    binary_img = largest_blob(a > 0) # get the largest binary blob in the image
+    center_int = [int(np.round(point)) for point in center]
             
     # cv2.imwrite('square_test ' + str(int(pixels_per_mm)) + '.bmp', large_img_norm.astype(np.uint8))
     np.save('autofocus_stack.npy',np.asarray(images))
