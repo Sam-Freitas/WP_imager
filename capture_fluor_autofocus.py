@@ -216,16 +216,16 @@ if __name__ == "__main__":
 
     # calibration_model = yolo_model()
 
-    starting_location_xyz = [-500,-300,-103] # center of where you want to measure [-191.4,-300,-86]
+    starting_location_xyz = [-155-170,-35,-89] # center of where you want to measure [-191.4,-300,-86]
     pixels_per_mm = 192
 
     FOV = 5
   
     autofocus_min_max = [5,-5] # remember that down (towards sample) is negative
-    autofocus_delta_z = 0.5 # mm 
+    autofocus_delta_z = 0.25 # mm 
     autofocus_steps = int(abs(np.diff(autofocus_min_max) / autofocus_delta_z)) + 1
 
-    z_limit = [-5,-108]
+    z_limit = [-5,-94]
 
     z_positions = np.linspace(starting_location_xyz[2]+autofocus_min_max[0],starting_location_xyz[2]+autofocus_min_max[1],num = autofocus_steps)
 
@@ -262,31 +262,60 @@ if __name__ == "__main__":
         red = False, 
         red_intensity = 100)
 
-    large_img = np.zeros((int(extent_y*pixels_per_mm),int(extent_x*pixels_per_mm)))
     controller.move_XY_at_Z_travel(starting_location, z_travel_height)
 
     images = []
-    for counter,z_pos in enumerate(z_positions):
-        print(i)
-        this_position = starting_location.copy()
+    for counter,z_pos in enumerate(tqdm.tqdm(z_positions)):
+        this_location = starting_location.copy()
         this_location['z_pos'] = z_pos
+        jprint(this_location)
 
         if z_pos < z_limit[0] and z_pos > z_limit[1]:
 
             controller.move_XYZ(position = this_location)
                 
-            if (row == 0) and (col == 0):
+            if counter == 0:
                 frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, return_cap = True)
             else:
                 frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, cap = cap,return_cap = True)
             images.append(frame)
 
+    lights.labjackU3_control.turn_off_everything(d)
+    lights.coolLed_control.turn_everything_off(coolLED_port)
+
+    images = np.asarray(images)
+    np.save('autofocus_stack.npy',images)
+
     a = np.mean(images, axis = 0) # get the average image taken of the stack (for illumination correction)
-    binary_img = largest_blob(a > 0) # get the largest binary blob in the image
+    binary_img = analysis.fluor_postprocess.largest_blob(a > 3) # get the largest binary blob in the image
+    center = [ np.average(indices) for indices in np.where(binary_img) ] # find where the actual center of the frame is 
     center_int = [int(np.round(point)) for point in center]
+
+    norm_array = scipy.ndimage.gaussian_filter(a,100) # get the instensities of the images for the illuminance normalizations
+    norm_array_full = 1-(norm_array/np.max(norm_array))
+    norm_array = analysis.fluor_postprocess.crop_center_numpy_return(norm_array_full,pixels_per_mm*(FOV), center = center_int)
+
+    focus_score = []
+    for this_img in images:
+        this_img = this_img*(norm_array_full+1)
+        img_data_cropped = analysis.fluor_postprocess.crop_center_numpy_return(this_img,pixels_per_mm*(FOV), center = center_int)
+        b = scipy.ndimage.sobel(img_data_cropped.astype(np.float32))
+        this_fscore = np.max(np.abs(b))
+        focus_score.append(this_fscore)
+
+    assumed_focus = np.argmax(focus_score)
+
+    plt.subplot(1,2,1)
+    plt.title('assumed focus:' + str(assumed_focus))
+    plt.imshow(images[assumed_focus]*(norm_array_full+1))
+    plt.subplot(1,2,2)
+    plt.title('plot of focus socre')
+    plt.plot(focus_score)
+    plt.plot(assumed_focus,focus_score[assumed_focus],'ro')
+    plt.show()
             
     # cv2.imwrite('square_test ' + str(int(pixels_per_mm)) + '.bmp', large_img_norm.astype(np.uint8))
-    np.save('autofocus_stack.npy',np.asarray(images))
+    
 
     lights.labjackU3_control.turn_off_everything(d)
     lights.coolLed_control.turn_everything_off(coolLED_port)
