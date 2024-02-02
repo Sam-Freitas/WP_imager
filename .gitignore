@@ -13,3 +13,5 @@ camera/__pycache__/
 lights/__pycache__/
 movement/__pycache__/
 settings/__pycache__/
+
+settings/todays_runs.txt

@@ -303,6 +303,9 @@ if __name__ == "__main__":
             camera.camera_control.imshow_resize('img',large_img.astype(np.uint8), resize_size = [640,640])
             counter += 1
             cv2.imwrite('square_test.bmp', large_img.astype(np.uint8))
+            
+    lights.labjackU3_control.turn_off_everything(d)
+    lights.coolLed_control.turn_everything_off(coolLED_port)
 
     images, img_data_cropped, large_img = analysis.fluor_postprocess.align_frames_register(images,pixels_per_mm,FOV,extent_x,extent_y,delta_x,delta_y, overlap = 1)
             

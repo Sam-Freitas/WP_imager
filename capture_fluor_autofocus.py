@@ -195,6 +195,30 @@ def run_calib(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_posi
 
 import atexit
 
+def sq_grad(img,thresh = 50,offset = 10):
+
+    shift = int(0-offset)
+    offset = int(offset)
+
+    img1 = img[:,0:shift].astype(np.float32)
+    img2 = img[:,offset:].astype(np.float32)
+
+    diff = np.abs(img2-img1)
+    mask = diff > thresh
+    squared_gradient = diff*diff*mask
+
+    # img3 = img[0:shift,:]
+    # img4 = img[offset:,:]
+
+    # diff1 = np.abs(img2-img1)
+    # diff2 = np.abs(img4-img3)
+    # mask1 = diff1 > thresh
+    # mask2 = diff2 > thresh
+
+    # squared_gradient = diff1*diff2*mask1*mask2
+
+    return squared_gradient
+
 if __name__ == "__main__":
 
     # this is a test to try and capture a square of overlapping images
@@ -216,16 +240,19 @@ if __name__ == "__main__":
 
     # calibration_model = yolo_model()
 
-    starting_location_xyz = [-155-170,-35,-89] # center of where you want to measure [-191.4,-300,-86]
+    # starting_location_xyz = [-170,-35,-89]# <--WM [-325,-35,-89]# <-- blackpla # center of where you want to measure [-191.4,-300,-86]
+    starting_location_xyz = [-325,-35,-89]
     pixels_per_mm = 192
 
     FOV = 5
   
-    autofocus_min_max = [5,-5] # remember that down (towards sample) is negative
+    autofocus_min_max = [2.5,-10] # remember that down (towards sample) is negative
     autofocus_delta_z = 0.25 # mm 
     autofocus_steps = int(abs(np.diff(autofocus_min_max) / autofocus_delta_z)) + 1
 
     z_limit = [-5,-94]
+    offset = 5
+    thresh = 50
 
     z_positions = np.linspace(starting_location_xyz[2]+autofocus_min_max[0],starting_location_xyz[2]+autofocus_min_max[1],num = autofocus_steps)
 
@@ -257,14 +284,16 @@ if __name__ == "__main__":
         uv_intensity = 100,
         blue = True, 
         blue_intensity = 100,
-        green = False, 
+        green = True, 
         green_intensity = 100,
-        red = False, 
+        red = True, 
         red_intensity = 100)
 
     controller.move_XY_at_Z_travel(starting_location, z_travel_height)
 
     images = []
+    uncalib_fscore = []
+    plt.show(block=False)
     for counter,z_pos in enumerate(tqdm.tqdm(z_positions)):
         this_location = starting_location.copy()
         this_location['z_pos'] = z_pos
@@ -279,15 +308,18 @@ if __name__ == "__main__":
             else:
                 frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, cap = cap,return_cap = True)
             images.append(frame)
-
-    lights.labjackU3_control.turn_off_everything(d)
-    lights.coolLed_control.turn_everything_off(coolLED_port)
+            # img_data_cropped = analysis.fluor_postprocess.crop_center_numpy_return(frame,pixels_per_mm*(FOV))
+            temp = sq_grad(frame,thresh = thresh,offset = offset)
+            camera.camera_control.imshow_resize(frame_name = "img", frame = frame)
+            uncalib_fscore.append(np.sum(temp))
+            plt.plot(uncalib_fscore)
+            plt.pause(1)
 
     images = np.asarray(images)
     np.save('autofocus_stack.npy',images)
 
     a = np.mean(images, axis = 0) # get the average image taken of the stack (for illumination correction)
-    binary_img = analysis.fluor_postprocess.largest_blob(a > 3) # get the largest binary blob in the image
+    binary_img = analysis.fluor_postprocess.largest_blob(a > 20) # get the largest binary blob in the image
     center = [ np.average(indices) for indices in np.where(binary_img) ] # find where the actual center of the frame is 
     center_int = [int(np.round(point)) for point in center]
 
@@ -298,27 +330,32 @@ if __name__ == "__main__":
     focus_score = []
     for this_img in images:
         this_img = this_img*(norm_array_full+1)
-        img_data_cropped = analysis.fluor_postprocess.crop_center_numpy_return(this_img,pixels_per_mm*(FOV), center = center_int)
-        b = scipy.ndimage.sobel(img_data_cropped.astype(np.float32))
-        this_fscore = np.max(np.abs(b))
+        # img_data_cropped = analysis.fluor_postprocess.crop_center_numpy_return(this_img,pixels_per_mm*(FOV), center = center_int)
+        b = sq_grad(this_img,thresh = thresh,offset = offset)
+        this_fscore = np.sum(b)
         focus_score.append(this_fscore)
 
     assumed_focus = np.argmax(focus_score)
 
+    plt.close('all')
+    plt.figure()
     plt.subplot(1,2,1)
     plt.title('assumed focus:' + str(assumed_focus))
     plt.imshow(images[assumed_focus]*(norm_array_full+1))
     plt.subplot(1,2,2)
-    plt.title('plot of focus socre')
+    plt.title('plot of focus socre:' + str(z_positions[assumed_focus]))
     plt.plot(focus_score)
     plt.plot(assumed_focus,focus_score[assumed_focus],'ro')
     plt.show()
-            
-    # cv2.imwrite('square_test ' + str(int(pixels_per_mm)) + '.bmp', large_img_norm.astype(np.uint8))
-    
+                
+    this_location = starting_location.copy()
+    this_location['z_pos'] = z_positions[assumed_focus]
+    controller.move_XYZ(position = this_location)
+
+    frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, cap = cap,return_cap = True)
+    camera.camera_control.imshow_resize(frame_name = "img", frame = frame)
 
     lights.labjackU3_control.turn_off_everything(d)
     lights.coolLed_control.turn_everything_off(coolLED_port)
-
 
     print('eof') 

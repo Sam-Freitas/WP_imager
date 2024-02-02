@@ -281,7 +281,7 @@ def align_frames_register(frames,pixels_per_mm,FOV,extent_x,extent_y,delta_x,del
 
     a = np.mean(images_loaded, axis = 0) # get the average image taken of the stack (for illumination correction)
 
-    binary_img = largest_blob(a > 0) # get the largest binary blob in the image
+    binary_img = largest_blob(a > 2) # get the largest binary blob in the image
     # (min_row, min_col, size), cropped_blob = crop_smallest_square(binary_img) # get the square crop of the blob
     center = [ np.average(indices) for indices in np.where(binary_img) ] # find where the actual center of the frame is 
     center_int = [int(np.round(point)) for point in center]
