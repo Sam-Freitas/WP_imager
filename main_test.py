@@ -18,6 +18,30 @@ def turn_everything_off_at_exit():
     cv2.destroyAllWindows()
     lights.coolLed_control.turn_everything_off('COM6')
 
+def sq_grad(img,thresh = 50,offset = 10):
+
+    shift = int(0-offset)
+    offset = int(offset)
+
+    img1 = img[:,0:shift].astype(np.float32)
+    img2 = img[:,offset:].astype(np.float32)
+
+    diff = np.abs(img2-img1)
+    mask = diff > thresh
+    squared_gradient = diff*diff*mask
+
+    # img3 = img[0:shift,:]
+    # img4 = img[offset:,:]
+
+    # diff1 = np.abs(img2-img1)
+    # diff2 = np.abs(img4-img3)
+    # mask1 = diff1 > thresh
+    # mask2 = diff2 > thresh
+
+    # squared_gradient = diff1*diff2*mask1*mask2
+
+    return squared_gradient
+
 def run_calib(s_camera_settings,this_plate_parameters,output_dir, calibration_model, adjust_with_movement = True, final_measurement = False, delete_prev_data = True):
     # take image
     image_filename = camera.camera_control.simple_capture_data_single_image(s_camera_settings, plate_parameters=this_plate_parameters,
@@ -111,6 +135,95 @@ def run_calib_terasaki(s_camera_settings,this_plate_parameters,output_dir,s_tera
 
     return adjusted_position, center_delta_in_mm
   
+def run_autofocus_at_current_position(controller, starting_location, coolLED_port, this_plate_parameters):
+
+    lights.coolLed_control.turn_everything_off(coolLED_port) # turn everything off
+
+    # set up the variables  
+    z_pos = -5
+    pixels_per_mm = 192
+    FOV = 5
+    autofocus_min_max = [2.5,-6] # remember that down (towards sample) is negative
+    autofocus_delta_z = 0.25 # mm 
+    autofocus_steps = int(abs(np.diff(autofocus_min_max) / autofocus_delta_z)) + 1
+    z_limit = [-5,-94]
+    offset = 5
+    thresh = 50
+
+    # find the z locations for the loop to step through
+    z_positions = np.linspace(starting_location['z_pos']+autofocus_min_max[0],starting_location['z_pos']+autofocus_min_max[1],num = autofocus_steps)
+
+    # turn on the RGB lights to get a white light for focusing 
+    lights.coolLed_control.turn_specified_on(coolLED_port, 
+        uv = False, 
+        uv_intensity = 100,
+        blue = True, 
+        blue_intensity = 100,
+        green = True, 
+        green_intensity = 100,
+        red = True, 
+        red_intensity = 100)
+
+    # go though all the z_positions and get the most in focus position
+    images = []
+    uncalib_fscore = []
+    for counter,z_pos in enumerate(z_positions):
+        this_location = starting_location.copy()
+        this_location['z_pos'] = z_pos
+        # jprint(this_location)
+
+        if z_pos < z_limit[0] and z_pos > z_limit[1]:
+
+            controller.move_XYZ(position = this_location) # move the said location 
+                
+            if counter == 0: # capture the frame and return the image and camera 'cap' object
+                frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, return_cap = True, clear_N_images_from_buffer = 3) 
+            else:
+                frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, cap = cap,return_cap = True, clear_N_images_from_buffer = 1)
+            images.append(frame)
+            # temp = sq_grad(frame,thresh = thresh,offset = offset)
+            camera.camera_control.imshow_resize(frame_name = "img", frame = frame)
+            # uncalib_fscore.append(np.sum(temp))
+    
+    lights.coolLed_control.turn_everything_off(coolLED_port) # turn everything off
+    images = np.asarray(images)
+    # np.save('autofocus_stack.npy',images)
+
+    a = np.mean(images, axis = 0) # get the average image taken of the stack (for illumination correction)
+    binary_img = analysis.fluor_postprocess.largest_blob(a > 20) # get the largest binary blob in the image
+    center = [ np.average(indices) for indices in np.where(binary_img) ] # find where the actual center of the frame is (assuming camera sensor is larger than image circle)
+    center_int = [int(np.round(point)) for point in center]
+
+    norm_array = scipy.ndimage.gaussian_filter(a,100) # get the instensities of the images for the illuminance normalizations
+    norm_array_full = 1-(norm_array/np.max(norm_array))
+    # norm_array = analysis.fluor_postprocess.crop_center_numpy_return(norm_array_full,pixels_per_mm*(FOV), center = center_int)
+
+    focus_score = [] # get the focus score for every image that gets stepped through
+    for this_img in images:
+        this_img = this_img*(norm_array_full+1)
+        b = sq_grad(this_img,thresh = thresh,offset = offset)
+        this_fscore = np.sum(b)
+        focus_score.append(this_fscore)
+
+    assumed_focus_idx = np.argmax(focus_score)
+
+    z_pos = z_positions[assumed_focus] # for the final output
+    this_location = starting_location.copy()
+    this_location['z_pos'] = z_positions[assumed_focus]
+    controller.move_XYZ(position = this_location)
+
+    lights.coolLed_control.turn_specified_on(coolLED_port, 
+        uv = int(this_plate_parameters['fluorescence_UV']) > 0, 
+        uv_intensity = int(this_plate_parameters['fluorescence_UV']),
+        blue = int(this_plate_parameters['fluorescence_BLUE']) > 0, 
+        blue_intensity = int(this_plate_parameters['fluorescence_BLUE']),
+        green = int(this_plate_parameters['fluorescence_GREEN']) > 0, 
+        green_intensity = int(this_plate_parameters['fluorescence_GREEN']),
+        red = int(this_plate_parameters['fluorescence_RED']) > 0, 
+        red_intensity = int(this_plate_parameters['fluorescence_RED']))
+
+    return z_pos
+
 class CNCController:
     def __init__(self, port, baudrate):
         import re
@@ -405,7 +518,7 @@ if __name__ == "__main__":
 
         lights.labjackU3_control.turn_on_red(d)
 
-        # try:
+        # try: # this is an attempt at finding the wells using the image 
         #     use_adjusted_centers = True
         #     centers = (sort_rows(individual_well_locations)-center_location)/pixels_per_mm
         # except:
@@ -458,6 +571,9 @@ if __name__ == "__main__":
                 # lights.labjackU3_control.turn_on_red(d)
                 # terasaki_adjusted_position, center_delta_in_mm = run_calib_terasaki(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_positions,calibration_model)
                 lights.labjackU3_control.turn_off_everything(d)
+            
+            z_pos_found_autofocus = run_autofocus_at_current_position(controller, this_well_coords, coolLED_port, this_plate_parameters)
+            this_well_coords['z_pos'] = z_pos_found_autofocus
 
             if run_as_testing:
                 this_plate_parameters['fluorescence_UV']

@@ -32,7 +32,7 @@ df = pd.DataFrame(columns = header)
 
 calib_x_pos_mm = -43.75
 calib_y_pos_mm = -28.5
-calib_z_pos_mm = -81.5
+calib_z_pos_mm = -89.0
 y_offset_to_fluor_mm = 87.75
 
 names = []
@@ -95,7 +95,7 @@ df.to_csv(os.path.join(path_to_settings_folder,'settings_WM_positions.csv'),inde
 
 # calib_x_pos_mm = -43.75
 # calib_y_pos_mm = -28.5
-# calib_z_pos_mm = -81.5
+# calib_z_pos_mm = -89.0
 # y_offset_to_fluor_mm = 87.75
 
 # names = ['h1','g1','f1','e1','d1','c1','b1','a1',
