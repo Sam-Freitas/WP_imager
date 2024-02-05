@@ -242,7 +242,8 @@ if __name__ == "__main__":
 
     # starting_location_xyz = [-170,-35,-89]# <--WM [-325,-35,-89]# <-- blackpla# [-490,-35,-89]# <-- clearTERA# center of where you want to measure [-191.4,-300,-86]
     # -3.8276966328669104, 'y_pos': -53.505427481711735, 'z_pos': -81.5
-    starting_location_xyz = [-3.8276966328669104,-53.505427481711735,-89]
+    starting_location_xyz = [-170,-35,-89]
+    starting_location_xyz = [-151.1,-50.90,-89]
     pixels_per_mm = 192
 
     FOV = 5

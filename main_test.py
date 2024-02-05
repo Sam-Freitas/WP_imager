@@ -1,10 +1,11 @@
-import os,time,glob,sys,time,tqdm,cv2, serial, json, torch
+import os,time,glob,sys,time,tqdm,cv2, serial, json, torch, scipy
 import numpy as np
 import lights.labjackU3_control
 import lights.coolLed_control
 import settings.get_settings
 # import movement.simple_stream
 import camera.camera_control
+import analysis.fluor_postprocess
 import atexit
 
 from Run_yolo_model import yolo_model, sort_rows
@@ -207,9 +208,9 @@ def run_autofocus_at_current_position(controller, starting_location, coolLED_por
 
     assumed_focus_idx = np.argmax(focus_score)
 
-    z_pos = z_positions[assumed_focus] # for the final output
+    z_pos = z_positions[assumed_focus_idx] # for the final output
     this_location = starting_location.copy()
-    this_location['z_pos'] = z_positions[assumed_focus]
+    this_location['z_pos'] = z_positions[assumed_focus_idx]
     controller.move_XYZ(position = this_location)
 
     lights.coolLed_control.turn_specified_on(coolLED_port, 
@@ -221,6 +222,9 @@ def run_autofocus_at_current_position(controller, starting_location, coolLED_por
         green_intensity = int(this_plate_parameters['fluorescence_GREEN']),
         red = int(this_plate_parameters['fluorescence_RED']) > 0, 
         red_intensity = int(this_plate_parameters['fluorescence_RED']))
+
+    frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, cap = cap,return_cap = True, clear_N_images_from_buffer = 5)
+    camera.camera_control.imshow_resize(frame_name = "img", frame = frame)
 
     return z_pos
 
@@ -572,8 +576,11 @@ if __name__ == "__main__":
                 # terasaki_adjusted_position, center_delta_in_mm = run_calib_terasaki(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_positions,calibration_model)
                 lights.labjackU3_control.turn_off_everything(d)
             
-            z_pos_found_autofocus = run_autofocus_at_current_position(controller, this_well_coords, coolLED_port, this_plate_parameters)
-            this_well_coords['z_pos'] = z_pos_found_autofocus
+            if well_index == 0:
+                z_pos_found_autofocus = run_autofocus_at_current_position(controller, this_well_coords, coolLED_port, this_plate_parameters)
+                this_well_coords['z_pos'] = z_pos_found_autofocus
+            else:
+                this_well_coords['z_pos'] = z_pos_found_autofocus
 
             if run_as_testing:
                 this_plate_parameters['fluorescence_UV']
