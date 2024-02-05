@@ -33,14 +33,14 @@ class CNCController:
 
         if ('$X' not in cleaned_line) and ('$$' not in cleaned_line) and ('?' not in cleaned_line):
             idle_counter = 0
-            time.sleep(0.1)
+            # time.sleep(0.025)
             while True:
                 self.ser.reset_input_buffer()
                 self.ser.reset_output_buffer()
-                time.sleep(0.1)
+                time.sleep(0.025)
                 command = str.encode("?"+ "\n")
                 self.ser.write(command)
-                time.sleep(0.1)
+                time.sleep(0.025)
                 grbl_out = self.ser.readline().decode().strip()
                 grbl_response = grbl_out.strip()
 
@@ -62,9 +62,9 @@ class CNCController:
     def send_command(self, command):
         self.ser.reset_input_buffer() # flush the input and the output 
         self.ser.reset_output_buffer()
-        time.sleep(0.1)
+        time.sleep(0.025)
         self.ser.write(command.encode())
-        time.sleep(0.1)
+        time.sleep(0.025)
 
         CNCController.wait_for_movement_completion(self,command)
         out = []
@@ -240,8 +240,9 @@ if __name__ == "__main__":
 
     # calibration_model = yolo_model()
 
-    # starting_location_xyz = [-170,-35,-89]# <--WM [-325,-35,-89]# <-- blackpla # center of where you want to measure [-191.4,-300,-86]
-    starting_location_xyz = [-325,-35,-89]
+    # starting_location_xyz = [-170,-35,-89]# <--WM [-325,-35,-89]# <-- blackpla# [-490,-35,-89]# <-- clearTERA# center of where you want to measure [-191.4,-300,-86]
+    # -3.8276966328669104, 'y_pos': -53.505427481711735, 'z_pos': -81.5
+    starting_location_xyz = [-3.8276966328669104,-53.505427481711735,-89]
     pixels_per_mm = 192
 
     FOV = 5
@@ -293,7 +294,7 @@ if __name__ == "__main__":
 
     images = []
     uncalib_fscore = []
-    plt.show(block=False)
+    # plt.show(block=False)
     for counter,z_pos in enumerate(tqdm.tqdm(z_positions)):
         this_location = starting_location.copy()
         this_location['z_pos'] = z_pos
@@ -304,16 +305,16 @@ if __name__ == "__main__":
             controller.move_XYZ(position = this_location)
                 
             if counter == 0:
-                frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, return_cap = True)
+                frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, return_cap = True, clear_N_images_from_buffer = 3)
             else:
-                frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, cap = cap,return_cap = True)
+                frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, cap = cap,return_cap = True, clear_N_images_from_buffer = 1)
             images.append(frame)
             # img_data_cropped = analysis.fluor_postprocess.crop_center_numpy_return(frame,pixels_per_mm*(FOV))
             temp = sq_grad(frame,thresh = thresh,offset = offset)
             camera.camera_control.imshow_resize(frame_name = "img", frame = frame)
             uncalib_fscore.append(np.sum(temp))
-            plt.plot(uncalib_fscore)
-            plt.pause(1)
+            # plt.plot(uncalib_fscore)
+            # plt.pause(0.01)
 
     images = np.asarray(images)
     np.save('autofocus_stack.npy',images)
@@ -344,15 +345,15 @@ if __name__ == "__main__":
     plt.imshow(images[assumed_focus]*(norm_array_full+1))
     plt.subplot(1,2,2)
     plt.title('plot of focus socre:' + str(z_positions[assumed_focus]))
-    plt.plot(focus_score)
-    plt.plot(assumed_focus,focus_score[assumed_focus],'ro')
+    plt.plot(z_positions[0:len(focus_score)], focus_score)
+    plt.plot(z_positions[assumed_focus],focus_score[assumed_focus],'ro')
     plt.show()
                 
     this_location = starting_location.copy()
     this_location['z_pos'] = z_positions[assumed_focus]
     controller.move_XYZ(position = this_location)
 
-    frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, cap = cap,return_cap = True)
+    frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, cap = cap,return_cap = True, clear_N_images_from_buffer = 3)
     camera.camera_control.imshow_resize(frame_name = "img", frame = frame)
 
     lights.labjackU3_control.turn_off_everything(d)

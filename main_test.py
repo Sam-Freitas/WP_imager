@@ -123,14 +123,14 @@ class CNCController:
 
         if ('$X' not in cleaned_line) and ('$$' not in cleaned_line) and ('?' not in cleaned_line):
             idle_counter = 0
-            time.sleep(0.1)
+            time.sleep(0.025)
             while True:
                 self.ser.reset_input_buffer()
                 self.ser.reset_output_buffer()
-                time.sleep(0.1)
+                time.sleep(0.025)
                 command = str.encode("?"+ "\n")
                 self.ser.write(command)
-                time.sleep(0.1)
+                time.sleep(0.025)
                 grbl_out = self.ser.readline().decode().strip()
                 grbl_response = grbl_out.strip()
 
@@ -152,9 +152,9 @@ class CNCController:
     def send_command(self, command):
         self.ser.reset_input_buffer() # flush the input and the output 
         self.ser.reset_output_buffer()
-        time.sleep(0.1)
+        time.sleep(0.025)
         self.ser.write(command.encode())
-        time.sleep(0.1)
+        time.sleep(0.025)
 
         CNCController.wait_for_movement_completion(self,command)
         out = []

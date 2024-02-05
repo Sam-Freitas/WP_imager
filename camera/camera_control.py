@@ -492,7 +492,7 @@ def simple_capture_data_fluor_single_image(camera_settings, plate_parameters = N
     return image_filename
 
 
-def capture_fluor_img_return_img(camera_settings, cap = None, return_cap = False):
+def capture_fluor_img_return_img(camera_settings, cap = None, return_cap = False, clear_N_images_from_buffer = 3):
 
     if cap is None:
         cap_release = True
@@ -521,10 +521,13 @@ def capture_fluor_img_return_img(camera_settings, cap = None, return_cap = False
 
         if return_cap:
             cap_release = False
+        
     else:
         cap_release = False
 
-    clear_camera_image_buffer(cap, N = 3)
+    if clear_N_images_from_buffer > 0:
+        clear_camera_image_buffer(cap, N = clear_N_images_from_buffer)
+
     num_images = 1
     # Capture a series of images
     ret, frame = cap.read()
