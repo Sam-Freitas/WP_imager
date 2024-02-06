@@ -326,7 +326,7 @@ def simple_capture_data_fluor(camera_settings, plate_parameters = None, testing 
         del_dir_contents(output_dir)
 
     camera_id = camera_settings['fluorescence'][0]
-    camera_id = 0 #####################################################################################S
+    # camera_id = 0 #####################################################################################S
     cam_width = float(camera_settings['fluorescence'][1])
     cam_height = float(camera_settings['fluorescence'][2])
     cam_framerate = camera_settings['fluorescence'][3]
@@ -353,8 +353,8 @@ def simple_capture_data_fluor(camera_settings, plate_parameters = None, testing 
     text_x2 = text_x-200
     text_y2 = 500
 
-    time_between_images_seconds = 1 # this is just for testing 
-    img_file_format = 'png' # slow and lossless but smaller 
+    # time_between_images_seconds = 1 # this is just for testing 
+    # img_file_format = 'png' # slow and lossless but smaller 
     # # img_file_format = 'jpg' # fast but lossy small files
     # # img_file_format = 'bmp' # fastest and lossess huge files
 
@@ -373,7 +373,7 @@ def simple_capture_data_fluor(camera_settings, plate_parameters = None, testing 
 
     num_images = int(number_of_images_per_burst)
     # Capture a series of images
-    for i in tqdm.tqdm(range(num_images)):
+    for i in range(num_images): #tqdm.tqdm(range(num_images)):
         start_time = time.time()
         ret, frame = cap.read()
         if not ret:
