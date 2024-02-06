@@ -24,11 +24,13 @@ print('START:','x',xo,'y',yo,'z',zo)
 dx = -153.2  # distace between plates
 dy = -115  # used to be 116
 
-# # # ##############################################
-# ## this is for the settings Wormotel positions 
+
+# # ##############################################
+## this is for the settings Wormotel positions 4 at a time measurements
 
 header = ['CentroidsX_mm','CentroidsY_mm','x_relative_pos_mm','y_relative_pos_mm','calib_x_pos_mm','calib_y_pos_mm','calib_z_pos_mm','y_offset_to_fluor_mm','name']
 df = pd.DataFrame(columns = header)
+df2 = df.copy(deep=True)
 
 calib_x_pos_mm = -43.75
 calib_y_pos_mm = -28.5
@@ -78,7 +80,101 @@ df.iloc[0,4] = calib_x_pos_mm
 df.iloc[0,5] = calib_y_pos_mm
 df.iloc[0,6] = calib_z_pos_mm
 df.iloc[0,7] = y_offset_to_fluor_mm
-df.to_csv(os.path.join(path_to_settings_folder,'settings_WM_positions.csv'),index= False)
+
+row_names = ['A','B','C','D','E','F','G','H','I','J','K','L']
+col_names = list(range(1,21))
+
+names_of_wells = list(df['name'].values)
+x_positions = list(df['x_relative_pos_mm'].values)
+y_positions = list(df['y_relative_pos_mm'].values)
+x_centroids = list(df['CentroidsX_mm'].values)
+y_centroids = list(df['CentroidsY_mm'].values)
+names = []
+counter = 0
+for i in range(0,len(row_names),2):
+    for j in range(0,len(col_names),2):
+
+        first_well = str(row_names[i]) + str(col_names[j]) 
+        fourth_well = str(row_names[i+1]) + str(col_names[j+1]) 
+
+        export_name = str(row_names[i]) + str(col_names[j]) + '_' + str(row_names[i]) + str(col_names[j+1]) + '_' + str(row_names[i+1]) + str(col_names[j]) + '_' + str(row_names[i+1]) + str(col_names[j+1])
+        names.append(export_name)
+
+        idx_1 = names_of_wells.index(first_well)
+        idx_4 = names_of_wells.index(fourth_well)
+
+        x_pos = (x_positions[idx_1] + x_positions[idx_4])/2
+        y_pos = (y_positions[idx_1] + y_positions[idx_4])/2
+        x_cen = (x_centroids[idx_1] + x_centroids[idx_4])/2
+        y_cen = (y_centroids[idx_1] + y_centroids[idx_4])/2
+
+        # df2.iloc[counter,0:4] = []
+        df2.loc[counter] = [x_cen,y_cen,x_pos,y_pos,0,0,0,0,export_name] #just xyz
+        # print(export_name, x_pos,y_pos)
+        counter = counter + 1
+
+df2.iloc[0,4] = calib_x_pos_mm
+df2.iloc[0,5] = calib_y_pos_mm
+df2.iloc[0,6] = calib_z_pos_mm
+df2.iloc[0,7] = y_offset_to_fluor_mm
+df2.to_csv(os.path.join(path_to_settings_folder,'settings_WM_4pair_positions.csv'),index= False)
+
+
+# # # ##############################################
+# ## this is for the settings Wormotel positions 
+
+# header = ['CentroidsX_mm','CentroidsY_mm','x_relative_pos_mm','y_relative_pos_mm','calib_x_pos_mm','calib_y_pos_mm','calib_z_pos_mm','y_offset_to_fluor_mm','name']
+# df = pd.DataFrame(columns = header)
+
+# calib_x_pos_mm = -43.75
+# calib_y_pos_mm = -28.5
+# calib_z_pos_mm = -89.0
+# y_offset_to_fluor_mm = 87.75
+
+# names = []
+# for WM_row_names in range(1,21):
+#     for WM_col_names in ['A','B','C','D','E','F','G','H','I','J','K','L']:
+#         names.append(str(WM_col_names)+str(WM_row_names))
+         
+# i = 0
+# j = 0
+# counter = 0
+
+# WM_xo = 0.0
+# WM_yo = -42
+# WM_zo = -83.5
+
+# WM_xextent = -85.5
+# WM_yextent = -49.5
+
+# WM_rows = 12
+# WM_cols = 20
+
+# x_linspace = np.linspace(0,WM_xextent,WM_cols)
+# y_linspace = np.linspace(WM_yextent,0,WM_rows)
+
+# xv,yv = np.meshgrid(x_linspace,y_linspace)
+
+# for c in range(WM_cols):
+#     i = 0
+#     for r in range(WM_rows):
+
+#         BLx = round(xv[r][c],4)
+#         BLy = round(yv[r][c],4)
+
+#         centered_x = BLx - (WM_xextent/2)
+#         centered_y = BLy - (WM_yextent/2)
+
+#         df.loc[counter] = [BLx,BLy,centered_x,centered_y,0,0,0,0,names[counter]] #just xyz
+#         counter = counter + 1
+#         i = i +1
+#     j = j+1
+
+# df.iloc[0,4] = calib_x_pos_mm
+# df.iloc[0,5] = calib_y_pos_mm
+# df.iloc[0,6] = calib_z_pos_mm
+# df.iloc[0,7] = y_offset_to_fluor_mm
+# df.to_csv(os.path.join(path_to_settings_folder,'settings_WM_positions.csv'),index= False)
 
 ######## this is just a little check script to make sure that the output is correct (and flipped that axis')
 # # # # import matplotlib.pyplot as plt

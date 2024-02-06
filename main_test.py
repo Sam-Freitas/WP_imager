@@ -383,6 +383,7 @@ if __name__ == "__main__":
     s_plate_positions = settings.get_settings.get_plate_positions()
     s_terasaki_positions = settings.get_settings.get_terasaki_positions()
     s_wm_positions = settings.get_settings.get_wm_positions()
+    s_wm_4pair_positions = settings.get_settings.get_wm_4pair_positions()
     s_machines = settings.get_settings.get_machine_settings()
     s_camera_settings = settings.get_settings.get_basic_camera_settings()
     s_todays_runs = settings.get_settings.get_todays_runs()
@@ -501,7 +502,8 @@ if __name__ == "__main__":
             s_positions = s_terasaki_positions.copy()
         elif n_wells==240:
             pixels_per_mm = well_locations_delta/[85.5,49.5]
-            s_positions = s_wm_positions.copy()
+            # s_positions = s_wm_positions.copy()
+            s_positions = s_wm_4pair_positions.copy()
         else:
             pixels_per_mm = well_locations_delta/[69.8,41.95] #default to terasaki
         # find the realtion between the measured and where it supposed to be currently
@@ -540,7 +542,7 @@ if __name__ == "__main__":
             red = int(this_plate_parameters['fluorescence_RED']) > 0, 
             red_intensity = int(this_plate_parameters['fluorescence_RED']))
 
-        # fluorescently image each of the terasaki wells (96)
+        # fluorescently image each of the wells
         for well_index,this_well_location_xy in enumerate(zip(s_positions['x_relative_pos_mm'].values(),s_positions['y_relative_pos_mm'].values())):
             # get plate parameters
             this_plate_parameters['well_name'] = s_positions['name'][well_index]
@@ -582,10 +584,12 @@ if __name__ == "__main__":
             else:
                 this_well_coords['z_pos'] = z_pos_found_autofocus
 
-            if run_as_testing:
-                this_plate_parameters['fluorescence_UV']
-
-            camera.camera_control.simple_capture_data_fluor(s_camera_settings, plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir)
+            # if run_as_testing:
+            #     this_plate_parameters['fluorescence_UV']
+            if well_index == 0:
+                cap = camera.camera_control.simple_capture_data_fluor(s_camera_settings, plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir, cap = None, return_cap = True)
+            else:
+                cap = camera.camera_control.simple_capture_data_fluor(s_camera_settings, plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir, cap = cap, return_cap = True)
         lights.coolLed_control.turn_everything_off(coolLED_port)
 
     # shut everything down 

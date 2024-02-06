@@ -125,6 +125,15 @@ def get_wm_positions():
 
     return df
 
+def get_wm_4pair_positions():
+
+    print('Getting WorMotel 4pair positions')
+    path = os.path.join(get_base_path(),'settings_WM_4pair_positions.csv')
+    df = pd.read_csv(path, delimiter = ',',index_col=False)
+    df = df.to_dict()
+
+    return df
+
 def convert_GRBL_settings(settings): # this converts grblHAL settings to readable dictionary 
 
     path = os.path.join(get_base_path(),'settings_grbl_base.txt')

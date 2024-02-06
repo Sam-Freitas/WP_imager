@@ -312,7 +312,7 @@ def simple_capture_data_single_image(camera_settings, plate_parameters = None, t
 
     return image_filename
 
-def simple_capture_data_fluor(camera_settings, plate_parameters = None, testing = False, output_dir = None):
+def simple_capture_data_fluor(camera_settings, plate_parameters = None, testing = False, output_dir = None, cap = None, return_cap = False):
 
     todays_date = datetime.date.today().strftime("%Y-%m-%d")
 
@@ -358,15 +358,16 @@ def simple_capture_data_fluor(camera_settings, plate_parameters = None, testing 
     # # img_file_format = 'jpg' # fast but lossy small files
     # # img_file_format = 'bmp' # fastest and lossess huge files
 
-    # Open the camera0
-    cap = cv2.VideoCapture(int(camera_id))
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH,int(cam_width))
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT,int(cam_height))
-    cap.set(cv2.CAP_PROP_FPS,int(cam_framerate))
+    if cap == None:
+        # Open the camera0
+        cap = cv2.VideoCapture(int(camera_id))
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH,int(cam_width))
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT,int(cam_height))
+        cap.set(cv2.CAP_PROP_FPS,int(cam_framerate))
 
-    if not cap.isOpened():
-        print("Error: Unable to open camera.")
-        exit()
+        if not cap.isOpened():
+            print("Error: Unable to open camera.")
+            exit()
 
     clear_camera_image_buffer(cap, N = 3)
 
@@ -400,7 +401,10 @@ def simple_capture_data_fluor(camera_settings, plate_parameters = None, testing 
 
     # Release the camera
     # cv2.destroyAllWindows()
-    cap.release()
+    if return_cap:
+        return cap
+    else:
+        cap.release()
 
 def simple_capture_data_fluor_single_image(camera_settings, plate_parameters = None, testing = False, output_dir = None, image_file_format = 'png'):
 
