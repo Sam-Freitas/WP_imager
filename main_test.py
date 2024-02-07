@@ -314,12 +314,12 @@ class CNCController:
             command = "G1 z" + str(z_travel_height) + " F2500" #+ "\n"
             response, out = CNCController.send_command(self,command)
         
-        print('moving to XY')
+        # print('moving to XY')
         # command = 'G0 ' + 'X' + str(position['x_pos']) + ' ' + 'Y' + str(position['y_pos']) 
         command = 'G1 ' + 'X' + str(position['x_pos']) + ' ' + 'Y' + str(position['y_pos']) + ' F2500'
         response, out = CNCController.send_command(self,command)
         ##### move z
-        print('moving to Z')
+        # print('moving to Z')
         # command = 'G0 ' + 'Z' + str(position['z_pos']) 
         command = 'G1 ' + 'Z' + str(position['z_pos']) + ' F2500'
         response, out = CNCController.send_command(self,command)
@@ -329,7 +329,7 @@ class CNCController:
     def move_XYZ(self, position):
 
         ##### move xyz
-        print('moving to XYZ')
+        # print('moving to XYZ')
         # command = 'G0 ' + 'X' + str(position['x_pos']) + ' ' + 'Y' + str(position['y_pos']) + ' ' + 'Z' + str(position['z_pos']) 
         command = 'G1 ' + 'X' + str(position['x_pos']) + ' ' + 'Y' + str(position['y_pos']) + ' ' + 'Z' + str(position['z_pos']) + ' F2500'
         response, out = CNCController.send_command(self,command)
@@ -588,6 +588,8 @@ if __name__ == "__main__":
             #     this_plate_parameters['fluorescence_UV']
             if well_index == 0:
                 cap = camera.camera_control.simple_capture_data_fluor(s_camera_settings, plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir, cap = None, return_cap = True)
+            elif well_index == (len(s_positions['x_relative_pos_mm'].values()) - 1): 
+                cap = camera.camera_control.simple_capture_data_fluor(s_camera_settings, plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir, cap = cap, return_cap = False)
             else:
                 cap = camera.camera_control.simple_capture_data_fluor(s_camera_settings, plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir, cap = cap, return_cap = True)
         lights.coolLed_control.turn_everything_off(coolLED_port)
