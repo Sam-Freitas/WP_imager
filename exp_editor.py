@@ -37,7 +37,7 @@ def update_s_plate_names_and_opts(index,options):
                     options[i] = 0
             if i > 3:
                 if options[i] == True:
-                    options[i] = 100
+                    options[i] = 5
                 if options[i] == False:
                     options[i] = 0
     else:

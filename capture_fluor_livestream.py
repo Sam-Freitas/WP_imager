@@ -16,6 +16,29 @@ matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import scipy
 
+def sq_grad(img,thresh = 50,offset = 10):
+
+    shift = int(0-offset)
+    offset = int(offset)
+
+    img1 = img[:,0:shift].astype(np.float32)
+    img2 = img[:,offset:].astype(np.float32)
+
+    diff = np.abs(img2-img1)
+    mask = diff > thresh
+    squared_gradient = diff*diff*mask
+
+    # img3 = img[0:shift,:]
+    # img4 = img[offset:,:]
+
+    # diff1 = np.abs(img2-img1)
+    # diff2 = np.abs(img4-img3)
+    # mask1 = diff1 > thresh
+    # mask2 = diff2 > thresh
+
+    # squared_gradient = diff1*diff2*mask1*mask2
+
+    return squared_gradient
 
 class CNCController:
     def __init__(self, port, baudrate):
@@ -305,16 +328,16 @@ if __name__ == "__main__":
     s_todays_runs = settings.get_settings.get_todays_runs()
 
     settings.get_settings.check_grbl_port(s_machines['grbl'][0], run_as_testing = False)
-    controller = CNCController(port=s_machines['grbl'][0], baudrate=s_machines['grbl'][1])
-    controller.set_up_grbl(home = True)
     coolLED_port = s_machines['coolLed'][0] # test the fluorescent lights (if applicable)
     lights.coolLed_control.turn_everything_off(coolLED_port)
+    controller = CNCController(port=s_machines['grbl'][0], baudrate=s_machines['grbl'][1])
+    controller.set_up_grbl(home = True)
 
     # starting_location_xyz = [-170,-35,-89]# <--WM [-325,-35,-89]# <-- blackpla# [-490,-35,-89]# <-- clearTERA# center of where you want to measure [-191.4,-300,-86]
     # -3.8276966328669104, 'y_pos': -53.505427481711735, 'z_pos': -89
     # [-3.8276966328669104,-53.505427481711735, -89]
 
-    starting_location_xyz = [-490,-35,-89]#
+    starting_location_xyz = [-170,-35,-89]#
 
     starting_location = dict()
     starting_location['x_pos'] = round(starting_location_xyz[0],4)
@@ -322,7 +345,13 @@ if __name__ == "__main__":
     starting_location['z_pos'] = round(starting_location_xyz[2],4)
     controller.move_XYZ(position=starting_location)
 
-    z_pos_found_autofocus, center_int= run_autofocus_at_current_position(controller, this_well_coords, coolLED_port, this_plate_parameters)
+    this_plate_parameters = dict()
+    this_plate_parameters['fluorescence_UV'] = 100
+    this_plate_parameters['fluorescence_BLUE'] = 100
+    this_plate_parameters['fluorescence_GREEN'] = 100
+    this_plate_parameters['fluorescence_RED'] = 100
+
+    z_pos_found_autofocus, center_int= run_autofocus_at_current_position(controller, starting_location, coolLED_port, this_plate_parameters)
 
     print(z_pos_found_autofocus)
     controller.close_connection()
@@ -332,13 +361,19 @@ if __name__ == "__main__":
         uv_intensity = 100,
         blue = True, 
         blue_intensity = 100,
-        green = False, 
+        green = True, 
         green_intensity = 100,
-        red = False, 
+        red = True, 
         red_intensity = 100)
 
-    frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, return_cap = False, clear_N_images_from_buffer = 3)
+    frame = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, return_cap = False, clear_N_images_from_buffer = 3)
 
-    binary_img = analysis.fluor_postprocess.largest_blob(frame > 20) # get the largest binary blob in the image
+    camera.camera_control.imshow_resize(frame_name = "img", frame = frame, resize_size = [640,640])
+
+    a = scipy.ndimage.gaussian_filter(frame,20)
+    binary_img = analysis.fluor_postprocess.largest_blob(a > 4) # get the largest binary blob in the image
     center = [ np.average(indices) for indices in np.where(binary_img) ] # find where the actual center of the frame is 
     center_int = [int(np.round(point)) for point in center]
+
+    plt.imshow(binary_img)
+    print('')

@@ -242,8 +242,9 @@ if __name__ == "__main__":
 
     # starting_location_xyz = [-170,-35,-89]# <--WM [-325,-35,-89]# <-- blackpla# [-490,-35,-89]# <-- clearTERA# center of where you want to measure [-191.4,-300,-86]
     # -3.8276966328669104, 'y_pos': -53.505427481711735, 'z_pos': -81.5
+    starting_location_xyz = [3.8276966328669104, -53.505427481711735,-89]
     starting_location_xyz = [-170,-35,-89]
-    starting_location_xyz = [-151.1,-50.90,-89]
+    # starting_location_xyz = [-151.1,-50.90,-89]
     pixels_per_mm = 192
 
     FOV = 5
@@ -283,13 +284,13 @@ if __name__ == "__main__":
 
     lights.coolLed_control.turn_specified_on(coolLED_port, 
         uv = False, 
-        uv_intensity = 100,
+        uv_intensity = 5,
         blue = True, 
-        blue_intensity = 100,
+        blue_intensity = 5,
         green = True, 
-        green_intensity = 100,
+        green_intensity = 5,
         red = True, 
-        red_intensity = 100)
+        red_intensity = 5)
 
     controller.move_XY_at_Z_travel(starting_location, z_travel_height)
 
@@ -321,7 +322,7 @@ if __name__ == "__main__":
     np.save('autofocus_stack.npy',images)
 
     a = np.mean(images, axis = 0) # get the average image taken of the stack (for illumination correction)
-    binary_img = analysis.fluor_postprocess.largest_blob(a > 20) # get the largest binary blob in the image
+    binary_img = analysis.fluor_postprocess.largest_blob(a > 0) # get the largest binary blob in the image
     center = [ np.average(indices) for indices in np.where(binary_img) ] # find where the actual center of the frame is 
     center_int = [int(np.round(point)) for point in center]
 

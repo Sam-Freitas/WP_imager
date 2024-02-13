@@ -159,11 +159,11 @@ def run_autofocus_at_current_position(controller, starting_location, coolLED_por
         uv = False, 
         uv_intensity = 100,
         blue = True, 
-        blue_intensity = 100,
+        blue_intensity = 25,
         green = True, 
-        green_intensity = 100,
+        green_intensity = 25,
         red = True, 
-        red_intensity = 100)
+        red_intensity = 25)
 
     # go though all the z_positions and get the most in focus position
     images = []
