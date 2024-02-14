@@ -136,16 +136,16 @@ def run_calib_terasaki(s_camera_settings,this_plate_parameters,output_dir,s_tera
 
     return adjusted_position, center_delta_in_mm
   
-def run_autofocus_at_current_position(controller, starting_location, coolLED_port, this_plate_parameters):
+def run_autofocus_at_current_position(controller, starting_location, coolLED_port, this_plate_parameters, autofocus_min_max = [1,-1], autofocus_delta_z = 0.25):
 
     lights.coolLed_control.turn_everything_off(coolLED_port) # turn everything off
 
     # set up the variables  
-    z_pos = -5
+    # z_pos = -5
     pixels_per_mm = 192
     FOV = 5
-    autofocus_min_max = [2.5,-6] # remember that down (towards sample) is negative
-    autofocus_delta_z = 0.25 # mm 
+    # autofocus_min_max = [2.5,-6] # remember that down (towards sample) is negative
+    # autofocus_delta_z = 0.25 # mm 
     autofocus_steps = int(abs(np.diff(autofocus_min_max) / autofocus_delta_z)) + 1
     z_limit = [-5,-94]
     offset = 5
@@ -191,9 +191,9 @@ def run_autofocus_at_current_position(controller, starting_location, coolLED_por
     # np.save('autofocus_stack.npy',images)
 
     a = np.mean(images, axis = 0) # get the average image taken of the stack (for illumination correction)
-    binary_img = analysis.fluor_postprocess.largest_blob(a > 20) # get the largest binary blob in the image
-    center = [ np.average(indices) for indices in np.where(binary_img) ] # find where the actual center of the frame is (assuming camera sensor is larger than image circle)
-    center_int = [int(np.round(point)) for point in center]
+    # binary_img = analysis.fluor_postprocess.largest_blob(a > 20) # get the largest binary blob in the image
+    # center = [ np.average(indices) for indices in np.where(binary_img) ] # find where the actual center of the frame is (assuming camera sensor is larger than image circle)
+    # center_int = [int(np.round(point)) for point in center]
 
     norm_array = scipy.ndimage.gaussian_filter(a,100) # get the instensities of the images for the illuminance normalizations
     norm_array_full = 1-(norm_array/np.max(norm_array))
@@ -579,9 +579,10 @@ if __name__ == "__main__":
                 lights.labjackU3_control.turn_off_everything(d)
             
             if well_index == 0:
-                z_pos_found_autofocus = run_autofocus_at_current_position(controller, this_well_coords, coolLED_port, this_plate_parameters)
+                z_pos_found_autofocus = run_autofocus_at_current_position(controller, this_well_coords, coolLED_port, this_plate_parameters, autofocus_min_max = [2.5,-6], autofocus_delta_z = 0.1)
                 this_well_coords['z_pos'] = z_pos_found_autofocus
             else:
+                z_pos_found_autofocus = run_autofocus_at_current_position(controller, this_well_coords, coolLED_port, this_plate_parameters, autofocus_min_max = [0.5,-0.5], autofocus_delta_z = 0.1)
                 this_well_coords['z_pos'] = z_pos_found_autofocus
 
             # if run_as_testing:
