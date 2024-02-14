@@ -498,14 +498,14 @@ if __name__ == "__main__":
 
         # determine if the plate is a terasaki or wm and use the correct settings
         if n_wells==96:
-            pixels_per_mm = well_locations_delta/[69.8,41.95] #[85.5,49.5]
+            pixels_per_mm = well_locations_delta/[69.695,41.845] #[85.5,49.5]
             s_positions = s_terasaki_positions.copy()
         elif n_wells==240:
             pixels_per_mm = well_locations_delta/[85.5,49.5]
             # s_positions = s_wm_positions.copy()
             s_positions = s_wm_4pair_positions.copy()
         else:
-            pixels_per_mm = well_locations_delta/[69.8,41.95] #default to terasaki
+            pixels_per_mm = well_locations_delta/[69.695,41.845] #default to terasaki
         # find the realtion between the measured and where it supposed to be currently
         center = [float(s_camera_settings['widefield'][1])/2,float(s_camera_settings['widefield'][2])/2]
         center_delta = center-center_location
