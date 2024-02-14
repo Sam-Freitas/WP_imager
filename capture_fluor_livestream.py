@@ -377,7 +377,10 @@ if __name__ == "__main__":
         # Drawing the lines 
         cv2.line(frame, (0, 0), (frame_shape[0], frame_shape[1]), (0, 0, 255), 5) # add a red cross through the middle of the screen
         cv2.line(frame, (frame_shape[0], 0), (0, frame_shape[1]), (0, 0, 255), 5) # note not the middle of the viewpoint that comes later
-    
+        cv2.circle(frame, (int(frame_shape[0]/2), int(frame_shape[1]/2)), 100, (0, 0, 255), 5) 
+        cv2.circle(frame, (int(frame_shape[0]/2), int(frame_shape[1]/2)), 250, (0, 0, 255), 5) 
+        cv2.circle(frame, (int(frame_shape[0]/2), int(frame_shape[1]/2)), 500, (0, 0, 255), 5)  
+
         camera.camera_control.imshow_resize(frame_name = "img", frame = frame, resize_size = [894,894])
 
     # a = scipy.ndimage.gaussian_filter(frame,20)
