@@ -167,20 +167,20 @@ class CNCController:
     def close_connection(self):
         self.ser.close()
 
-def run_autofocus_at_current_position(controller, starting_location, coolLED_port, this_plate_parameters):
+def run_autofocus_at_current_position(controller, starting_location, coolLED_port, this_plate_parameters, autofocus_min_max = [1,-1], autofocus_delta_z = 0.25):
 
     lights.coolLed_control.turn_everything_off(coolLED_port) # turn everything off
 
     # set up the variables  
-    z_pos = -5
-    pixels_per_mm = 192
-    FOV = 5
-    autofocus_min_max = [2.5,-6] # remember that down (towards sample) is negative
-    autofocus_delta_z = 0.25 # mm 
+    # z_pos = -5
+    # pixels_per_mm = 192
+    # FOV = 5
+    # autofocus_min_max = [2.5,-6] # remember that down (towards sample) is negative
+    # autofocus_delta_z = 0.25 # mm 
     autofocus_steps = int(abs(np.diff(autofocus_min_max) / autofocus_delta_z)) + 1
     z_limit = [-5,-94]
-    offset = 5
-    thresh = 50
+    offset = 5 # this is for the autofocus algorithm how many pixels apart is the focus to be measures
+    thresh = 50 # same as above but now ignores all the values under thresh
 
     # find the z locations for the loop to step through
     z_positions = np.linspace(starting_location['z_pos']+autofocus_min_max[0],starting_location['z_pos']+autofocus_min_max[1],num = autofocus_steps)
@@ -190,11 +190,11 @@ def run_autofocus_at_current_position(controller, starting_location, coolLED_por
         uv = False, 
         uv_intensity = 100,
         blue = True, 
-        blue_intensity = 100,
+        blue_intensity = 25,
         green = True, 
-        green_intensity = 100,
+        green_intensity = 25,
         red = True, 
-        red_intensity = 100)
+        red_intensity = 25)
 
     # go though all the z_positions and get the most in focus position
     images = []
@@ -222,9 +222,9 @@ def run_autofocus_at_current_position(controller, starting_location, coolLED_por
     # np.save('autofocus_stack.npy',images)
 
     a = np.mean(images, axis = 0) # get the average image taken of the stack (for illumination correction)
-    binary_img = analysis.fluor_postprocess.largest_blob(a > 20) # get the largest binary blob in the image
-    center = [ np.average(indices) for indices in np.where(binary_img) ] # find where the actual center of the frame is (assuming camera sensor is larger than image circle)
-    center_int = [int(np.round(point)) for point in center]
+    # binary_img = analysis.fluor_postprocess.largest_blob(a > 20) # get the largest binary blob in the image
+    # center = [ np.average(indices) for indices in np.where(binary_img) ] # find where the actual center of the frame is (assuming camera sensor is larger than image circle)
+    # center_int = [int(np.round(point)) for point in center]
 
     norm_array = scipy.ndimage.gaussian_filter(a,100) # get the instensities of the images for the illuminance normalizations
     norm_array_full = 1-(norm_array/np.max(norm_array))
@@ -257,7 +257,7 @@ def run_autofocus_at_current_position(controller, starting_location, coolLED_por
     frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, cap = cap,return_cap = True, clear_N_images_from_buffer = 5)
     camera.camera_control.imshow_resize(frame_name = "img", frame = frame)
 
-    return z_pos, center_int
+    return z_pos
 
 def turn_everything_off_at_exit():
     lights.labjackU3_control.turn_off_everything()
@@ -327,53 +327,63 @@ if __name__ == "__main__":
     s_camera_settings = settings.get_settings.get_basic_camera_settings()
     s_todays_runs = settings.get_settings.get_todays_runs()
 
-    settings.get_settings.check_grbl_port(s_machines['grbl'][0], run_as_testing = False)
+    # settings.get_settings.check_grbl_port(s_machines['grbl'][0], run_as_testing = False)
     coolLED_port = s_machines['coolLed'][0] # test the fluorescent lights (if applicable)
-    lights.coolLed_control.turn_everything_off(coolLED_port)
-    controller = CNCController(port=s_machines['grbl'][0], baudrate=s_machines['grbl'][1])
-    controller.set_up_grbl(home = True)
+    # lights.coolLed_control.turn_everything_off(coolLED_port)
+    # controller = CNCController(port=s_machines['grbl'][0], baudrate=s_machines['grbl'][1])
+    # controller.set_up_grbl(home = True)
 
     # starting_location_xyz = [-170,-35,-89]# <--WM [-325,-35,-89]# <-- blackpla# [-490,-35,-89]# <-- clearTERA# center of where you want to measure [-191.4,-300,-86]
     # -3.8276966328669104, 'y_pos': -53.505427481711735, 'z_pos': -89
     # [-3.8276966328669104,-53.505427481711735, -89]
 
-    starting_location_xyz = [-170,-35,-89]#
+    starting_location_xyz = [-3.8276966328669104,-53.505427481711735, -89]#
 
     starting_location = dict()
     starting_location['x_pos'] = round(starting_location_xyz[0],4)
     starting_location['y_pos'] = round(starting_location_xyz[1],4)
     starting_location['z_pos'] = round(starting_location_xyz[2],4)
-    controller.move_XYZ(position=starting_location)
+    # controller.move_XYZ(position=starting_location)
 
     this_plate_parameters = dict()
-    this_plate_parameters['fluorescence_UV'] = 100
-    this_plate_parameters['fluorescence_BLUE'] = 100
-    this_plate_parameters['fluorescence_GREEN'] = 100
-    this_plate_parameters['fluorescence_RED'] = 100
+    this_plate_parameters['fluorescence_UV'] = 5
+    this_plate_parameters['fluorescence_BLUE'] = 5
+    this_plate_parameters['fluorescence_GREEN'] = 5
+    this_plate_parameters['fluorescence_RED'] = 5
 
-    z_pos_found_autofocus, center_int= run_autofocus_at_current_position(controller, starting_location, coolLED_port, this_plate_parameters)
+    # z_pos_found_autofocus, center_int = run_autofocus_at_current_position(controller, starting_location, coolLED_port, this_plate_parameters)
 
-    print(z_pos_found_autofocus)
-    controller.close_connection()
+    # print(z_pos_found_autofocus)
+    # controller.close_connection()
 
     lights.coolLed_control.turn_specified_on(coolLED_port, 
         uv = False, 
-        uv_intensity = 100,
+        uv_intensity = 5,
         blue = True, 
-        blue_intensity = 100,
+        blue_intensity = 5,
         green = True, 
-        green_intensity = 100,
+        green_intensity = 5,
         red = True, 
-        red_intensity = 100)
+        red_intensity = 5)
 
-    frame = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, return_cap = False, clear_N_images_from_buffer = 3)
+    frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, cap = None, return_cap = True, clear_N_images_from_buffer = 10)
 
-    camera.camera_control.imshow_resize(frame_name = "img", frame = frame, resize_size = [640,640])
+    while True:
+        frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, cap = cap, return_cap = True, clear_N_images_from_buffer = 0)
 
-    a = scipy.ndimage.gaussian_filter(frame,20)
-    binary_img = analysis.fluor_postprocess.largest_blob(a > 4) # get the largest binary blob in the image
-    center = [ np.average(indices) for indices in np.where(binary_img) ] # find where the actual center of the frame is 
-    center_int = [int(np.round(point)) for point in center]
+        frame_shape = frame.shape
+        frame = cv2.merge((frame,frame,frame))
 
-    plt.imshow(binary_img)
+        # Drawing the lines 
+        cv2.line(frame, (0, 0), (frame_shape[0], frame_shape[1]), (0, 0, 255), 5) # add a red cross through the middle of the screen
+        cv2.line(frame, (frame_shape[0], 0), (0, frame_shape[1]), (0, 0, 255), 5) # note not the middle of the viewpoint that comes later
+    
+        camera.camera_control.imshow_resize(frame_name = "img", frame = frame, resize_size = [894,894])
+
+    # a = scipy.ndimage.gaussian_filter(frame,20)
+    # binary_img = analysis.fluor_postprocess.largest_blob(a > 4) # get the largest binary blob in the image
+    # center = [ np.average(indices) for indices in np.where(binary_img) ] # find where the actual center of the frame is 
+    # center_int = [int(np.round(point)) for point in center]
+
+    # plt.imshow(binary_img)
     print('')

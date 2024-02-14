@@ -142,8 +142,8 @@ def run_autofocus_at_current_position(controller, starting_location, coolLED_por
 
     # set up the variables  
     # z_pos = -5
-    pixels_per_mm = 192
-    FOV = 5
+    # pixels_per_mm = 192
+    # FOV = 5
     # autofocus_min_max = [2.5,-6] # remember that down (towards sample) is negative
     # autofocus_delta_z = 0.25 # mm 
     autofocus_steps = int(abs(np.diff(autofocus_min_max) / autofocus_delta_z)) + 1
