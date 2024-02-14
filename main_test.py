@@ -148,8 +148,8 @@ def run_autofocus_at_current_position(controller, starting_location, coolLED_por
     # autofocus_delta_z = 0.25 # mm 
     autofocus_steps = int(abs(np.diff(autofocus_min_max) / autofocus_delta_z)) + 1
     z_limit = [-5,-94]
-    offset = 5
-    thresh = 50
+    offset = 5 # this is for the autofocus algorithm how many pixels apart is the focus to be measures
+    thresh = 50 # same as above but now ignores all the values under thresh
 
     # find the z locations for the loop to step through
     z_positions = np.linspace(starting_location['z_pos']+autofocus_min_max[0],starting_location['z_pos']+autofocus_min_max[1],num = autofocus_steps)
