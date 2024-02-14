@@ -389,4 +389,5 @@ if __name__ == "__main__":
     # center_int = [int(np.round(point)) for point in center]
 
     # plt.imshow(binary_img)
+    light.coolLed_control.turn_everything_off(coolLED_port)
     print('')

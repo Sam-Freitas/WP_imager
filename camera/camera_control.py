@@ -14,7 +14,11 @@ def imshow_resize(frame_name = "img", frame = 0, resize_size = [640,480], defaul
         cv2.setWindowProperty(frame_name, cv2.WND_PROP_TOPMOST, 1)
     if use_waitkey:
         cv2.waitKey(1)
-    cv2.moveWindow(frame_name,move_to[0]-resize_size[0],move_to[1])
+    if frame_name == "stream":
+        move_to = [1920,520]
+        cv2.moveWindow(frame_name,move_to[0]-resize_size[0],move_to[1])
+    else:
+        cv2.moveWindow(frame_name,move_to[0]-resize_size[0],move_to[1])
     return True
 
 # this deletes all the dir contents, recursive or not 
@@ -369,7 +373,7 @@ def simple_capture_data_fluor(camera_settings, plate_parameters = None, testing 
             print("Error: Unable to open camera.")
             exit()
 
-    clear_camera_image_buffer(cap, N = 3)
+    # clear_camera_image_buffer(cap, N = 3)
 
     num_images = int(number_of_images_per_burst)
     # Capture a series of images
