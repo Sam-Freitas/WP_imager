@@ -283,7 +283,7 @@ df.to_csv(os.path.join(path_to_settings_folder,'settings_plate_positions.csv'),i
 # for r in range(rows):
 #     i = 0
 #     for c in range(cols):
-#         df.loc[counter] = [counter ,r , c ,'NONE','NONE','1','1','100','5','5','5','5']
+#         df.loc[counter] = [counter ,r , c ,'NONE','NONE','1','1','100','1','1','5','5']
 #         counter = counter + 1
 #         i = i +1
 #     j = j+1

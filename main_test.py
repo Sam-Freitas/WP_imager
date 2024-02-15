@@ -157,13 +157,13 @@ def run_autofocus_at_current_position(controller, starting_location, coolLED_por
     # turn on the RGB lights to get a white light for focusing 
     lights.coolLed_control.turn_specified_on(coolLED_port, 
         uv = False, 
-        uv_intensity = 5,
+        uv_intensity = 0,
         blue = True, 
         blue_intensity = 1,
         green = True, 
-        green_intensity = 1,
+        green_intensity = 5,
         red = True, 
-        red_intensity = 1)
+        red_intensity = 0)
 
     # go though all the z_positions and get the most in focus position
     images = []
@@ -568,7 +568,7 @@ if __name__ == "__main__":
             if well_index == 0:
                 this_well_coords['z_pos'] = calibration_coordinates['z_pos']
             else:
-                this_well_coords['z_pos'] = z_pos_found_autofocus
+                this_well_coords['z_pos'] = z_pos_found_autofocus_inital
             print(well_index, this_well_coords)
             # move the fluorescent imaging head to that specific well  
 
@@ -585,8 +585,8 @@ if __name__ == "__main__":
             
             if well_index == 0:
                 # get first autofocus and return the cap
-                z_pos_found_autofocus, cap = run_autofocus_at_current_position(controller, this_well_coords, coolLED_port, this_plate_parameters, autofocus_min_max = [2.5,-2.5], autofocus_delta_z = 0.1, cap = None)
-                this_well_coords['z_pos'] = z_pos_found_autofocus
+                z_pos_found_autofocus_inital, cap = run_autofocus_at_current_position(controller, this_well_coords, coolLED_port, this_plate_parameters, autofocus_min_max = [2.5,-2.5], autofocus_delta_z = 0.1, cap = None)
+                this_well_coords['z_pos'] = z_pos_found_autofocus_inital
             else:
                 z_pos_found_autofocus, cap = run_autofocus_at_current_position(controller, this_well_coords, coolLED_port, this_plate_parameters, autofocus_min_max = [0.5,-0.5], autofocus_delta_z = 0.25, cap = cap)
                 this_well_coords['z_pos'] = z_pos_found_autofocus

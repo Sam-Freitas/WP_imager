@@ -30,16 +30,37 @@ def update_s_plate_names_and_opts(index,options):
 
     if options is not None:
         for i,val in enumerate(options):
-            if i < 4:
+            if i < 4: #plate name, experiment name, lifepsan, healthspan,
                 if options[i] == True:
                     options[i] = 1
                 if options[i] == False:
                     options[i] = 0
-            if i > 3:
+            if i == 4: # fluor timing
+                if options[i] == True:
+                    options[i] = 100
+                if options[i] == False:
+                    options[i] = 0
+            if i == 5: # UV excitation 
+                if options[i] == True:
+                    options[i] = 1
+                if options[i] == False:
+                    options[i] = 0
+            if i == 6: # Blue excitation 
+                if options[i] == True:
+                    options[i] = 1
+                if options[i] == False:
+                    options[i] = 0
+            if i == 7: # Green excitation 
                 if options[i] == True:
                     options[i] = 5
                 if options[i] == False:
                     options[i] = 0
+            if i == 8: # RED excitation 
+                if options[i] == True:
+                    options[i] = 5
+                if options[i] == False:
+                    options[i] = 0
+            
     else:
         options = DEFAULT_VALUES
 

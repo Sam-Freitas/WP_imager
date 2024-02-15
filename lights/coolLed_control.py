@@ -82,20 +82,22 @@ def test_lights(port):
         
         print('End of commands')
 
-def turn_specified_on(port, uv = False, blue = False, green = False, red = False, uv_intensity = 25, blue_intensity = 25, green_intensity = 25, red_intensity = 25):
+def turn_specified_on(port, uv = False, blue = False, green = False, red = False, uv_intensity = 25, blue_intensity = 25, green_intensity = 25, red_intensity = 25,
+    verbose = False):
 
     with serial.Serial(port, BAUD_RATE) as ser:
 
         ser.reset_input_buffer()
         ser.reset_output_buffer()
         time.sleep(0.02)
-
-        print('Reading coolLed settings:') # read in the settings from the current system 
+        if verbose:
+            print('Reading coolLed settings:') # read in the settings from the current system 
         ser.write(str.encode("CSS?\r\n"))
         time.sleep(0.01)   # Wait 
         out = ser.readline() 
         response = out.strip().decode('utf-8')
-        print("Returned settings:", response)
+        if verbose:
+            print("Returned settings:", response)
 
         # print('turn off lights before slecting:') 
         ser.write(str.encode("CSSAXF000BXN000CXN000DXN000\r\n")) # make sure that the lights are turned off
@@ -118,28 +120,32 @@ def turn_specified_on(port, uv = False, blue = False, green = False, red = False
             intensity_str = "{:03d}".format(green_intensity)
             command = command + "DSN" + intensity_str
 
-        print("Writing coolLed settings:", command)
+        if verbose:
+            print("Writing coolLed settings:", command)
         ser.write(str.encode(command + "\r\n")) ### CSS (all) A (orBCD channel) S (orX selected) N (orF on) 050 (50 intensity)
         time.sleep(0.01)   # Wait 
         out = ser.readline() 
         response = out.strip().decode('utf-8')
-        print(response)
+        if verbose:
+            print(response)
 
-def turn_everything_off(port):
+def turn_everything_off(port, verbose = False):
 
     with serial.Serial(port, BAUD_RATE) as ser:
 
         # print('Reading coolLed settings:')
         # ser.reset_input_buffer()
         # ser.reset_output_buffer()
-        time.sleep(0.1)
+        # time.sleep(0.1)
 
-        print('coolLED off:')
+        if verbose:
+            print('coolLED off:')
         ser.write(str.encode("CSSAXF000BXN000CXN000DXN000\r\n"))
-        time.sleep(0.5)   # Wait 
+        time.sleep(0.02)   # Wait 
         out = ser.readline() 
         response = out.strip().decode('utf-8')
-        print(response)
+        if verbose:
+            print(response)
         
 def force_turn_everything_off():
 
@@ -170,13 +176,13 @@ if __name__ == "__main__":
  
     turn_specified_on(port_path, #############
             uv = False, 
-            uv_intensity = 5,
+            uv_intensity = 1,
             blue = True, #########################################################
-            blue_intensity = 5,
+            blue_intensity = 1,
             green = True, 
             green_intensity = 5,
             red = True, ###########################################################
-            red_intensity = 5
+            red_intensity = 0
             )
 
     turn_everything_off(port_path)
