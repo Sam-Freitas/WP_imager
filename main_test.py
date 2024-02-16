@@ -149,7 +149,7 @@ def run_autofocus_at_current_position(controller, starting_location, coolLED_por
     autofocus_steps = int(abs(np.diff(autofocus_min_max) / autofocus_delta_z)) + 1
     z_limit = [-5,-94]
     offset = 5 # this is for the autofocus algorithm how many pixels apart is the focus to be measures
-    thresh = 50 # same as above but now ignores all the values under thresh
+    thresh = 5 # same as above but now ignores all the values under thresh
 
     # find the z locations for the loop to step through
     z_positions = np.linspace(starting_location['z_pos']+autofocus_min_max[0],starting_location['z_pos']+autofocus_min_max[1],num = autofocus_steps)
@@ -184,31 +184,31 @@ def run_autofocus_at_current_position(controller, starting_location, coolLED_por
             else:
                 frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, cap = cap, return_cap = True, clear_N_images_from_buffer = 1)
             images.append(frame)
-            # temp = sq_grad(frame,thresh = thresh,offset = offset)
+            temp = sq_grad(frame,thresh = thresh,offset = offset)
+            uncalib_fscore.append(np.sum(temp))
             camera.camera_control.imshow_resize(frame_name = "stream", frame = frame)
-            # uncalib_fscore.append(np.sum(temp))
     
     lights.coolLed_control.turn_everything_off(coolLED_port) # turn everything off
-    images = np.asarray(images)
-    # np.save('autofocus_stack.npy',images)
+    # images = np.asarray(images)
+    # # np.save('autofocus_stack.npy',images)
 
-    a = np.mean(images, axis = 0) # get the average image taken of the stack (for illumination correction)
-    # binary_img = analysis.fluor_postprocess.largest_blob(a > 20) # get the largest binary blob in the image
-    # center = [ np.average(indices) for indices in np.where(binary_img) ] # find where the actual center of the frame is (assuming camera sensor is larger than image circle)
-    # center_int = [int(np.round(point)) for point in center]
+    # a = np.mean(images, axis = 0) # get the average image taken of the stack (for illumination correction)
+    # # binary_img = analysis.fluor_postprocess.largest_blob(a > 20) # get the largest binary blob in the image
+    # # center = [ np.average(indices) for indices in np.where(binary_img) ] # find where the actual center of the frame is (assuming camera sensor is larger than image circle)
+    # # center_int = [int(np.round(point)) for point in center]
 
-    norm_array = scipy.ndimage.gaussian_filter(a,10) # get the instensities of the images for the illuminance normalizations
-    norm_array_full = 1-(norm_array/np.max(norm_array))
-    # norm_array = analysis.fluor_postprocess.crop_center_numpy_return(norm_array_full,pixels_per_mm*(FOV), center = center_int)
+    # norm_array = scipy.ndimage.gaussian_filter(a,10) # get the instensities of the images for the illuminance normalizations
+    # norm_array_full = 1-(norm_array/np.max(norm_array))
+    # # norm_array = analysis.fluor_postprocess.crop_center_numpy_return(norm_array_full,pixels_per_mm*(FOV), center = center_int)
 
-    focus_score = [] # get the focus score for every image that gets stepped through
-    for this_img in images:
-        this_img = this_img*(norm_array_full+1)
-        b = sq_grad(this_img,thresh = thresh,offset = offset)
-        this_fscore = np.sum(b)
-        focus_score.append(this_fscore)
+    # focus_score = [] # get the focus score for every image that gets stepped through
+    # for this_img in images:
+    #     this_img = this_img*(norm_array_full+1)
+    #     b = sq_grad(this_img,thresh = thresh,offset = offset)
+    #     this_fscore = np.sum(b)
+    #     focus_score.append(this_fscore)
 
-    assumed_focus_idx = np.argmax(focus_score)
+    assumed_focus_idx = np.argmax(uncalib_fscore)
 
     z_pos = z_positions[assumed_focus_idx] # for the final output
     this_location = starting_location.copy()
