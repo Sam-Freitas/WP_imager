@@ -107,7 +107,7 @@ class yolo_model:
             n_wells = 96
             print('----------------------------ERROR DEFAULING TO 96 TERASAKI----------------------------')
 
-        points = temp[:,0:2]
+        points = temp[:,0:2] #TODO make the system default to a terasaki well 
         kmeans = KMeans(n_clusters=n_wells, random_state=0, n_init="auto").fit(points)
         cluster_centers = kmeans.cluster_centers_ # get the center of the clusters to find the locations of the wells
 
