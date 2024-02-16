@@ -43,12 +43,13 @@ def sq_grad(img,thresh = 50,offset = 10):
 
     return squared_gradient
 
-def run_calib(s_camera_settings,this_plate_parameters,output_dir, calibration_model, adjust_with_movement = True, final_measurement = False, delete_prev_data = True):
+def run_calib(s_camera_settings,this_plate_parameters,output_dir, calibration_model, 
+    adjust_with_movement = True, final_measurement = False, delete_prev_data = True):
     # take image
     image_filename = camera.camera_control.simple_capture_data_single_image(s_camera_settings, plate_parameters=this_plate_parameters,
                                 output_dir=output_dir, image_file_format = 'jpg', testing = delete_prev_data)
     # run yolo model and get the locations of the well and center of the plate
-    individual_well_locations,center_location,n_wells = calibration_model.run_yolo_model(img_filename=image_filename, save_results = True, show_results = True, plate_index = this_plate_parameters['plate_index'])
+    individual_well_locations,center_location,n_wells = calibration_model.run_yolo_model(img_filename=image_filename, save_results = True, show_results = False, plate_index = this_plate_parameters['plate_index'])
 
     # Calculate pixels per mm based on well location data
     well_locations_delta = individual_well_locations[-1] - individual_well_locations[0]
@@ -136,7 +137,8 @@ def run_calib_terasaki(s_camera_settings,this_plate_parameters,output_dir,s_tera
 
     return adjusted_position, center_delta_in_mm
   
-def run_autofocus_at_current_position(controller, starting_location, coolLED_port, this_plate_parameters, autofocus_min_max = [1,-1], autofocus_delta_z = 0.25, cap = None):
+def run_autofocus_at_current_position(controller, starting_location, coolLED_port, 
+    this_plate_parameters, autofocus_min_max = [1,-1], autofocus_delta_z = 0.25, cap = None):
 
     lights.coolLed_control.turn_everything_off(coolLED_port) # turn everything off
 
@@ -225,7 +227,7 @@ def run_autofocus_at_current_position(controller, starting_location, coolLED_por
         red = int(this_plate_parameters['fluorescence_RED']) > 0, 
         red_intensity = int(this_plate_parameters['fluorescence_RED']))
 
-    frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, cap = cap,return_cap = True, clear_N_images_from_buffer = 5)
+    frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, cap = cap,return_cap = True, clear_N_images_from_buffer = 1)
     camera.camera_control.imshow_resize(frame_name = "stream", frame = frame)
 
     return z_pos, cap
@@ -278,9 +280,9 @@ class CNCController:
         CNCController.wait_for_movement_completion(self,command)
         out = []
         for i in range(50):
-            time.sleep(0.01)
+            time.sleep(0.001)
             response = self.ser.readline().decode().strip()
-            time.sleep(0.01)
+            time.sleep(0.001)
             out.append(response)
             if 'error' in response.lower():
                 print('error--------------------------------------------------')
@@ -328,7 +330,7 @@ class CNCController:
 
         return CNCController.get_current_position(self)
     
-    def move_XYZ(self, position):
+    def move_XYZ(self, position, return_position = False):
 
         ##### move xyz
         # print('moving to XYZ')
@@ -336,7 +338,10 @@ class CNCController:
         command = 'G1 ' + 'X' + str(position['x_pos']) + ' ' + 'Y' + str(position['y_pos']) + ' ' + 'Z' + str(position['z_pos']) + ' F2500'
         response, out = CNCController.send_command(self,command)
 
-        return CNCController.get_current_position(self)
+        if return_position:
+            return CNCController.get_current_position(self)
+        else:
+            return response
     
     def home_grbl(self):
         print("HOMING CNC")
@@ -581,9 +586,9 @@ if __name__ == "__main__":
                 controller.move_XYZ(position = this_well_coords)
                 # lights.labjackU3_control.turn_on_red(d)
                 # terasaki_adjusted_position, center_delta_in_mm = run_calib_terasaki(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_positions,calibration_model)
-                lights.labjackU3_control.turn_off_everything(d)
             
             if well_index == 0:
+                lights.labjackU3_control.turn_off_everything(d)
                 # get first autofocus and return the cap
                 z_pos_found_autofocus_inital, cap = run_autofocus_at_current_position(controller, this_well_coords, coolLED_port, this_plate_parameters, autofocus_min_max = [2.5,-2.5], autofocus_delta_z = 0.1, cap = None)
                 this_well_coords['z_pos'] = z_pos_found_autofocus_inital

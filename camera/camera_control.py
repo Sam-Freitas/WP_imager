@@ -400,7 +400,7 @@ def simple_capture_data_fluor(camera_settings, plate_parameters = None, testing 
 
         imshow_resize("img", frame, resize_size=[640,480])
 
-        capture_images_for_time(cap,time_between_images_seconds, show_images=True,move_to = [1920,520], start_time = start_time)
+        # capture_images_for_time(cap,time_between_images_seconds, show_images=True,move_to = [1920,520], start_time = start_time)
         # time.sleep(1)
 
     # Release the camera
