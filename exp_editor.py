@@ -28,11 +28,14 @@ POPUP_HEIGHT = 350  # Set the height of the popup window
 
 s_plate_names_and_opts = settings.get_settings.get_plate_names_and_opts()
 
-# save whatever was just changed before quitting
-def exit_function():
+def save_function():
     df = pd.DataFrame(s_plate_names_and_opts)
     print(os.path.join(path_to_settings_folder,'settings_plate_names_and_opts.csv'))
     df.to_csv(os.path.join(path_to_settings_folder,'settings_plate_names_and_opts.csv'),index= False)
+
+# save whatever was just changed before quitting
+def exit_function():
+    save_function()
 
 def update_s_plate_names_and_opts(index,options):
 
@@ -84,7 +87,7 @@ def update_s_plate_names_and_opts(index,options):
     s_plate_names_and_opts['fluorescence_BLUE'][index] = options[6]
     s_plate_names_and_opts['fluorescence_GREEN'][index] = options[7]
     s_plate_names_and_opts['fluorescence_RED'][index] = options[8]
-
+    save_function()
 
 def update_button_with_new_preferences(row,col,options):
 
