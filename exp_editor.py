@@ -8,9 +8,16 @@ from tkinter import messagebox, PhotoImage
 import atexit, json
 import pathlib
 
+### Default values for the experiments 
 ### plate name, experiment name, lifepsan, healthspan, fluor timing, uv, blue, green, red
-DEFAULT_VALUES = ['NONE','NONE',1,0,100,0,0,0,0]
+DEFAULT_VALUES = ['NONE','NONE',1,0,'100',0,0,0,0]
+# Excitation amount from the coolLED system --- must be integers and total must not go above ~20
+UV_EX_MAGNITUDE = 1
+BLUE_EX_MAGNITUDE = 1
+GREEN_EX_MAGNITUDE = 5
+RED_EX_MAGNITUDE = 5
 
+# get basic pathings for the system
 path_to_file = pathlib.Path(__file__).parent.resolve() 
 path_to_settings_folder = path_to_settings_folder = os.path.join(path_to_file, "settings")
 
@@ -21,12 +28,15 @@ POPUP_HEIGHT = 350  # Set the height of the popup window
 
 s_plate_names_and_opts = settings.get_settings.get_plate_names_and_opts()
 
+# save whatever was just changed before quitting
 def exit_function():
     df = pd.DataFrame(s_plate_names_and_opts)
     print(os.path.join(path_to_settings_folder,'settings_plate_names_and_opts.csv'))
     df.to_csv(os.path.join(path_to_settings_folder,'settings_plate_names_and_opts.csv'),index= False)
 
 def update_s_plate_names_and_opts(index,options):
+
+    # this (badly) loops through the options and changes the boolean values to what they should be
 
     if options is not None:
         for i,val in enumerate(options):
@@ -36,28 +46,29 @@ def update_s_plate_names_and_opts(index,options):
                 if options[i] == False:
                     options[i] = 0
             if i == 4: # fluor timing
-                if options[i] == True:
-                    options[i] = 100
-                if options[i] == False:
-                    options[i] = 0
+                options[i] = str(options[i])
+                # if options[i] == True:
+                #     options[i] = 100
+                # if options[i] == False:
+                #     options[i] = 0
             if i == 5: # UV excitation 
                 if options[i] == True:
-                    options[i] = 1
+                    options[i] = UV_EX_MAGNITUDE
                 if options[i] == False:
                     options[i] = 0
             if i == 6: # Blue excitation 
                 if options[i] == True:
-                    options[i] = 1
+                    options[i] = BLUE_EX_MAGNITUDE
                 if options[i] == False:
                     options[i] = 0
             if i == 7: # Green excitation 
                 if options[i] == True:
-                    options[i] = 5
+                    options[i] = GREEN_EX_MAGNITUDE
                 if options[i] == False:
                     options[i] = 0
             if i == 8: # RED excitation 
                 if options[i] == True:
-                    options[i] = 5
+                    options[i] = RED_EX_MAGNITUDE
                 if options[i] == False:
                     options[i] = 0
             
@@ -110,6 +121,25 @@ def get_settings_from_index(index):
 
     return temp
 
+def convert_string_to_bool_list(in_str):
+
+    boolean_list = [False] * len(in_str)
+
+    for i in range(3):
+        if in_str[i] == '1':
+            boolean_list[i] = True
+
+    return boolean_list
+
+def convert_bool_list_to_integer_string(boolean_list):
+
+    integer_amount = '000'
+    for i,b in enumerate(boolean_list):
+        if b:
+            integer_amount = integer_amount[:i] + '1' + integer_amount[i + 1:]
+
+    return integer_amount
+
 def button_click(row, col):
     # Create a new tkinter window
     popup = tk.Toplevel(root)
@@ -119,13 +149,13 @@ def button_click(row, col):
     index = get_index_from_row_col(row,col)
 
     # Create labels and entries for the first two options with default value 'NONE'
-    label1 = tk.Label(popup, text="Option 1:")
+    label1 = tk.Label(popup, text="Plate name -- Plate ID:")
     label1.pack()
     entry1 = tk.Entry(popup)
     entry1.insert(0, s_plate_names_and_opts['plate_name'][index])  # Set default value
     entry1.pack()
 
-    label2 = tk.Label(popup, text="Option 2:")
+    label2 = tk.Label(popup, text="Experiment name:")
     label2.pack()
     entry2 = tk.Entry(popup)
     entry2.insert(0, s_plate_names_and_opts['experiment_name'][index])  # Set default value
@@ -134,29 +164,41 @@ def button_click(row, col):
     button_settings = get_settings_from_index(index)
     print(json.dumps(button_settings, indent = 4))
 
+    fluorescent_times_bool = convert_string_to_bool_list(str(button_settings['fluorescence_times']))
+
     # Create checkbuttons for the remaining seven options with default value True
     check_var = [tk.BooleanVar(value=bool(button_settings['lifespan'])),
                  tk.BooleanVar(value=bool(button_settings['fluorescence'])),
-                 tk.BooleanVar(value=bool(button_settings['fluorescence_times'])),
+                 tk.BooleanVar(value=bool(fluorescent_times_bool[0])),
+                 tk.BooleanVar(value=bool(fluorescent_times_bool[1])),
+                #  tk.BooleanVar(value=bool(button_settings['fluorescence_times'])),
                  tk.BooleanVar(value=bool(button_settings['fluorescence_UV'])),
                  tk.BooleanVar(value=bool(button_settings['fluorescence_BLUE'])),
                  tk.BooleanVar(value=bool(button_settings['fluorescence_GREEN'])),
                  tk.BooleanVar(value=bool(button_settings['fluorescence_RED']))]
-    checkbutton_names = ["Lifespan", "Fluorescence", "Fluorescence Time(s)", "UV excitation", "BLUE excitation", "GREEN excitation", "RED excitation"]
-    for i in range(7):
-        if i == 2:  # Move the first check button to a different row
-            checkbutton = tk.Checkbutton(popup, text=checkbutton_names[i], variable=check_var[i])
-            checkbutton.pack()
-        else:
-            checkbutton = tk.Checkbutton(popup, text=checkbutton_names[i], variable=check_var[i])
-            checkbutton.pack()
+    checkbutton_names = ["Lifespan", "Fluorescence", "Fluorescence Time(s) 1", "Fluorescence Time(s) 2", "UV excitation", "BLUE excitation", "GREEN excitation", "RED excitation"]
+    counter = 0
+    # populate the buttons
+    for i in range(len(check_var)):
+
+        checkbutton = tk.Checkbutton(popup, text=checkbutton_names[i], variable=check_var[i])
+        checkbutton.pack()
+        counter =+ 1
 
     def return_values():
+
+        # get experiment and plate names
         option1 = entry1.get()
         option2 = entry2.get()
-        option3_to_9 = [var.get() for var in check_var]
+        # checkbutton_names = ["Lifespan", "Fluorescence", "Fluorescence Time(s) 1", "Fluorescence Time(s) 2", "UV excitation", "BLUE excitation", "GREEN excitation", "RED excitation"]
+        # get plate options or known as checkbutton names
+        option3_to_end = [var.get() for var in check_var]
 
-        options = [option1, option2] + option3_to_9
+        fluor_times_list = option3_to_end[2:4] # get the two fluor times
+        fluor_times_int_str = convert_bool_list_to_integer_string(fluor_times_list)
+        option3_to_end[2:4] = [fluor_times_int_str] # update the list 
+
+        options = [option1, option2] + option3_to_end
 
         # messagebox.showinfo("Button Clicked", f"Button ({row}, {col}) clicked with options: {options}")
         print("Button Clicked", f"Button ({row}, {col}) clicked with options: {options}")
@@ -223,11 +265,6 @@ if __name__ == "__main__":
             fluor_option = bool(s_plate_names_and_opts['fluorescence'][index])
             bg = zeros(shape= (x,y,3)).astype(uint8)
 
-            # if 'NONE' in text:
-            #     bg[:,:,:] = 255#'White'
-            # else:
-            #     bg[:,:,1] = 255#'Green'
-
             if 'NONE' in text:
                 bg = 'White'
             else:
@@ -235,8 +272,6 @@ if __name__ == "__main__":
 
             if 'NONE' not in text and fluor_option:
                 bg = 'Purple'
-
-            # bg = numpy_to_photoimage(bg)
 
             buttons[i][j] = tk.Button(root, text=text, 
                                     command=lambda i=i, j=j: button_click(i, j), 

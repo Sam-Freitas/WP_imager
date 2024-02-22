@@ -75,7 +75,7 @@ def get_plate_names_and_opts(): # this gets the plate parameters (this SHOULD ch
 
     print('Getting plate names and options')
     path = os.path.join(get_base_path(),'settings_plate_names_and_opts.csv')
-    df = pd.read_csv(path, delimiter = ',',index_col=False)
+    df = pd.read_csv(path, delimiter = ',',index_col=False ,  dtype={"fluorescence_times": str})
     df = df.to_dict()
 
     return df
