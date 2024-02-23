@@ -46,12 +46,12 @@ i = 0
 j = 0
 counter = 0
 
-WM_xo = 0.0
-WM_yo = -42
-WM_zo = -83.5
+# WM_xo = 0.0
+# WM_yo = -42
+# WM_zo = -83.5
 
-WM_xextent = -85.5
-WM_yextent = -49.5
+WM_xextent = -84.143
+WM_yextent = -49.227
 
 WM_rows = 12
 WM_cols = 20
@@ -120,75 +120,9 @@ df2.iloc[0,7] = y_offset_to_fluor_mm
 df2.to_csv(os.path.join(path_to_settings_folder,'settings_WM_4pair_positions.csv'),index= False)
 
 
-# # # ##############################################
-# ## this is for the settings Wormotel positions 
-
-# header = ['CentroidsX_mm','CentroidsY_mm','x_relative_pos_mm','y_relative_pos_mm','calib_x_pos_mm','calib_y_pos_mm','calib_z_pos_mm','y_offset_to_fluor_mm','name']
-# df = pd.DataFrame(columns = header)
-
-# calib_x_pos_mm = -43.75
-# calib_y_pos_mm = -28.5
-# calib_z_pos_mm = -89.0
-# y_offset_to_fluor_mm = 87.75
-
-# names = []
-# for WM_row_names in range(1,21):
-#     for WM_col_names in ['A','B','C','D','E','F','G','H','I','J','K','L']:
-#         names.append(str(WM_col_names)+str(WM_row_names))
-         
-# i = 0
-# j = 0
-# counter = 0
-
-# WM_xo = 0.0
-# WM_yo = -42
-# WM_zo = -83.5
-
-# WM_xextent = -85.5
-# WM_yextent = -49.5
-
-# WM_rows = 12
-# WM_cols = 20
-
-# x_linspace = np.linspace(0,WM_xextent,WM_cols)
-# y_linspace = np.linspace(WM_yextent,0,WM_rows)
-
-# xv,yv = np.meshgrid(x_linspace,y_linspace)
-
-# for c in range(WM_cols):
-#     i = 0
-#     for r in range(WM_rows):
-
-#         BLx = round(xv[r][c],4)
-#         BLy = round(yv[r][c],4)
-
-#         centered_x = BLx - (WM_xextent/2)
-#         centered_y = BLy - (WM_yextent/2)
-
-#         df.loc[counter] = [BLx,BLy,centered_x,centered_y,0,0,0,0,names[counter]] #just xyz
-#         counter = counter + 1
-#         i = i +1
-#     j = j+1
-
-# df.iloc[0,4] = calib_x_pos_mm
-# df.iloc[0,5] = calib_y_pos_mm
-# df.iloc[0,6] = calib_z_pos_mm
-# df.iloc[0,7] = y_offset_to_fluor_mm
-# df.to_csv(os.path.join(path_to_settings_folder,'settings_WM_positions.csv'),index= False)
-
-######## this is just a little check script to make sure that the output is correct (and flipped that axis')
-# # # # import matplotlib.pyplot as plt
-# # # # x,y = df.x_relative_pos_mm,df.y_relative_pos_mm
-# # # # plt.scatter(-x,-y)
-# # # # for i,txt in enumerate(names):
-# # # #     plt.annotate(txt,(-x[int(i)],-y[int(i)]))
-# # # # plt.show()
-
-
-
-
 # # ##############################################
-## this is for the settings terasaki positions 
+## this is for the settings Wormotel positions 
+
 header = ['CentroidsX_mm','CentroidsY_mm','x_relative_pos_mm','y_relative_pos_mm','calib_x_pos_mm','calib_y_pos_mm','calib_z_pos_mm','y_offset_to_fluor_mm','name']
 df = pd.DataFrame(columns = header)
 
@@ -197,46 +131,39 @@ calib_y_pos_mm = -28.5
 calib_z_pos_mm = -89.0
 y_offset_to_fluor_mm = 87.75
 
-names = ['h1','g1','f1','e1','d1','c1','b1','a1',
-         'h2','g2','f2','e2','d2','c2','b2','a2',
-         'h3','g3','f3','e3','d3','c3','b3','a3',
-         'h4','g4','f4','e4','d4','c4','b4','a4',
-         'h5','g5','f5','e5','d5','c5','b5','a5',
-         'h6','g6','f6','e6','d6','c6','b6','a6',
-         'h7','g7','f7','e7','d7','c7','b7','a7',
-         'h8','g8','f8','e8','d8','c8','b8','a8',
-         'h9','g9','f9','e9','d9','c9','b9','a9',
-         'h10','g10','f10','e10','d10','c10','b10','a10',
-         'h11','g11','f11','e11','d11','c11','b11','a11',
-         'h12','g12','f12','e12','d12','c12','b12','a12']
-
+names = []
+for WM_row_names in range(1,21):
+    for WM_col_names in ['A','B','C','D','E','F','G','H','I','J','K','L']:
+        names.append(str(WM_col_names)+str(WM_row_names))
+         
 i = 0
 j = 0
 counter = 0
 
-terasaki_xextent = -69.695
-terasaki_yextent = -41.896 #[69.695,41.845] 
+# WM_xo = 0.0
+# WM_yo = -42
+# WM_zo = -83.5
 
-terasaki_rows = 8
-terasaki_cols = 12
+WM_xextent = -84.143
+WM_yextent = -49.227
 
-x_linspace = np.linspace(0,terasaki_xextent,terasaki_cols)
-y_linspace = np.linspace(terasaki_yextent,0,terasaki_rows)
+WM_rows = 12
+WM_cols = 20
+
+x_linspace = np.linspace(0,WM_xextent,WM_cols)
+y_linspace = np.linspace(WM_yextent,0,WM_rows)
 
 xv,yv = np.meshgrid(x_linspace,y_linspace)
 
-for c in range(terasaki_cols):
+for c in range(WM_cols):
     i = 0
-    for r in range(terasaki_rows):
+    for r in range(WM_rows):
 
         BLx = round(xv[r][c],4)
         BLy = round(yv[r][c],4)
 
-        centered_x = BLx - (terasaki_xextent/2)
-        centered_y = BLy - (terasaki_yextent/2)
-
-        centered_x = round(centered_x,5)
-        centered_y = round(centered_y,5)
+        centered_x = BLx - (WM_xextent/2)
+        centered_y = BLy - (WM_yextent/2)
 
         df.loc[counter] = [BLx,BLy,centered_x,centered_y,0,0,0,0,names[counter]] #just xyz
         counter = counter + 1
@@ -247,27 +174,100 @@ df.iloc[0,4] = calib_x_pos_mm
 df.iloc[0,5] = calib_y_pos_mm
 df.iloc[0,6] = calib_z_pos_mm
 df.iloc[0,7] = y_offset_to_fluor_mm
-df.to_csv(os.path.join(path_to_settings_folder,'settings_terasaki_positions.csv'),index= False)
+df.to_csv(os.path.join(path_to_settings_folder,'settings_WM_positions.csv'),index= False)
+
+####### this is just a little check script to make sure that the output is correct (and flipped that axis')
+# # # import matplotlib.pyplot as plt
+# # # x,y = df.x_relative_pos_mm,df.y_relative_pos_mm
+# # # plt.scatter(-x,-y)
+# # # for i,txt in enumerate(names):
+# # #     plt.annotate(txt,(-x[int(i)],-y[int(i)]))
+# # # plt.show()
 
 
-#############################################
-## this is for the settings plate postions
-header = ['plate_index','row','column','x_pos','y_pos','z_pos']
-df = pd.DataFrame(columns = header)
 
-i = 0
-j = 0
-counter = 0
 
-for r in range(rows):
-    i = 0
-    for c in range(cols):
-        df.loc[counter] = [counter,r,c,round(xo+(dx*i),4),round(yo+(dy*j),4),zo] #just xyz
-        counter = counter + 1
-        i = i +1
-    j = j+1
+# # # ##############################################
+# ## this is for the settings terasaki positions 
+# header = ['CentroidsX_mm','CentroidsY_mm','x_relative_pos_mm','y_relative_pos_mm','calib_x_pos_mm','calib_y_pos_mm','calib_z_pos_mm','y_offset_to_fluor_mm','name']
+# df = pd.DataFrame(columns = header)
 
-df.to_csv(os.path.join(path_to_settings_folder,'settings_plate_positions.csv'),index= False)
+# calib_x_pos_mm = -43.75
+# calib_y_pos_mm = -28.5
+# calib_z_pos_mm = -89.0
+# y_offset_to_fluor_mm = 87.75
+
+# names = ['h1','g1','f1','e1','d1','c1','b1','a1',
+#          'h2','g2','f2','e2','d2','c2','b2','a2',
+#          'h3','g3','f3','e3','d3','c3','b3','a3',
+#          'h4','g4','f4','e4','d4','c4','b4','a4',
+#          'h5','g5','f5','e5','d5','c5','b5','a5',
+#          'h6','g6','f6','e6','d6','c6','b6','a6',
+#          'h7','g7','f7','e7','d7','c7','b7','a7',
+#          'h8','g8','f8','e8','d8','c8','b8','a8',
+#          'h9','g9','f9','e9','d9','c9','b9','a9',
+#          'h10','g10','f10','e10','d10','c10','b10','a10',
+#          'h11','g11','f11','e11','d11','c11','b11','a11',
+#          'h12','g12','f12','e12','d12','c12','b12','a12']
+
+# i = 0
+# j = 0
+# counter = 0
+
+# terasaki_xextent = -69.695
+# terasaki_yextent = -41.896 #[69.695,41.845] 
+
+# terasaki_rows = 8
+# terasaki_cols = 12
+
+# x_linspace = np.linspace(0,terasaki_xextent,terasaki_cols)
+# y_linspace = np.linspace(terasaki_yextent,0,terasaki_rows)
+
+# xv,yv = np.meshgrid(x_linspace,y_linspace)
+
+# for c in range(terasaki_cols):
+#     i = 0
+#     for r in range(terasaki_rows):
+
+#         BLx = round(xv[r][c],4)
+#         BLy = round(yv[r][c],4)
+
+#         centered_x = BLx - (terasaki_xextent/2)
+#         centered_y = BLy - (terasaki_yextent/2)
+
+#         centered_x = round(centered_x,5)
+#         centered_y = round(centered_y,5)
+
+#         df.loc[counter] = [BLx,BLy,centered_x,centered_y,0,0,0,0,names[counter]] #just xyz
+#         counter = counter + 1
+#         i = i +1
+#     j = j+1
+
+# df.iloc[0,4] = calib_x_pos_mm
+# df.iloc[0,5] = calib_y_pos_mm
+# df.iloc[0,6] = calib_z_pos_mm
+# df.iloc[0,7] = y_offset_to_fluor_mm
+# df.to_csv(os.path.join(path_to_settings_folder,'settings_terasaki_positions.csv'),index= False)
+
+
+# #############################################
+# ## this is for the settings plate postions
+# header = ['plate_index','row','column','x_pos','y_pos','z_pos']
+# df = pd.DataFrame(columns = header)
+
+# i = 0
+# j = 0
+# counter = 0
+
+# for r in range(rows):
+#     i = 0
+#     for c in range(cols):
+#         df.loc[counter] = [counter,r,c,round(xo+(dx*i),4),round(yo+(dy*j),4),zo] #just xyz
+#         counter = counter + 1
+#         i = i +1
+#     j = j+1
+
+# df.to_csv(os.path.join(path_to_settings_folder,'settings_plate_positions.csv'),index= False)
 
 
 

@@ -162,6 +162,8 @@ class yolo_model:
                     plt.show(block=False)
                     plt.pause(3)
                     plt.close()
+            else:
+                plt.close('all')
 
         return input_sized_centers,input_sized_center_of_plate,n_wells
 

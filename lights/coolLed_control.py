@@ -180,7 +180,7 @@ if __name__ == "__main__":
             blue = True, #########################################################
             blue_intensity = 1,
             green = True, 
-            green_intensity = 5,
+            green_intensity = 10,
             red = True, ###########################################################
             red_intensity = 0
             )
