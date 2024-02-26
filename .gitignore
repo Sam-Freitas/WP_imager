@@ -2,6 +2,7 @@
 *.pt
 *.npy
 *.bmp
+*.h5
 output/
 
 __pycache__/
