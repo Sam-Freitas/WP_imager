@@ -150,7 +150,7 @@ def run_autofocus_at_current_position(controller, starting_location, coolLED_por
     # autofocus_delta_z = 0.25 # mm 
     autofocus_steps = int(abs(np.diff(autofocus_min_max) / autofocus_delta_z)) + 1
     z_limit = [-86,-94]
-    offset = 5 # this is for the autofocus algorithm how many pixels apart is the focus to be measures
+    offset = 25 # this is for the autofocus algorithm how many pixels apart is the focus to be measures
     thresh = 5 # same as above but now ignores all the values under thresh
 
     # find the z locations for the loop to step through
@@ -594,7 +594,10 @@ if __name__ == "__main__":
             elif well_index == 1:
                 this_well_coords['z_pos'] = z_pos_found_autofocus_inital
             else:
-                this_well_coords['z_pos'] = np.mean(found_autofocus_positions)
+                if len(found_autofocus_positions) > 5:
+                    this_well_coords['z_pos'] = np.mean(found_autofocus_positions[-5:])
+                else:
+                    this_well_coords['z_pos'] = np.mean(found_autofocus_positions)
             print(well_index, this_well_coords)
             # move the fluorescent imaging head to that specific well  
 
@@ -611,11 +614,15 @@ if __name__ == "__main__":
             if well_index == 0:
                 lights.labjackU3_control.turn_off_everything(d)
                 # get first autofocus and return the cap
-                z_pos_found_autofocus_inital, cap = run_autofocus_at_current_position(controller, this_well_coords, coolLED_port, this_plate_parameters, autofocus_min_max = [2.0,-10], autofocus_delta_z = 0.1, cap = None)
+                z_pos_found_autofocus_inital, cap = run_autofocus_at_current_position(controller, 
+                    this_well_coords, coolLED_port, this_plate_parameters, autofocus_min_max = [3,-3], 
+                    autofocus_delta_z = 0.1, cap = None)
                 this_well_coords['z_pos'] = z_pos_found_autofocus_inital
                 found_autofocus_positions.append(z_pos_found_autofocus_inital)
             else:
-                z_pos_found_autofocus, cap = run_autofocus_at_current_position(controller, this_well_coords, coolLED_port, this_plate_parameters, autofocus_min_max = [1.0,-1.0], autofocus_delta_z = 0.25, cap = cap)
+                z_pos_found_autofocus, cap = run_autofocus_at_current_position(controller, 
+                    this_well_coords, coolLED_port, this_plate_parameters, autofocus_min_max = [1.0,-1.0], 
+                    autofocus_delta_z = 0.25, cap = cap)
                 this_well_coords['z_pos'] = z_pos_found_autofocus
                 found_autofocus_positions.append(z_pos_found_autofocus)
 

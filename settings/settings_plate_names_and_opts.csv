@@ -1,6 +1,6 @@
 plate_index,row,column,plate_name,experiment_name,lifespan,fluorescence,fluorescence_times,fluorescence_UV,fluorescence_BLUE,fluorescence_GREEN,fluorescence_RED
-0,0,0,NONE,NONE,1,0,100,0,0,0,0
-1,0,1,NONE,NONE,1,0,100,0,0,0,0
+0,0,0,wm_3R,Ftest,0,1,100,0,0,5,0
+1,0,1,t_1R,Ftest,0,1,100,0,0,5,0
 2,0,2,t_1G,Ftest,0,1,100,0,1,0,0
 3,0,3,NONE,NONE,1,1,100,100,100,100,100
 4,0,4,NONE,NONE,1,1,100,100,100,100,100
