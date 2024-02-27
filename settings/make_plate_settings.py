@@ -28,153 +28,153 @@ dy = -115  # used to be 116
 # # ##############################################
 ## this is for the settings Wormotel positions 4 at a time measurements
 
-header = ['CentroidsX_mm','CentroidsY_mm','x_relative_pos_mm','y_relative_pos_mm','calib_x_pos_mm','calib_y_pos_mm','calib_z_pos_mm','y_offset_to_fluor_mm','name']
-df = pd.DataFrame(columns = header)
-df2 = df.copy(deep=True)
+# header = ['CentroidsX_mm','CentroidsY_mm','x_relative_pos_mm','y_relative_pos_mm','calib_x_pos_mm','calib_y_pos_mm','calib_z_pos_mm','y_offset_to_fluor_mm','name']
+# df = pd.DataFrame(columns = header)
+# df2 = df.copy(deep=True)
 
-calib_x_pos_mm = -43.75
-calib_y_pos_mm = -28.5
-calib_z_pos_mm = -89.0
-y_offset_to_fluor_mm = 87.75
+# calib_x_pos_mm = -43.75
+# calib_y_pos_mm = -28.5
+# calib_z_pos_mm = -89.0
+# y_offset_to_fluor_mm = 87.75
 
-names = []
-for WM_row_names in range(1,21):
-    for WM_col_names in ['A','B','C','D','E','F','G','H','I','J','K','L']:
-        names.append(str(WM_col_names)+str(WM_row_names))
+# names = []
+# for WM_row_names in range(1,21):
+#     for WM_col_names in ['A','B','C','D','E','F','G','H','I','J','K','L']:
+#         names.append(str(WM_col_names)+str(WM_row_names))
          
-i = 0
-j = 0
-counter = 0
+# i = 0
+# j = 0
+# counter = 0
 
-# WM_xo = 0.0
-# WM_yo = -42
-# WM_zo = -83.5
+# # WM_xo = 0.0
+# # WM_yo = -42
+# # WM_zo = -83.5
 
-WM_xextent = -84.143
-WM_yextent = -49.227
+# WM_xextent = -84.143
+# WM_yextent = -49.227
 
-WM_rows = 12
-WM_cols = 20
+# WM_rows = 12
+# WM_cols = 20
 
-x_linspace = np.linspace(0,WM_xextent,WM_cols)
-y_linspace = np.linspace(WM_yextent,0,WM_rows)
+# x_linspace = np.linspace(0,WM_xextent,WM_cols)
+# y_linspace = np.linspace(WM_yextent,0,WM_rows)
 
-xv,yv = np.meshgrid(x_linspace,y_linspace)
+# xv,yv = np.meshgrid(x_linspace,y_linspace)
 
-for c in range(WM_cols):
-    i = 0
-    for r in range(WM_rows):
+# for c in range(WM_cols):
+#     i = 0
+#     for r in range(WM_rows):
 
-        BLx = round(xv[r][c],4)
-        BLy = round(yv[r][c],4)
+#         BLx = round(xv[r][c],4)
+#         BLy = round(yv[r][c],4)
 
-        centered_x = BLx - (WM_xextent/2)
-        centered_y = BLy - (WM_yextent/2)
+#         centered_x = BLx - (WM_xextent/2)
+#         centered_y = BLy - (WM_yextent/2)
 
-        df.loc[counter] = [BLx,BLy,centered_x,centered_y,0,0,0,0,names[counter]] #just xyz
-        counter = counter + 1
-        i = i +1
-    j = j+1
+#         df.loc[counter] = [BLx,BLy,centered_x,centered_y,0,0,0,0,names[counter]] #just xyz
+#         counter = counter + 1
+#         i = i +1
+#     j = j+1
 
-df.iloc[0,4] = calib_x_pos_mm
-df.iloc[0,5] = calib_y_pos_mm
-df.iloc[0,6] = calib_z_pos_mm
-df.iloc[0,7] = y_offset_to_fluor_mm
+# df.iloc[0,4] = calib_x_pos_mm
+# df.iloc[0,5] = calib_y_pos_mm
+# df.iloc[0,6] = calib_z_pos_mm
+# df.iloc[0,7] = y_offset_to_fluor_mm
 
-row_names = ['A','B','C','D','E','F','G','H','I','J','K','L']
-col_names = list(range(1,21))
+# row_names = ['A','B','C','D','E','F','G','H','I','J','K','L']
+# col_names = list(range(1,21))
 
-names_of_wells = list(df['name'].values)
-x_positions = list(df['x_relative_pos_mm'].values)
-y_positions = list(df['y_relative_pos_mm'].values)
-x_centroids = list(df['CentroidsX_mm'].values)
-y_centroids = list(df['CentroidsY_mm'].values)
-names = []
-counter = 0
-for i in range(0,len(row_names),2):
-    for j in range(0,len(col_names),2):
+# names_of_wells = list(df['name'].values)
+# x_positions = list(df['x_relative_pos_mm'].values)
+# y_positions = list(df['y_relative_pos_mm'].values)
+# x_centroids = list(df['CentroidsX_mm'].values)
+# y_centroids = list(df['CentroidsY_mm'].values)
+# names = []
+# counter = 0
+# for i in range(0,len(row_names),2):
+#     for j in range(0,len(col_names),2):
 
-        first_well = str(row_names[i]) + str(col_names[j]) 
-        fourth_well = str(row_names[i+1]) + str(col_names[j+1]) 
+#         first_well = str(row_names[i]) + str(col_names[j]) 
+#         fourth_well = str(row_names[i+1]) + str(col_names[j+1]) 
 
-        export_name = str(row_names[i]) + str(col_names[j]) + '_' + str(row_names[i]) + str(col_names[j+1]) + '_' + str(row_names[i+1]) + str(col_names[j]) + '_' + str(row_names[i+1]) + str(col_names[j+1])
-        names.append(export_name)
+#         export_name = str(row_names[i]) + str(col_names[j]) + '_' + str(row_names[i]) + str(col_names[j+1]) + '_' + str(row_names[i+1]) + str(col_names[j]) + '_' + str(row_names[i+1]) + str(col_names[j+1])
+#         names.append(export_name)
 
-        idx_1 = names_of_wells.index(first_well)
-        idx_4 = names_of_wells.index(fourth_well)
+#         idx_1 = names_of_wells.index(first_well)
+#         idx_4 = names_of_wells.index(fourth_well)
 
-        x_pos = (x_positions[idx_1] + x_positions[idx_4])/2
-        y_pos = (y_positions[idx_1] + y_positions[idx_4])/2
-        x_cen = (x_centroids[idx_1] + x_centroids[idx_4])/2
-        y_cen = (y_centroids[idx_1] + y_centroids[idx_4])/2
+#         x_pos = (x_positions[idx_1] + x_positions[idx_4])/2
+#         y_pos = (y_positions[idx_1] + y_positions[idx_4])/2
+#         x_cen = (x_centroids[idx_1] + x_centroids[idx_4])/2
+#         y_cen = (y_centroids[idx_1] + y_centroids[idx_4])/2
 
-        # df2.iloc[counter,0:4] = []
-        df2.loc[counter] = [x_cen,y_cen,x_pos,y_pos,0,0,0,0,export_name] #just xyz
-        # print(export_name, x_pos,y_pos)
-        counter = counter + 1
+#         # df2.iloc[counter,0:4] = []
+#         df2.loc[counter] = [x_cen,y_cen,x_pos,y_pos,0,0,0,0,export_name] #just xyz
+#         # print(export_name, x_pos,y_pos)
+#         counter = counter + 1
 
-df2.iloc[0,4] = calib_x_pos_mm
-df2.iloc[0,5] = calib_y_pos_mm
-df2.iloc[0,6] = calib_z_pos_mm
-df2.iloc[0,7] = y_offset_to_fluor_mm
-df2.to_csv(os.path.join(path_to_settings_folder,'settings_WM_4pair_positions.csv'),index= False)
+# df2.iloc[0,4] = calib_x_pos_mm
+# df2.iloc[0,5] = calib_y_pos_mm
+# df2.iloc[0,6] = calib_z_pos_mm
+# df2.iloc[0,7] = y_offset_to_fluor_mm
+# df2.to_csv(os.path.join(path_to_settings_folder,'settings_WM_4pair_positions.csv'),index= False)
 
 
-# # ##############################################
-## this is for the settings Wormotel positions 
+# # # ##############################################
+# ## this is for the settings Wormotel positions 
 
-header = ['CentroidsX_mm','CentroidsY_mm','x_relative_pos_mm','y_relative_pos_mm','calib_x_pos_mm','calib_y_pos_mm','calib_z_pos_mm','y_offset_to_fluor_mm','name']
-df = pd.DataFrame(columns = header)
+# header = ['CentroidsX_mm','CentroidsY_mm','x_relative_pos_mm','y_relative_pos_mm','calib_x_pos_mm','calib_y_pos_mm','calib_z_pos_mm','y_offset_to_fluor_mm','name']
+# df = pd.DataFrame(columns = header)
 
-calib_x_pos_mm = -43.75
-calib_y_pos_mm = -28.5
-calib_z_pos_mm = -89.0
-y_offset_to_fluor_mm = 87.75
+# calib_x_pos_mm = -43.75
+# calib_y_pos_mm = -28.5
+# calib_z_pos_mm = -89.0
+# y_offset_to_fluor_mm = 87.75
 
-names = []
-for WM_row_names in range(1,21):
-    for WM_col_names in ['A','B','C','D','E','F','G','H','I','J','K','L']:
-        names.append(str(WM_col_names)+str(WM_row_names))
+# names = []
+# for WM_row_names in range(1,21):
+#     for WM_col_names in ['A','B','C','D','E','F','G','H','I','J','K','L']:
+#         names.append(str(WM_col_names)+str(WM_row_names))
          
-i = 0
-j = 0
-counter = 0
+# i = 0
+# j = 0
+# counter = 0
 
-# WM_xo = 0.0
-# WM_yo = -42
-# WM_zo = -83.5
+# # WM_xo = 0.0
+# # WM_yo = -42
+# # WM_zo = -83.5
 
-WM_xextent = -84.143
-WM_yextent = -49.227
+# WM_xextent = -84.143
+# WM_yextent = -49.227
 
-WM_rows = 12
-WM_cols = 20
+# WM_rows = 12
+# WM_cols = 20
 
-x_linspace = np.linspace(0,WM_xextent,WM_cols)
-y_linspace = np.linspace(WM_yextent,0,WM_rows)
+# x_linspace = np.linspace(0,WM_xextent,WM_cols)
+# y_linspace = np.linspace(WM_yextent,0,WM_rows)
 
-xv,yv = np.meshgrid(x_linspace,y_linspace)
+# xv,yv = np.meshgrid(x_linspace,y_linspace)
 
-for c in range(WM_cols):
-    i = 0
-    for r in range(WM_rows):
+# for c in range(WM_cols):
+#     i = 0
+#     for r in range(WM_rows):
 
-        BLx = round(xv[r][c],4)
-        BLy = round(yv[r][c],4)
+#         BLx = round(xv[r][c],4)
+#         BLy = round(yv[r][c],4)
 
-        centered_x = BLx - (WM_xextent/2)
-        centered_y = BLy - (WM_yextent/2)
+#         centered_x = BLx - (WM_xextent/2)
+#         centered_y = BLy - (WM_yextent/2)
 
-        df.loc[counter] = [BLx,BLy,centered_x,centered_y,0,0,0,0,names[counter]] #just xyz
-        counter = counter + 1
-        i = i +1
-    j = j+1
+#         df.loc[counter] = [BLx,BLy,centered_x,centered_y,0,0,0,0,names[counter]] #just xyz
+#         counter = counter + 1
+#         i = i +1
+#     j = j+1
 
-df.iloc[0,4] = calib_x_pos_mm
-df.iloc[0,5] = calib_y_pos_mm
-df.iloc[0,6] = calib_z_pos_mm
-df.iloc[0,7] = y_offset_to_fluor_mm
-df.to_csv(os.path.join(path_to_settings_folder,'settings_WM_positions.csv'),index= False)
+# df.iloc[0,4] = calib_x_pos_mm
+# df.iloc[0,5] = calib_y_pos_mm
+# df.iloc[0,6] = calib_z_pos_mm
+# df.iloc[0,7] = y_offset_to_fluor_mm
+# df.to_csv(os.path.join(path_to_settings_folder,'settings_WM_positions.csv'),index= False)
 
 ####### this is just a little check script to make sure that the output is correct (and flipped that axis')
 # # # import matplotlib.pyplot as plt
@@ -303,24 +303,26 @@ df.to_csv(os.path.join(path_to_settings_folder,'settings_WM_positions.csv'),inde
 
 # df.to_csv(os.path.join(path_to_settings_folder,'settings_machines.csv'),index= False)
 
-# #############################################
-# ## this is for the setting machines
+#############################################
+## this is for the cameras setting machines
 
-# header = ['Explanation','widefield','fluorescence']
-# df = pd.DataFrame(columns = header)
+header = ['Explanation','widefield','fluorescence']
+df = pd.DataFrame(columns = header)
 
-# df.loc[0] = ['camera_port','0','1']
-# df.loc[1] = ['pixel_width','5472','2496']
-# df.loc[2] = ['pixel_height','3640','2500']
-# df.loc[3] = ['max_framerate','6','10']
-# df.loc[4] = ['time_between_images_seconds','5','0.33']
-# df.loc[5] = ['time_of_single_burst_seconds','60','0']
-# df.loc[6] = ['number_of_images_per_burst','12','3']
-# df.loc[7] = ['img_file_format','png','png']
-# df.loc[8] = ['img_pixel_depth','8','8']
-# df.loc[9] = ['img_color','0','1']
+df.loc[0] = ['camera_port','0','1']
+df.loc[1] = ['pixel_width','5472','2560']
+df.loc[2] = ['pixel_height','3640','2560']
+df.loc[3] = ['max_framerate','6','10']
+df.loc[4] = ['time_between_images_seconds','5','0.01']
+df.loc[5] = ['time_of_single_burst_seconds','60','0']
+df.loc[6] = ['number_of_images_per_burst','12','3']
+df.loc[7] = ['img_file_format','png','png']
+df.loc[8] = ['img_pixel_depth','8','8']
+df.loc[9] = ['img_color','0','1']
+df.loc[10] = ['pixel_binning','1','1']
+df.loc[11] = ['HDR','0','1']
 
-# df.to_csv(os.path.join(path_to_settings_folder,'settings_cameras.csv'),index= False)
+df.to_csv(os.path.join(path_to_settings_folder,'settings_cameras.csv'),index= False)
 
 # #############################################
 # ## this id for the grbl base
