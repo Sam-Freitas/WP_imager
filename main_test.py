@@ -149,43 +149,35 @@ def run_autofocus_at_current_position(controller, starting_location, coolLED_por
     # autofocus_min_max = [2.5,-6] # remember that down (towards sample) is negative
     # autofocus_delta_z = 0.25 # mm 
     autofocus_steps = int(abs(np.diff(autofocus_min_max) / autofocus_delta_z)) + 1
-    z_limit = [-86,-94]
+    z_limit = [-10,-94]
     offset = 25 # this is for the autofocus algorithm how many pixels apart is the focus to be measures
     thresh = 5 # same as above but now ignores all the values under thresh
 
     # find the z locations for the loop to step through
-    z_positions = np.linspace(starting_location['z_pos']+autofocus_min_max[0],starting_location['z_pos']+autofocus_min_max[1],num = autofocus_steps)
+    z_positions_start = np.linspace(starting_location['z_pos']+autofocus_min_max[0],starting_location['z_pos']+autofocus_min_max[1],num = autofocus_steps)
+    z_positions = []
 
     # turn on the RGB lights to get a white light for focusing 
     lights.coolLed_control.turn_specified_on(coolLED_port, 
         uv = False, 
         uv_intensity = 1,
         blue = True, 
-        blue_intensity = 1,
+        blue_intensity = 10,
         green = True, 
         green_intensity = 10,
         red = True, 
         red_intensity = 0)
   
-    # lights.coolLed_control.turn_specified_on(coolLED_port, 
-    #     uv = True, 
-    #     uv_intensity = 1,
-    #     blue = int(this_plate_parameters['fluorescence_BLUE']) > 0, 
-    #     blue_intensity = int(this_plate_parameters['fluorescence_BLUE']),
-    #     green = int(this_plate_parameters['fluorescence_GREEN']) > 0, 
-    #     green_intensity = int(this_plate_parameters['fluorescence_GREEN']),
-    #     red = int(this_plate_parameters['fluorescence_RED']) > 0, 
-    #     red_intensity = int(this_plate_parameters['fluorescence_RED']))
-
     # go though all the z_positions and get the most in focus position
     images = []
     uncalib_fscore = []
-    for counter,z_pos in enumerate(z_positions):
+    for counter,z_pos in enumerate(z_positions_start):
         this_location = starting_location.copy()
         this_location['z_pos'] = z_pos
         # jprint(this_location)
 
         if z_pos < z_limit[0] and z_pos > z_limit[1]:
+            z_positions.append(z_pos)
 
             controller.move_XYZ(position = this_location) # move the said location 
                 
@@ -196,7 +188,8 @@ def run_autofocus_at_current_position(controller, starting_location, coolLED_por
             else:
                 frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, cap = cap, return_cap = True, clear_N_images_from_buffer = 1)
             images.append(frame)
-            temp = sq_grad(frame,thresh = thresh,offset = offset)
+            temp = analysis.fluor_postprocess.crop_center_numpy_return(frame, 512, center = [1440,1252] )
+            temp = sq_grad(temp,thresh = thresh,offset = offset)
             uncalib_fscore.append(np.sum(temp))
             camera.camera_control.imshow_resize(frame_name = "stream", frame = frame)
     
@@ -494,7 +487,7 @@ if __name__ == "__main__":
         position = this_plate_position.copy()
         position['x_pos'],position['y_pos'],position['z_pos'] = round(position['x_pos'],4), round(position['y_pos'],4), round(position['z_pos'],4)
 
-        # move the imaging head to the experiment
+        # move the imaging head to the experiment  
         controller.move_XY_at_Z_travel(position = position,
                                        z_travel_height = z_travel_height)
 
@@ -619,16 +612,16 @@ if __name__ == "__main__":
                     autofocus_delta_z = 0.1, cap = None)
                 this_well_coords['z_pos'] = z_pos_found_autofocus_inital
                 found_autofocus_positions.append(z_pos_found_autofocus_inital)
-            else:
+            else:  
                 z_pos_found_autofocus, cap = run_autofocus_at_current_position(controller, 
-                    this_well_coords, coolLED_port, this_plate_parameters, autofocus_min_max = [1.0,-1.0], 
-                    autofocus_delta_z = 0.25, cap = cap)
+                    this_well_coords, coolLED_port, this_plate_parameters, autofocus_min_max = [0.75,-0.75], 
+                    autofocus_delta_z = 0.125, cap = cap)
                 this_well_coords['z_pos'] = z_pos_found_autofocus
                 found_autofocus_positions.append(z_pos_found_autofocus)
 
             if well_index == (len(s_positions['x_relative_pos_mm'].values()) - 1): 
                 cap = camera.camera_control.simple_capture_data_fluor(s_camera_settings, plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir, cap = cap, return_cap = False)
-            else:
+            else:  
                 cap = camera.camera_control.simple_capture_data_fluor(s_camera_settings, plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir, cap = cap, return_cap = True)
         lights.coolLed_control.turn_everything_off(coolLED_port)
 
