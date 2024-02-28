@@ -13,8 +13,8 @@ import pathlib
 DEFAULT_VALUES = ['NONE','NONE',1,0,'100',0,0,0,0]
 # Excitation amount from the coolLED system --- must be integers and total must not go above ~20
 UV_EX_MAGNITUDE = 1
-BLUE_EX_MAGNITUDE = 1
-GREEN_EX_MAGNITUDE = 5
+BLUE_EX_MAGNITUDE = 10
+GREEN_EX_MAGNITUDE = 10
 RED_EX_MAGNITUDE = 5
 
 # get basic pathings for the system
