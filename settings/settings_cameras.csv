@@ -1,11 +1,13 @@
 Explanation,widefield,fluorescence
-camera_port,1,0
+camera_port,0,1
 pixel_width,5472,2560
 pixel_height,3640,2560
 max_framerate,6,10
-time_between_images_seconds,5,0.1
+time_between_images_seconds,5,0.01
 time_of_single_burst_seconds,60,0
 number_of_images_per_burst,12,3
 img_file_format,png,png
 img_pixel_depth,8,8
 img_color,0,1
+pixel_binning,1,1
+HDR,0,1

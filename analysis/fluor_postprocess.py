@@ -16,6 +16,10 @@ def normalize_to_smallest_nonzero(input_array):
     out = np.clip(out,0,1)
 
     return out
+
+def norm(input_array):
+
+    return input_array/np.max(input_array)
     
 def largest_blob(binary_image):
     # Label connected components in the binary image
