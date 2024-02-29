@@ -138,7 +138,7 @@ def run_calib_terasaki(s_camera_settings,this_plate_parameters,output_dir,s_tera
     return adjusted_position, center_delta_in_mm
   
 def run_autofocus_at_current_position(controller, starting_location, coolLED_port, 
-    this_plate_parameters, autofocus_min_max = [1,-1], autofocus_delta_z = 0.25, cap = None, show_results = False):
+    this_plate_parameters, autofocus_min_max = [1,-1], autofocus_delta_z = 0.25, cap = None, show_results = False, af_area = 2560):
 
     lights.coolLed_control.turn_everything_off(coolLED_port) # turn everything off
 
@@ -188,7 +188,7 @@ def run_autofocus_at_current_position(controller, starting_location, coolLED_por
             else:
                 frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, cap = cap, return_cap = True, clear_N_images_from_buffer = 1)
             images.append(frame)
-            temp = analysis.fluor_postprocess.crop_center_numpy_return(frame, 512, center = [1440,1252] )
+            temp = analysis.fluor_postprocess.crop_center_numpy_return(frame, af_area, center = [1440,1252] )
             temp = sq_grad(temp,thresh = thresh,offset = offset)
             uncalib_fscore.append(np.sum(temp))
             camera.camera_control.imshow_resize(frame_name = "stream", frame = frame)
@@ -517,10 +517,11 @@ if __name__ == "__main__":
         if n_wells==96:
             pixels_per_mm = well_locations_delta/[69.695,41.845] #[85.5,49.5]
             s_positions = s_terasaki_positions.copy()
+            af_area = 800
         elif n_wells==240:
             pixels_per_mm = well_locations_delta/[84.143,49.227]
-            # s_positions = s_wm_positions.copy()
             s_positions = s_wm_4pair_positions.copy()
+            af_area = 1500
         else:
             pixels_per_mm = well_locations_delta/[69.695,41.845] #default to terasaki
         # find the realtion between the measured and where it supposed to be currently
@@ -609,13 +610,13 @@ if __name__ == "__main__":
                 # get first autofocus and return the cap
                 z_pos_found_autofocus_inital, cap = run_autofocus_at_current_position(controller, 
                     this_well_coords, coolLED_port, this_plate_parameters, autofocus_min_max = [3,-3], 
-                    autofocus_delta_z = 0.1, cap = None)
+                    autofocus_delta_z = 0.1, cap = None, af_area=af_area)
                 this_well_coords['z_pos'] = z_pos_found_autofocus_inital
                 found_autofocus_positions.append(z_pos_found_autofocus_inital)
             else:  
                 z_pos_found_autofocus, cap = run_autofocus_at_current_position(controller, 
                     this_well_coords, coolLED_port, this_plate_parameters, autofocus_min_max = [0.75,-0.75], 
-                    autofocus_delta_z = 0.125, cap = cap)
+                    autofocus_delta_z = 0.125, cap = cap, af_area=af_area)
                 this_well_coords['z_pos'] = z_pos_found_autofocus
                 found_autofocus_positions.append(z_pos_found_autofocus)
 

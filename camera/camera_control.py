@@ -540,7 +540,7 @@ def capture_data_fluor_multi_exposure(camera_settings, plate_parameters = None, 
 
     # convert the cam_exposure time from seconds into 2^x = seconds
     cam_exposure_cv2 = convert_to_float(cam_exposure)
-    cam_exposure_cv2 = math.log(cam_exposure_cv2)/math.log(cam_exposure_cv2)
+    cam_exposure_cv2 = math.log(cam_exposure_cv2)/math.log(2)
     cam_exposure_cv2 = int(cam_exposure_cv2) ############################### mathmatically this is worng but program wise thig get -4.0 -> -4
 
     # Define the text and font settings
@@ -575,7 +575,7 @@ def capture_data_fluor_multi_exposure(camera_settings, plate_parameters = None, 
             print("Error: Unable to open camera.")
             exit()
 
-    current_exposure = cam_exposure_cv2
+    current_exposure = cam_exposure_cv2 + 1 # starting exposure should be 1/8 sec -> 1/16 -> 1/32 -> 1/64
 
     num_images = int(number_of_images_per_burst)
     # Capture a series of images
@@ -583,9 +583,8 @@ def capture_data_fluor_multi_exposure(camera_settings, plate_parameters = None, 
         # start_time = time.time()
 
         # set the exposure to current_exposre, clear the buffer(??), and then capture
-        if i > 0:
-            cap.set(cv2.CAP_PROP_EXPOSURE,current_exposure)
-            capture_images_for_time(cap, N = 0.25)
+        cap.set(cv2.CAP_PROP_EXPOSURE,current_exposure)
+        capture_images_for_time(cap, N = 0.25)
         
         # read the image from the camera buffer
         ret, frame = cap.read()
