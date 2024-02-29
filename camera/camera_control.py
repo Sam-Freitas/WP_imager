@@ -597,7 +597,7 @@ def capture_data_fluor_multi_exposure(camera_settings, plate_parameters = None, 
         
         # current_time_for_filename = datetime.datetime.now().strftime("%Y-%m-%d (%H-%M-%S-%f)")
         image_subtype = plate_parameters['well_name'] + '_00' + str(i+1) + '_' + str(current_exposure)
-        image_name = plate_parameters['well_name'] + '_00' + str(i+1) + '_' + str(current_exposure) + '_' + '.' + img_file_format#current_time_for_filename + '.' + img_file_format
+        image_name = plate_parameters['well_name'] + '_00' + str(i+1) + '_' + str(current_exposure) + '_' + '.' + img_file_format #current_time_for_filename + '.' + img_file_format
         image_filename = os.path.join(output_dir, image_name)
 
         cv2.imwrite(image_filename, frame[:,:,-1])#, [int(cv2.IMWRITE_PNG_COMPRESSION), 5])
