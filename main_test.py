@@ -620,9 +620,9 @@ if __name__ == "__main__":
                 found_autofocus_positions.append(z_pos_found_autofocus)
 
             if well_index == (len(s_positions['x_relative_pos_mm'].values()) - 1): 
-                cap = camera.camera_control.simple_capture_data_fluor(s_camera_settings, plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir, cap = cap, return_cap = False)
+                cap = camera.camera_control.capture_data_fluor_multi_exposure(s_camera_settings, plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir, cap = cap, return_cap = False)
             else:  
-                cap = camera.camera_control.simple_capture_data_fluor(s_camera_settings, plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir, cap = cap, return_cap = True)
+                cap = camera.camera_control.capture_data_fluor_multi_exposure(s_camera_settings, plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir, cap = cap, return_cap = True)
         lights.coolLed_control.turn_everything_off(coolLED_port)
 
     # shut everything down 

@@ -19,6 +19,8 @@ def normalize_to_smallest_nonzero(input_array):
 
 def norm(input_array):
 
+    input_array = input_array - np.min(input_array)
+
     return input_array/np.max(input_array)
     
 def largest_blob(binary_image):

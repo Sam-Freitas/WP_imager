@@ -309,7 +309,7 @@ dy = -115  # used to be 116
 header = ['Explanation','widefield','fluorescence']
 df = pd.DataFrame(columns = header)
 
-df.loc[0] = ['camera_port','0','1']
+df.loc[0] = ['camera_port','1','0']
 df.loc[1] = ['pixel_width','5472','2560']
 df.loc[2] = ['pixel_height','3640','2560']
 df.loc[3] = ['max_framerate','6','10']
@@ -321,8 +321,12 @@ df.loc[8] = ['img_pixel_depth','8','8']
 df.loc[9] = ['img_color','0','1']
 df.loc[10] = ['pixel_binning','1','1']
 df.loc[11] = ['HDR','0','1']
+df.loc[12] = ['gain','0.0','0.0']
+df.loc[13] = ['exposure',' 1/17',' 1/16']
+df.loc[14] = ['brightness','300','0']
+df.loc[15] = ['contrast','30','0']
 
-df.to_csv(os.path.join(path_to_settings_folder,'settings_cameras.csv'),index= False)
+# df.to_csv(os.path.join(path_to_settings_folder,'settings_cameras.csv'),index= False)
 
 # #############################################
 # ## this id for the grbl base

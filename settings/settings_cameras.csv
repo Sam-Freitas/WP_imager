@@ -11,3 +11,7 @@ img_pixel_depth,8,8
 img_color,0,1
 pixel_binning,1,1
 HDR,0,1
+gain,0,0
+exposure, 1/17, 1/16
+brightness,300,0
+contrast,30,0
