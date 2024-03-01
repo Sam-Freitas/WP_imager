@@ -576,6 +576,7 @@ def capture_data_fluor_multi_exposure(camera_settings, plate_parameters = None, 
             exit()
 
     current_exposure = cam_exposure_cv2 + 1 # starting exposure should be 1/8 sec -> 1/16 -> 1/32 -> 1/64
+    cv2_exposures = [-2,-4,-6,-8]
 
     num_images = int(number_of_images_per_burst)
     # Capture a series of images
@@ -583,7 +584,7 @@ def capture_data_fluor_multi_exposure(camera_settings, plate_parameters = None, 
         # start_time = time.time()
 
         # set the exposure to current_exposre, clear the buffer(??), and then capture
-        cap.set(cv2.CAP_PROP_EXPOSURE,current_exposure)
+        cap.set(cv2.CAP_PROP_EXPOSURE,cv2_exposures[i])
         capture_images_for_time(cap, N = 0.25)
         
         # read the image from the camera buffer
@@ -595,8 +596,8 @@ def capture_data_fluor_multi_exposure(camera_settings, plate_parameters = None, 
             break
         
         # current_time_for_filename = datetime.datetime.now().strftime("%Y-%m-%d (%H-%M-%S-%f)")
-        image_subtype = plate_parameters['well_name'] + '_00' + str(i+1) + '_' + str(current_exposure)
-        image_name = plate_parameters['well_name'] + '_00' + str(i+1) + '_' + str(current_exposure) + '_' + '.' + img_file_format #current_time_for_filename + '.' + img_file_format
+        image_subtype = plate_parameters['well_name'] + '_00' + str(i+1) + '_' + str(cv2_exposures[i])
+        image_name = plate_parameters['well_name'] + '_00' + str(i+1) + '_' + str(cv2_exposures[i]) + '_' + '.' + img_file_format #current_time_for_filename + '.' + img_file_format
         image_filename = os.path.join(output_dir, image_name)
 
         cv2.imwrite(image_filename, frame[:,:,-1])#, [int(cv2.IMWRITE_PNG_COMPRESSION), 5])
@@ -609,8 +610,6 @@ def capture_data_fluor_multi_exposure(camera_settings, plate_parameters = None, 
         cv2.putText(frame, image_subtype, (int(text_x2), int(text_y2)), font, font_scale, font_color1, thickness1) # white
 
         imshow_resize("img", frame, resize_size=[640,480])
-
-        current_exposure -= 1 # increment the exposure
 
         # capture_images_for_time(cap,time_between_images_seconds, show_images=True,move_to = [1920,520], start_time = start_time)
         # time.sleep(1)

@@ -182,9 +182,9 @@ def run_autofocus_at_current_position(controller, starting_location, coolLED_por
             controller.move_XYZ(position = this_location) # move the said location 
                 
             if (counter == 0) and (cap is not None): # capture the frame and return the image and camera 'cap' object
-                frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, cap = cap, return_cap = True, clear_N_images_from_buffer = 10) 
+                frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, cap = cap, return_cap = True, clear_N_images_from_buffer = 5) 
             elif (counter == 0) and (cap == None):
-                frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, return_cap = True, clear_N_images_from_buffer = 10) 
+                frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, return_cap = True, clear_N_images_from_buffer = 5) 
             else:
                 frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, cap = cap, return_cap = True, clear_N_images_from_buffer = 1)
             images.append(frame)
@@ -237,7 +237,7 @@ def run_autofocus_at_current_position(controller, starting_location, coolLED_por
         red = int(this_plate_parameters['fluorescence_RED']) > 0, 
         red_intensity = int(this_plate_parameters['fluorescence_RED']))
 
-    frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, cap = cap,return_cap = True, clear_N_images_from_buffer = 3)
+    frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, cap = cap,return_cap = True, clear_N_images_from_buffer = 1)
     camera.camera_control.imshow_resize(frame_name = "stream", frame = frame)
 
     return z_pos, cap
@@ -503,7 +503,7 @@ if __name__ == "__main__":
             # capture a single image for calibration
             image_filename = camera.camera_control.simple_capture_data_single_image(s_camera_settings, plate_parameters=this_plate_parameters, output_dir=output_dir, image_file_format = 'jpg')
             image_filename = correct_barrel_distortion(image_filename, a = 0.0, b = 0.0, c = -0.03, d = 1.05)
-            individual_well_locations,center_location,n_wells = calibration_model.run_yolo_model(img_filename=image_filename, save_results = True, show_results = True)
+            individual_well_locations,center_location,n_wells = calibration_model.run_yolo_model(img_filename=image_filename, save_results = True, show_results = False)
 
         # turn off red
         lights.labjackU3_control.turn_off_red(d)
@@ -517,7 +517,7 @@ if __name__ == "__main__":
         if n_wells==96:
             pixels_per_mm = well_locations_delta/[69.695,41.845] #[85.5,49.5]
             s_positions = s_terasaki_positions.copy()
-            af_area = 800
+            af_area = 650
         elif n_wells==240:
             pixels_per_mm = well_locations_delta/[84.143,49.227]
             s_positions = s_wm_4pair_positions.copy()
@@ -550,15 +550,15 @@ if __name__ == "__main__":
         #     print('Couldnt find all wells reverting to d efault')  
         use_adjusted_centers = False
 
-        lights.coolLed_control.turn_specified_on(coolLED_port, 
-            uv = int(this_plate_parameters['fluorescence_UV']) > 0, 
-            uv_intensity = int(this_plate_parameters['fluorescence_UV']),
-            blue = int(this_plate_parameters['fluorescence_BLUE']) > 0, 
-            blue_intensity = int(this_plate_parameters['fluorescence_BLUE']),
-            green = int(this_plate_parameters['fluorescence_GREEN']) > 0, 
-            green_intensity = int(this_plate_parameters['fluorescence_GREEN']),
-            red = int(this_plate_parameters['fluorescence_RED']) > 0, 
-            red_intensity = int(this_plate_parameters['fluorescence_RED']))
+        # lights.coolLed_control.turn_specified_on(coolLED_port, 
+        #     uv = int(this_plate_parameters['fluorescence_UV']) > 0, 
+        #     uv_intensity = int(this_plate_parameters['fluorescence_UV']),
+        #     blue = int(this_plate_parameters['fluorescence_BLUE']) > 0, 
+        #     blue_intensity = int(this_plate_parameters['fluorescence_BLUE']),
+        #     green = int(this_plate_parameters['fluorescence_GREEN']) > 0, 
+        #     green_intensity = int(this_plate_parameters['fluorescence_GREEN']),
+        #     red = int(this_plate_parameters['fluorescence_RED']) > 0, 
+        #     red_intensity = int(this_plate_parameters['fluorescence_RED']))
 
         found_autofocus_positions = []
 
@@ -616,7 +616,7 @@ if __name__ == "__main__":
             else:  
                 z_pos_found_autofocus, cap = run_autofocus_at_current_position(controller, 
                     this_well_coords, coolLED_port, this_plate_parameters, autofocus_min_max = [0.75,-0.75], 
-                    autofocus_delta_z = 0.125, cap = cap, af_area=af_area)
+                    autofocus_delta_z = 0.25, cap = cap, af_area=af_area)
                 this_well_coords['z_pos'] = z_pos_found_autofocus
                 found_autofocus_positions.append(z_pos_found_autofocus)
 
@@ -624,6 +624,7 @@ if __name__ == "__main__":
                 cap = camera.camera_control.capture_data_fluor_multi_exposure(s_camera_settings, plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir, cap = cap, return_cap = False)
             else:  
                 cap = camera.camera_control.capture_data_fluor_multi_exposure(s_camera_settings, plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir, cap = cap, return_cap = True)
+            lights.coolLed_control.turn_everything_off(coolLED_port)
         lights.coolLed_control.turn_everything_off(coolLED_port)
 
     # shut everything down 
