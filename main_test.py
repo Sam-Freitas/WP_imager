@@ -137,6 +137,62 @@ def run_calib_terasaki(s_camera_settings,this_plate_parameters,output_dir,s_tera
 
     return adjusted_position, center_delta_in_mm
   
+def quick_autofocus_rerun(controller, starting_location, coolLED_port, 
+    this_plate_parameters, autofocus_min_max = [1,-1], autofocus_delta_z = 0.25, cap = None, show_results = False, af_area = 2560):
+
+    lights.coolLed_control.turn_everything_off(coolLED_port) # turn everything off
+    autofocus_steps = int(abs(np.diff(autofocus_min_max) / autofocus_delta_z)) + 1
+    z_limit = [-10,-94]
+    offset = 25 # this is for the autofocus algorithm how many pixels apart is the focus to be measures
+    thresh = 5 # same as above but now ignores all the values under thresh
+
+    # find the z locations for the loop to step through
+    z_positions_start = np.linspace(starting_location['z_pos']+autofocus_min_max[0],starting_location['z_pos']+autofocus_min_max[1],num = autofocus_steps)
+    z_positions_start = z_positions_start  + np.abs(np.diff(autofocus_min_max)) # start it higher
+    z_positions = []
+
+    # turn on the RGB lights to get a white light for focusing 
+    lights.coolLed_control.turn_specified_on(coolLED_port, 
+        uv = False, 
+        uv_intensity = 1,
+        blue = True, 
+        blue_intensity = 10,
+        green = True, 
+        green_intensity = 10,
+        red = True, 
+        red_intensity = 0)
+  
+    # go though all the z_positions and get the most in focus position
+    images = []
+    uncalib_fscore = []
+    for counter,z_pos in enumerate(z_positions_start):
+        this_location = starting_location.copy()
+        this_location['z_pos'] = z_pos
+        # jprint(this_location)
+
+        if z_pos < z_limit[0] and z_pos > z_limit[1]:
+            z_positions.append(z_pos)
+
+            controller.move_XYZ(position = this_location) # move the said location 
+                
+            if (counter == 0) and (cap is not None): # capture the frame and return the image and camera 'cap' object
+                frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, cap = cap, return_cap = True, clear_N_images_from_buffer = 5) 
+            elif (counter == 0) and (cap == None):
+                frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, return_cap = True, clear_N_images_from_buffer = 5) 
+            else:
+                frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, cap = cap, return_cap = True, clear_N_images_from_buffer = 1)
+            images.append(frame)
+            temp = analysis.fluor_postprocess.crop_center_numpy_return(frame, af_area, center = [1440,1252] )
+            temp = sq_grad(temp,thresh = thresh,offset = offset)
+            uncalib_fscore.append(np.sum(temp))
+            camera.camera_control.imshow_resize(frame_name = "stream", frame = frame)
+    
+    lights.coolLed_control.turn_everything_off(coolLED_port) # turn everything off
+
+    assumed_focus_idx = np.argmax(uncalib_fscore)
+
+    return assumed_focus_idx, uncalib_fscore, z_positions, controller, starting_location, coolLED_port, this_plate_parameters, autofocus_min_max, autofocus_delta_z, cap , show_results, af_area
+
 def run_autofocus_at_current_position(controller, starting_location, coolLED_port, 
     this_plate_parameters, autofocus_min_max = [1,-1], autofocus_delta_z = 0.25, cap = None, show_results = False, af_area = 2560):
 
@@ -222,6 +278,12 @@ def run_autofocus_at_current_position(controller, starting_location, coolLED_por
         plt.pause(5)
         plt.close('all')
 
+    if assumed_focus_idx == 0:
+        print('rerunning AF')
+        assumed_focus_idx, uncalib_fscore, z_positions, controller, starting_location, coolLED_port, this_plate_parameters, autofocus_min_max, autofocus_delta_z, cap , show_results, af_area = quick_autofocus_rerun(controller, 
+            starting_location, coolLED_port, 
+            this_plate_parameters, autofocus_min_max, autofocus_delta_z , cap, show_results, af_area)
+
     z_pos = z_positions[assumed_focus_idx] # for the final output
     this_location = starting_location.copy()
     this_location['z_pos'] = z_positions[assumed_focus_idx]
@@ -275,7 +337,7 @@ class CNCController:
                 if idle_counter == 1 or idle_counter == 2:
                     # print(grbl_response)
                     pass
-                if idle_counter > 5:
+                if idle_counter > 3:
                     break
                 if 'alarm' in grbl_response.lower():
                     raise ValueError(grbl_response)
