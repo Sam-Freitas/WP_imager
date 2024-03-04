@@ -138,7 +138,7 @@ def quick_autofocus_rerun(controller, starting_location, coolLED_port,
 
     # find the z locations for the loop to step through
     z_positions_start = np.linspace(starting_location['z_pos']+autofocus_min_max[0],starting_location['z_pos']+autofocus_min_max[1],num = autofocus_steps)
-    z_positions_start = z_positions_start + (np.abs(np.diff(autofocus_min_max))*(5/6)*up_or_down) # start it higher but still have some overlap
+    z_positions_start = z_positions_start + (np.abs(np.diff(autofocus_min_max))*(4/6)*up_or_down) # start it higher but still have some overlap
     z_positions = []
 
     # turn on the RGB lights to get a white light for focusing 
@@ -192,6 +192,13 @@ def run_autofocus_at_current_position(controller, starting_location, coolLED_por
     # find the z locations for the loop to step through
     z_positions_start = np.linspace(starting_location['z_pos']+autofocus_min_max[0],starting_location['z_pos']+autofocus_min_max[1],num = autofocus_steps)
     z_positions = []
+
+    # turn on the RGB lights to get a white light for focusing 
+    lights.coolLed_control.turn_specified_on(coolLED_port, 
+        uv = False, uv_intensity = 1,
+        blue = True, blue_intensity = 10,
+        green = True, green_intensity = 10,
+        red = True, red_intensity = 0)
   
     # go though all the z_positions and get the most in focus position
     images = []
@@ -229,12 +236,18 @@ def run_autofocus_at_current_position(controller, starting_location, coolLED_por
         plt.pause(5)
         plt.close('all')
 
-    if (assumed_focus_idx == 0) or (assumed_focus_idx == 1):
-        print('rerunning AF')
+    if (assumed_focus_idx == 0):
+        print('rerunning AF Moving UP')
         [assumed_focus_idx, uncalib_fscore, z_positions, controller, starting_location, coolLED_port, this_plate_parameters, 
          autofocus_min_max, autofocus_delta_z, cap , show_results, af_area] = quick_autofocus_rerun(controller, 
             starting_location, coolLED_port, 
             this_plate_parameters, autofocus_min_max, autofocus_delta_z , cap, show_results, af_area, up_or_down=1)
+    elif (assumed_focus_idx == len(uncalib_fscore)-1):
+        print('rerunning AF Moving DOWN')
+        [assumed_focus_idx, uncalib_fscore, z_positions, controller, starting_location, coolLED_port, this_plate_parameters, 
+         autofocus_min_max, autofocus_delta_z, cap , show_results, af_area] = quick_autofocus_rerun(controller, 
+            starting_location, coolLED_port, 
+            this_plate_parameters, autofocus_min_max, autofocus_delta_z , cap, show_results, af_area, up_or_down=-1)
 
     z_pos = z_positions[assumed_focus_idx] # for the final output
     this_location = starting_location.copy()
