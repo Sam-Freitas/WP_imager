@@ -162,9 +162,9 @@ def quick_autofocus_rerun(controller, starting_location, coolLED_port,
             controller.move_XYZ(position = this_location) # move the said location 
                 
             if (counter == 0) and (cap is not None): # capture the frame and return the image and camera 'cap' object
-                frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, cap = cap, return_cap = True, clear_N_images_from_buffer = 5) 
+                frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, cap = cap, return_cap = True, clear_N_images_from_buffer = 3) 
             elif (counter == 0) and (cap == None):
-                frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, return_cap = True, clear_N_images_from_buffer = 5) 
+                frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, return_cap = True, clear_N_images_from_buffer = 3) 
             else:
                 frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, cap = cap, return_cap = True, clear_N_images_from_buffer = 1)
             images.append(frame)
@@ -207,9 +207,9 @@ def run_autofocus_at_current_position(controller, starting_location, coolLED_por
             controller.move_XYZ(position = this_location) # move the said location 
                 
             if (counter == 0) and (cap is not None): # capture the frame and return the image and camera 'cap' object
-                frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, cap = cap, return_cap = True, clear_N_images_from_buffer = 5) 
+                frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, cap = cap, return_cap = True, clear_N_images_from_buffer = 3) 
             elif (counter == 0) and (cap == None):
-                frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, return_cap = True, clear_N_images_from_buffer = 5) 
+                frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, return_cap = True, clear_N_images_from_buffer = 3) 
             else:
                 frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, cap = cap, return_cap = True, clear_N_images_from_buffer = 1)
             images.append(frame)
@@ -231,7 +231,8 @@ def run_autofocus_at_current_position(controller, starting_location, coolLED_por
 
     if (assumed_focus_idx == 0) or (assumed_focus_idx == 1):
         print('rerunning AF')
-        assumed_focus_idx, uncalib_fscore, z_positions, controller, starting_location, coolLED_port, this_plate_parameters, autofocus_min_max, autofocus_delta_z, cap , show_results, af_area = quick_autofocus_rerun(controller, 
+        [assumed_focus_idx, uncalib_fscore, z_positions, controller, starting_location, coolLED_port, this_plate_parameters, 
+         autofocus_min_max, autofocus_delta_z, cap , show_results, af_area] = quick_autofocus_rerun(controller, 
             starting_location, coolLED_port, 
             this_plate_parameters, autofocus_min_max, autofocus_delta_z , cap, show_results, af_area, up_or_down=1)
 
