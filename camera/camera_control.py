@@ -369,11 +369,6 @@ def simple_capture_data_fluor(camera_settings, plate_parameters = None, testing 
     text_x2 = text_x-200
     text_y2 = 500
 
-    # time_between_images_seconds = 1 # this is just for testing 
-    # img_file_format = 'png' # slow and lossless but smaller 
-    # # img_file_format = 'jpg' # fast but lossy small files
-    # # img_file_format = 'bmp' # fastest and lossess huge files
-
     if cap == None:
         # Open the camera0
         cap = cv2.VideoCapture(int(camera_id))
@@ -411,9 +406,6 @@ def simple_capture_data_fluor(camera_settings, plate_parameters = None, testing 
         cv2.putText(frame, image_subtype, (int(text_x2), int(text_y2)), font, font_scale, font_color1, thickness1) # white
 
         imshow_resize("img", frame, resize_size=[640,480])
-
-        # capture_images_for_time(cap,time_between_images_seconds, show_images=True,move_to = [1920,520], start_time = start_time)
-        # time.sleep(1)
 
     # Release the camera
     # cv2.destroyAllWindows()
@@ -541,7 +533,7 @@ def capture_data_fluor_multi_exposure(camera_settings, plate_parameters = None, 
     # convert the cam_exposure time from seconds into 2^x = seconds
     cam_exposure_cv2 = convert_to_float(cam_exposure)
     cam_exposure_cv2 = math.log(cam_exposure_cv2)/math.log(2)
-    cam_exposure_cv2 = int(cam_exposure_cv2) ############################### mathmatically this is worng but program wise thig get -4.0 -> -4
+    cam_exposure_cv2 = int(cam_exposure_cv2) ############################### mathmatically this is worng but program wise this gets -4.0 -> -4
 
     # Define the text and font settings
     text = plate_parameters['experiment_name'] + '--' + plate_parameters['plate_name'] + '--' + todays_date
@@ -558,11 +550,6 @@ def capture_data_fluor_multi_exposure(camera_settings, plate_parameters = None, 
     text_y = 250  # 250 pixels from the top
     text_x2 = text_x-200
     text_y2 = 500
-
-    # time_between_images_seconds = 1 # this is just for testing 
-    # img_file_format = 'png' # slow and lossless but smaller 
-    # # img_file_format = 'jpg' # fast but lossy small files
-    # # img_file_format = 'bmp' # fastest and lossess huge files
 
     if cap == None:
         # Open the camera0
@@ -610,9 +597,6 @@ def capture_data_fluor_multi_exposure(camera_settings, plate_parameters = None, 
         cv2.putText(frame, image_subtype, (int(text_x2), int(text_y2)), font, font_scale, font_color1, thickness1) # white
 
         imshow_resize("img", frame, resize_size=[640,480])
-
-        # capture_images_for_time(cap,time_between_images_seconds, show_images=True,move_to = [1920,520], start_time = start_time)
-        # time.sleep(1)
 
     cap.set(cv2.CAP_PROP_EXPOSURE,cam_exposure_cv2)
 

@@ -31,16 +31,6 @@ def sq_grad(img,thresh = 50,offset = 10):
     mask = diff > thresh
     squared_gradient = diff*diff*mask
 
-    # img3 = img[0:shift,:]
-    # img4 = img[offset:,:]
-
-    # diff1 = np.abs(img2-img1)
-    # diff2 = np.abs(img4-img3)
-    # mask1 = diff1 > thresh
-    # mask2 = diff2 > thresh
-
-    # squared_gradient = diff1*diff2*mask1*mask2
-
     return squared_gradient
 
 def run_calib(s_camera_settings,this_plate_parameters,output_dir, calibration_model, 
@@ -138,7 +128,7 @@ def run_calib_terasaki(s_camera_settings,this_plate_parameters,output_dir,s_tera
     return adjusted_position, center_delta_in_mm
   
 def quick_autofocus_rerun(controller, starting_location, coolLED_port, 
-    this_plate_parameters, autofocus_min_max = [1,-1], autofocus_delta_z = 0.25, cap = None, show_results = False, af_area = 2560):
+    this_plate_parameters, autofocus_min_max = [1,-1], autofocus_delta_z = 0.25, cap = None, show_results = False, af_area = 2560, up_or_down = 1):
 
     lights.coolLed_control.turn_everything_off(coolLED_port) # turn everything off
     autofocus_steps = int(abs(np.diff(autofocus_min_max) / autofocus_delta_z)) + 1
@@ -148,19 +138,15 @@ def quick_autofocus_rerun(controller, starting_location, coolLED_port,
 
     # find the z locations for the loop to step through
     z_positions_start = np.linspace(starting_location['z_pos']+autofocus_min_max[0],starting_location['z_pos']+autofocus_min_max[1],num = autofocus_steps)
-    z_positions_start = z_positions_start  + np.abs(np.diff(autofocus_min_max)) # start it higher
+    z_positions_start = z_positions_start + (np.abs(np.diff(autofocus_min_max))*(5/6)*up_or_down) # start it higher but still have some overlap
     z_positions = []
 
     # turn on the RGB lights to get a white light for focusing 
     lights.coolLed_control.turn_specified_on(coolLED_port, 
-        uv = False, 
-        uv_intensity = 1,
-        blue = True, 
-        blue_intensity = 10,
-        green = True, 
-        green_intensity = 10,
-        red = True, 
-        red_intensity = 0)
+        uv = False, uv_intensity = 1,
+        blue = True, blue_intensity = 10,
+        green = True, green_intensity = 10,
+        red = True, red_intensity = 0)
   
     # go though all the z_positions and get the most in focus position
     images = []
@@ -198,12 +184,6 @@ def run_autofocus_at_current_position(controller, starting_location, coolLED_por
 
     lights.coolLed_control.turn_everything_off(coolLED_port) # turn everything off
 
-    # set up the variables  
-    # z_pos = -5
-    # pixels_per_mm = 192
-    # FOV = 5
-    # autofocus_min_max = [2.5,-6] # remember that down (towards sample) is negative
-    # autofocus_delta_z = 0.25 # mm 
     autofocus_steps = int(abs(np.diff(autofocus_min_max) / autofocus_delta_z)) + 1
     z_limit = [-10,-94]
     offset = 25 # this is for the autofocus algorithm how many pixels apart is the focus to be measures
@@ -212,17 +192,6 @@ def run_autofocus_at_current_position(controller, starting_location, coolLED_por
     # find the z locations for the loop to step through
     z_positions_start = np.linspace(starting_location['z_pos']+autofocus_min_max[0],starting_location['z_pos']+autofocus_min_max[1],num = autofocus_steps)
     z_positions = []
-
-    # turn on the RGB lights to get a white light for focusing 
-    lights.coolLed_control.turn_specified_on(coolLED_port, 
-        uv = False, 
-        uv_intensity = 1,
-        blue = True, 
-        blue_intensity = 10,
-        green = True, 
-        green_intensity = 10,
-        red = True, 
-        red_intensity = 0)
   
     # go though all the z_positions and get the most in focus position
     images = []
@@ -250,24 +219,6 @@ def run_autofocus_at_current_position(controller, starting_location, coolLED_por
             camera.camera_control.imshow_resize(frame_name = "stream", frame = frame)
     
     lights.coolLed_control.turn_everything_off(coolLED_port) # turn everything off
-    # images = np.asarray(images)
-    # np.save('autofocus_stack.npy',images)
-
-    # a = np.mean(images, axis = 0) # get the average image taken of the stack (for illumination correction)
-    # # binary_img = analysis.fluor_postprocess.largest_blob(a > 20) # get the largest binary blob in the image
-    # # center = [ np.average(indices) for indices in np.where(binary_img) ] # find where the actual center of the frame is (assuming camera sensor is larger than image circle)
-    # # center_int = [int(np.round(point)) for point in center]
-
-    # norm_array = scipy.ndimage.gaussian_filter(a,10) # get the instensities of the images for the illuminance normalizations
-    # norm_array_full = 1-(norm_array/np.max(norm_array))
-    # # norm_array = analysis.fluor_postprocess.crop_center_numpy_return(norm_array_full,pixels_per_mm*(FOV), center = center_int)
-
-    # focus_score = [] # get the focus score for every image that gets stepped through
-    # for this_img in images:
-    #     this_img = this_img*(norm_array_full+1)
-    #     b = sq_grad(this_img,thresh = thresh,offset = offset)
-    #     this_fscore = np.sum(b)
-    #     focus_score.append(this_fscore)
 
     assumed_focus_idx = np.argmax(uncalib_fscore)
 
@@ -278,11 +229,11 @@ def run_autofocus_at_current_position(controller, starting_location, coolLED_por
         plt.pause(5)
         plt.close('all')
 
-    if assumed_focus_idx == 0:
+    if (assumed_focus_idx == 0) or (assumed_focus_idx == 1):
         print('rerunning AF')
         assumed_focus_idx, uncalib_fscore, z_positions, controller, starting_location, coolLED_port, this_plate_parameters, autofocus_min_max, autofocus_delta_z, cap , show_results, af_area = quick_autofocus_rerun(controller, 
             starting_location, coolLED_port, 
-            this_plate_parameters, autofocus_min_max, autofocus_delta_z , cap, show_results, af_area)
+            this_plate_parameters, autofocus_min_max, autofocus_delta_z , cap, show_results, af_area, up_or_down=1)
 
     z_pos = z_positions[assumed_focus_idx] # for the final output
     this_location = starting_location.copy()
@@ -665,7 +616,6 @@ if __name__ == "__main__":
             else: # otherswise measure then report finding and then adjust from the inital base
                 controller.move_XYZ(position = this_well_coords)
                 # lights.labjackU3_control.turn_on_red(d)
-                # terasaki_adjusted_position, center_delta_in_mm = run_calib_terasaki(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_positions,calibration_model)
             
             if well_index == 0:
                 lights.labjackU3_control.turn_off_everything(d)
@@ -677,8 +627,8 @@ if __name__ == "__main__":
                 found_autofocus_positions.append(z_pos_found_autofocus_inital)
             else:  
                 z_pos_found_autofocus, cap = run_autofocus_at_current_position(controller, 
-                    this_well_coords, coolLED_port, this_plate_parameters, autofocus_min_max = [0.75,-0.75], 
-                    autofocus_delta_z = 0.25, cap = cap, af_area=af_area)
+                    this_well_coords, coolLED_port, this_plate_parameters, autofocus_min_max = [0.5,-0.5], 
+                    autofocus_delta_z = (1/6), cap = cap, af_area=af_area)
                 this_well_coords['z_pos'] = z_pos_found_autofocus
                 found_autofocus_positions.append(z_pos_found_autofocus)
 
@@ -694,3 +644,23 @@ if __name__ == "__main__":
     # movement.simple_stream.home_GRBL(s_machines['grbl'][0], testing = False,camera=None) # home the machine
 
     # print('eof')
+
+
+    # images = np.asarray(images)
+    # np.save('autofocus_stack.npy',images)
+
+    # a = np.mean(images, axis = 0) # get the average image taken of the stack (for illumination correction)
+    # # binary_img = analysis.fluor_postprocess.largest_blob(a > 20) # get the largest binary blob in the image
+    # # center = [ np.average(indices) for indices in np.where(binary_img) ] # find where the actual center of the frame is (assuming camera sensor is larger than image circle)
+    # # center_int = [int(np.round(point)) for point in center]
+
+    # norm_array = scipy.ndimage.gaussian_filter(a,10) # get the instensities of the images for the illuminance normalizations
+    # norm_array_full = 1-(norm_array/np.max(norm_array))
+    # # norm_array = analysis.fluor_postprocess.crop_center_numpy_return(norm_array_full,pixels_per_mm*(FOV), center = center_int)
+
+    # focus_score = [] # get the focus score for every image that gets stepped through
+    # for this_img in images:
+    #     this_img = this_img*(norm_array_full+1)
+    #     b = sq_grad(this_img,thresh = thresh,offset = offset)
+    #     this_fscore = np.sum(b)
+    #     focus_score.append(this_fscore)
