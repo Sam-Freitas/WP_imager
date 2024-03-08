@@ -138,7 +138,7 @@ def quick_autofocus_rerun(controller, starting_location, coolLED_port,
 
     # find the z locations for the loop to step through
     z_positions_start = np.linspace(starting_location['z_pos']+autofocus_min_max[0],starting_location['z_pos']+autofocus_min_max[1],num = autofocus_steps)
-    z_positions_start = z_positions_start + (np.abs(np.diff(autofocus_min_max))*(4/6)*up_or_down) # start it higher but still have some overlap
+    z_positions_start = z_positions_start + (np.abs(np.diff(autofocus_min_max))*(3/6)*up_or_down) # start it higher but still have some overlap
     z_positions = []
 
     # turn on the RGB lights to get a white light for focusing 
@@ -156,7 +156,7 @@ def quick_autofocus_rerun(controller, starting_location, coolLED_port,
         this_location['z_pos'] = z_pos
         # jprint(this_location)
 
-        if z_pos < z_limit[0] and z_pos > z_limit[1]:
+        if z_pos < z_limit[0] and z_pos > z_limit[1]:  
             z_positions.append(z_pos)
 
             controller.move_XYZ(position = this_location) # move the said location 

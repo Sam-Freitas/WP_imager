@@ -178,7 +178,7 @@ if __name__ == "__main__":
             uv = False, 
             uv_intensity = 1,
             blue = True, #########################################################
-            blue_intensity = 1,
+            blue_intensity = 10,
             green = True, 
             green_intensity = 10,
             red = True, ###########################################################

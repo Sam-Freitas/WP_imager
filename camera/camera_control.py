@@ -74,7 +74,7 @@ def capture_single_image_wait_N_seconds(camera_settings,timestart = None, excita
         timestart = time.time()
 
     if output_dir == None:
-        output_dir = os.path.join(os.getcwd(),'output',plate_parameters['experiment_name'],plate_parameters['plate_name'],todays_date)
+        output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)),'output',plate_parameters['experiment_name'],plate_parameters['plate_name'],todays_date)
     else:
         output_dir = os.path.join(output_dir,plate_parameters['experiment_name'],plate_parameters['plate_name'],todays_date)
     
@@ -157,7 +157,7 @@ def simple_capture_data(camera_settings, plate_parameters = None, testing = Fals
     todays_date = datetime.date.today().strftime("%Y-%m-%d")
 
     if output_dir == None:
-        output_dir = os.path.join(os.getcwd(),'output',plate_parameters['experiment_name'],plate_parameters['plate_name'],todays_date)
+        output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)),'output',plate_parameters['experiment_name'],plate_parameters['plate_name'],todays_date)
     else:
         output_dir = os.path.join(output_dir,plate_parameters['experiment_name'],plate_parameters['plate_name'],todays_date)
     
@@ -244,7 +244,7 @@ def simple_capture_data_single_image(camera_settings, plate_parameters = None, t
     todays_date = datetime.date.today().strftime("%Y-%m-%d")
 
     if output_dir == None:
-        output_dir = os.path.join(os.getcwd(),'output','calibration')
+        output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)),'output','calibration')
     else:
         output_dir = os.path.join(output_dir,'calibration')
     
@@ -333,7 +333,7 @@ def simple_capture_data_fluor(camera_settings, plate_parameters = None, testing 
     todays_date = datetime.date.today().strftime("%Y-%m-%d")
 
     if output_dir == None:
-        output_dir = os.path.join(os.getcwd(),'output',plate_parameters['experiment_name'],plate_parameters['plate_name'],todays_date)
+        output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)),'output',plate_parameters['experiment_name'],plate_parameters['plate_name'],todays_date)
     else:
         output_dir = os.path.join(output_dir,plate_parameters['experiment_name'],plate_parameters['plate_name'],todays_date,'fluorescent_data')
     
@@ -419,7 +419,7 @@ def simple_capture_data_fluor_single_image(camera_settings, plate_parameters = N
     todays_date = datetime.date.today().strftime("%Y-%m-%d")
 
     if output_dir == None:
-        output_dir = os.path.join(os.getcwd(),'output','calibration')
+        output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)),'output','calibration')
     else:
         output_dir = os.path.join(output_dir,'calibration')
     
@@ -509,7 +509,7 @@ def capture_data_fluor_multi_exposure(camera_settings, plate_parameters = None, 
     todays_date = datetime.date.today().strftime("%Y-%m-%d")
 
     if output_dir == None:
-        output_dir = os.path.join(os.getcwd(),'output',plate_parameters['experiment_name'],plate_parameters['plate_name'],todays_date)
+        output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)),'output',plate_parameters['experiment_name'],plate_parameters['plate_name'],todays_date)
     else:
         output_dir = os.path.join(output_dir,plate_parameters['experiment_name'],plate_parameters['plate_name'],todays_date,'fluorescent_data')
     

@@ -62,9 +62,13 @@ def sort_rows(centers, num_cols = 12, num_row = 8):
 
 class yolo_model:
     def __init__(self):
-        self.model_path = 'ultralytics_yolov5_master\WPdata_weightsWMterasaki.pt'
-        self.yolomodel = attempt_load(self.model_path, map_location='cuda') # load model
-
+        if os.path.isfile('ultralytics_yolov5_master\WPdata_weightsWMterasaki.pt'):
+            self.model_path = 'ultralytics_yolov5_master\WPdata_weightsWMterasaki.pt'
+            self.yolomodel = attempt_load(self.model_path, map_location='cuda') # load model
+        else:
+            path = os.path.join(os.path.dirname(os.path.abspath(__file__)),'ultralytics_yolov5_master\WPdata_weightsWMterasaki.pt')
+            self.model_path = path
+            self.yolomodel = attempt_load(self.model_path, map_location='cuda') # load model
     def only_model(self,img):
 
         out = self.yolomodel(img)[0] # run the model
@@ -153,7 +157,7 @@ class yolo_model:
 
             # Plot center of image
             plt.scatter(IMAGE_W / 2, IMAGE_H / 2, marker='P', color='cyan')
-            plt.savefig('output\calibration\calib_out' + str(plate_index) + '.jpg', dpi=500)
+            plt.savefig(os.path.join(os.path.dirname(os.path.abspath(__file__)),'output\calibration\calib_out' + str(plate_index) + '.jpg'), dpi=500)
 
             if show_results:
                 if pause_block == True:
