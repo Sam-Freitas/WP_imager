@@ -42,6 +42,7 @@ def sq_grad(img,thresh = 50,offset = 10):
 def run_calib(s_camera_settings,this_plate_parameters,output_dir, calibration_model, 
     adjust_with_movement = True, final_measurement = False, delete_prev_data = True, cap = None):
     # take image
+    cap = camera.camera_control.clear_camera_image_buffer(cap, N = 4)
     cap, image_filename = camera.camera_control.simple_capture_data_single_image(s_camera_settings, plate_parameters=this_plate_parameters,
                                 output_dir=output_dir, image_file_format = 'jpg', testing = delete_prev_data, cap = cap)
     # run yolo model and get the locations of the well and center of the plate
@@ -188,13 +189,13 @@ def run_autofocus_at_current_position(controller, starting_location, coolLED_por
         plt.close('all')
 
     if (assumed_focus_idx == 0):
-        print('rerunning AF Moving UP')
+        # print('rerunning AF Moving UP')
         [assumed_focus_idx, uncalib_fscore, z_positions, controller, starting_location, coolLED_port, this_plate_parameters, 
          autofocus_min_max, autofocus_delta_z, cap , show_results, af_area] = quick_autofocus_rerun(controller, 
             starting_location, coolLED_port, 
             this_plate_parameters, autofocus_min_max, autofocus_delta_z , cap, show_results, af_area, up_or_down=1)
     elif (assumed_focus_idx == len(uncalib_fscore)-1):
-        print('rerunning AF Moving DOWN')
+        # print('rerunning AF Moving DOWN')
         [assumed_focus_idx, uncalib_fscore, z_positions, controller, starting_location, coolLED_port, this_plate_parameters, 
          autofocus_min_max, autofocus_delta_z, cap , show_results, af_area] = quick_autofocus_rerun(controller, 
             starting_location, coolLED_port, 
@@ -406,6 +407,7 @@ if __name__ == "__main__":
     calibration_model = yolo_model()
 
     # todo set up both cameras and make sure that they return an image
+    print('Opening cameras')
     lights.labjackU3_control.turn_on_red(d)
     Fcap, Wcap = camera.camera_control.open_cameras(s_camera_settings)
     camera.camera_control.test_cameras(Fcap, Wcap)
@@ -442,6 +444,7 @@ if __name__ == "__main__":
         # move the imaging module to the position
         controller.move_XY_at_Z_travel(position = position,
                                        z_travel_height = z_travel_height)
+        Wcap = camera.camera_control.clear_camera_image_buffer(Wcap, N = 4)
         
         # # # image the experiment 
         Wcap = camera.camera_control.simple_capture_data(s_camera_settings, plate_parameters=this_plate_parameters, testing=run_as_testing, output_dir=output_dir, cap = Wcap)
@@ -499,10 +502,12 @@ if __name__ == "__main__":
 
         # determine if the plate is a terasaki or wm and use the correct settings
         if n_wells==96:
+            n_image_locs = 96
             pixels_per_mm = well_locations_delta/[69.695,41.845] #[85.5,49.5]
             s_positions = s_terasaki_positions.copy()
             af_area = 650
         elif n_wells==240:
+            n_image_locs = 60
             pixels_per_mm = well_locations_delta/[84.143,49.227]
             s_positions = s_wm_4pair_positions.copy()
             af_area = 1500
@@ -529,7 +534,7 @@ if __name__ == "__main__":
         found_autofocus_positions = []
 
         # fluorescently image each of the wells
-        for well_index,this_well_location_xy in enumerate(zip(s_positions['x_relative_pos_mm'].values(),s_positions['y_relative_pos_mm'].values())):
+        for well_index,this_well_location_xy in enumerate(tqdm.tqdm(zip(s_positions['x_relative_pos_mm'].values(),s_positions['y_relative_pos_mm'].values()), total = n_image_locs)):
             # get plate parameters
             this_plate_parameters['well_name'] = s_positions['name'][well_index]
             this_well_coords = dict()
@@ -550,7 +555,7 @@ if __name__ == "__main__":
                     this_well_coords['z_pos'] = np.mean(found_autofocus_positions[-5:])
                 else:
                     this_well_coords['z_pos'] = np.mean(found_autofocus_positions)
-            print(well_index, this_well_coords)
+            # print(well_index, this_well_coords)
 
             # move the fluorescent imaging head to that specific well  
             controller.move_XYZ(position = this_well_coords)

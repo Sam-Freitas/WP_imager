@@ -8,6 +8,7 @@ import numpy as np
 def clear_camera_image_buffer(cap,N=2):
     for i in range(N):
         ret, frame = cap.read()
+    return cap
 
 # this opens both camera ports
 def open_cameras(camera_settings):
@@ -47,10 +48,10 @@ def open_cameras(camera_settings):
 # this tests both cameras
 def test_cameras(Fcap, Wcap):
 
-    clear_camera_image_buffer(Wcap)
+    Wcap = clear_camera_image_buffer(Wcap)
     ret, Wframe = Wcap.read()
 
-    clear_camera_image_buffer(Fcap)
+    Fcap = clear_camera_image_buffer(Fcap)
     ret, Fframe = Fcap.read()
 
     assert np.sum(Wframe) > 0
@@ -114,7 +115,7 @@ def capture_images_for_time(cap,N, show_images = False, move_to = [100,100], res
         if start_time + N < current_time: 
             break 
 
-def capture_single_image_wait_N_seconds(camera_settings,timestart = None, excitation_amount = 9, plate_parameters = None, testing = False, output_dir = None):
+def capture_single_image_wait_N_seconds(camera_settings,timestart = None, excitation_amount = 9, plate_parameters = None, testing = False, output_dir = None, cap = None):
 
     todays_date = datetime.date.today().strftime("%Y-%m-%d")
 
@@ -173,7 +174,7 @@ def capture_single_image_wait_N_seconds(camera_settings,timestart = None, excita
     # time_between_images_seconds = 0 # this is just for testing 
     img_file_format = 'png' # slow and lossless but smaller 
 
-    clear_camera_image_buffer(cap)
+    cap = clear_camera_image_buffer(cap)
 
     num_images = int(number_of_images_per_burst)
     # Capture a series of images
@@ -265,7 +266,7 @@ def simple_capture_data(camera_settings, plate_parameters = None, testing = Fals
     text_x2 = text_x-200
     text_y2 = 500
 
-    clear_camera_image_buffer(cap)
+    cap = clear_camera_image_buffer(cap)
 
     num_images = int(number_of_images_per_burst)
     # Capture a series of images
@@ -361,7 +362,7 @@ def simple_capture_data_single_image(camera_settings, plate_parameters = None, t
         print("Error: Unable to open camera.")
         exit()
 
-    clear_camera_image_buffer(cap)
+    cap = clear_camera_image_buffer(cap)
 
     num_images = 1
     # Capture a series of images
@@ -443,7 +444,7 @@ def simple_capture_data_fluor(camera_settings, plate_parameters = None, testing 
             print("Error: Unable to open camera.")
             exit()
 
-    # clear_camera_image_buffer(cap, N = 3)
+    # cap = clear_camera_image_buffer(cap, N = 3)
 
     num_images = int(number_of_images_per_burst)
     # Capture a series of images
@@ -533,7 +534,7 @@ def simple_capture_data_fluor_single_image(camera_settings, plate_parameters = N
         print("Error: Unable to open camera.")
         exit()
 
-    clear_camera_image_buffer(cap)
+    cap = clear_camera_image_buffer(cap)
 
     num_images = 1
     # Capture a series of images
@@ -627,7 +628,7 @@ def capture_data_fluor_multi_exposure(camera_settings, plate_parameters = None, 
     text_y2 = 500
 
     # current_exposure = cam_exposure_cv2 + 1 # starting exposure should be 1/8 sec -> 1/16 -> 1/32 -> 1/64
-    cv2_exposures = [-2,-4,-6,-8]
+    cv2_exposures = [-8,-6,-4,-2] #[-2,-4,-6,-8]
 
     num_images = int(number_of_images_per_burst)
     # Capture a series of images
@@ -706,7 +707,7 @@ def capture_fluor_img_return_img(camera_settings, cap = None, return_cap = False
         cap_release = False
 
     if clear_N_images_from_buffer > 0:
-        clear_camera_image_buffer(cap, N = clear_N_images_from_buffer)
+        cap = clear_camera_image_buffer(cap, N = clear_N_images_from_buffer)
 
     num_images = 1
     # Capture a series of images
