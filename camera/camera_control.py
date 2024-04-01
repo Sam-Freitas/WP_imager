@@ -3,6 +3,59 @@ import matplotlib.pyplot as plt
 # from numpy import zeros, logical_and, logical_or, logical_xor
 import numpy as np
 
+
+# this captures the first N images to clear the pipeline (sometime just black images)
+def clear_camera_image_buffer(cap,N=2):
+    for i in range(N):
+        ret, frame = cap.read()
+
+# this opens both camera ports
+def open_cameras(camera_settings):
+
+    camera_id = camera_settings['fluorescence'][0]
+    cam_width = float(camera_settings['fluorescence'][1])
+    cam_height = float(camera_settings['fluorescence'][2])
+    cam_framerate = camera_settings['fluorescence'][3]
+
+    # Open the camera0
+    Fcap = cv2.VideoCapture(int(camera_id))
+    Fcap.set(cv2.CAP_PROP_FRAME_WIDTH,int(cam_width))
+    Fcap.set(cv2.CAP_PROP_FRAME_HEIGHT,int(cam_height))
+    Fcap.set(cv2.CAP_PROP_FPS,int(cam_framerate))
+
+    if not Fcap.isOpened():
+        print("Error: Unable to open fluorescence camera.")
+        assert False
+
+    camera_id = camera_settings['widefield'][0]
+    cam_width = float(camera_settings['widefield'][1])
+    cam_height = float(camera_settings['widefield'][2])
+    cam_framerate = camera_settings['widefield'][3]
+
+    # Open the camera
+    Wcap = cv2.VideoCapture(int(camera_id))
+    Wcap.set(cv2.CAP_PROP_FRAME_WIDTH,int(cam_width))
+    Wcap.set(cv2.CAP_PROP_FRAME_HEIGHT,int(cam_height))
+    Wcap.set(cv2.CAP_PROP_FPS,int(cam_framerate))
+
+    if not Fcap.isOpened():
+        print("Error: Unable to open widefield camera.")
+        assert False
+
+    return Fcap, Wcap
+
+# this tests both cameras
+def test_cameras(Fcap, Wcap):
+
+    clear_camera_image_buffer(Wcap)
+    ret, Wframe = Wcap.read()
+
+    clear_camera_image_buffer(Fcap)
+    ret, Fframe = Fcap.read()
+
+    assert np.sum(Wframe) > 0
+    assert np.sum(Fframe) > 0
+
 def convert_to_float(frac_str):
     try:
         return float(frac_str)
@@ -61,11 +114,6 @@ def capture_images_for_time(cap,N, show_images = False, move_to = [100,100], res
         if start_time + N < current_time: 
             break 
 
-# this captures the first N images to clear the pipeline (sometime just black images)
-def clear_camera_image_buffer(cap,N=2):
-    for i in range(N):
-        ret, frame = cap.read()
-
 def capture_single_image_wait_N_seconds(camera_settings,timestart = None, excitation_amount = 9, plate_parameters = None, testing = False, output_dir = None):
 
     todays_date = datetime.date.today().strftime("%Y-%m-%d")
@@ -92,6 +140,20 @@ def capture_single_image_wait_N_seconds(camera_settings,timestart = None, excita
     img_file_format = camera_settings['widefield'][7]
     img_pixel_depth = camera_settings['widefield'][8]
 
+    # Open the camera
+    if cap == None:
+        return_cap = False
+        cap = cv2.VideoCapture(int(camera_id))
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH,int(cam_width))
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT,int(cam_height))
+        cap.set(cv2.CAP_PROP_FPS,int(cam_framerate))
+    else:
+        return_cap = True
+
+    if not cap.isOpened():
+        print("Error: Unable to open camera.")
+        exit()
+
     # Define the text and font settings
     text = plate_parameters['experiment_name'] + '--' + plate_parameters['plate_name'] + '--' + todays_date
     font = cv2.FONT_HERSHEY_SIMPLEX
@@ -110,16 +172,6 @@ def capture_single_image_wait_N_seconds(camera_settings,timestart = None, excita
 
     # time_between_images_seconds = 0 # this is just for testing 
     img_file_format = 'png' # slow and lossless but smaller 
-
-    # Open the camera0
-    cap = cv2.VideoCapture(int(camera_id))
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH,int(cam_width))
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT,int(cam_height))
-    cap.set(cv2.CAP_PROP_FPS,int(cam_framerate))
-
-    if not cap.isOpened():
-        print("Error: Unable to open camera.")
-        exit()
 
     clear_camera_image_buffer(cap)
 
@@ -150,9 +202,12 @@ def capture_single_image_wait_N_seconds(camera_settings,timestart = None, excita
 
     # Release the camera
     # cv2.destroyAllWindows()
-    cap.release()
+    if return_cap:
+        return cap
+    else:
+        cap.release()
 
-def simple_capture_data(camera_settings, plate_parameters = None, testing = False, output_dir = None):
+def simple_capture_data(camera_settings, plate_parameters = None, testing = False, output_dir = None, cap = None, return_cap = True):
 
     todays_date = datetime.date.today().strftime("%Y-%m-%d")
 
@@ -175,6 +230,25 @@ def simple_capture_data(camera_settings, plate_parameters = None, testing = Fals
     img_file_format = camera_settings['widefield'][7]
     img_pixel_depth = camera_settings['widefield'][8]
 
+    # Open the camera0
+    if cap == None:
+        return_cap = False
+        cap = cv2.VideoCapture(int(camera_id))
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH,int(cam_width))
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT,int(cam_height))
+        cap.set(cv2.CAP_PROP_FPS,int(cam_framerate))
+    else:
+        return_cap = True
+
+    # time_between_images_seconds = 2 # this is just for testing 
+    img_file_format = 'png' # slow and lossless but smaller 
+    # # img_file_format = 'jpg' # fast but lossy small files
+    # # img_file_format = 'bmp' # fastest and lossess huge files
+
+    if not cap.isOpened():
+        print("Error: Unable to open camera.")
+        exit()
+
     # Define the text and font settings
     text = plate_parameters['experiment_name'] + '--' + plate_parameters['plate_name'] + '--' + todays_date
     font = cv2.FONT_HERSHEY_SIMPLEX
@@ -190,21 +264,6 @@ def simple_capture_data(camera_settings, plate_parameters = None, testing = Fals
     text_y = 250  # 250 pixels from the top
     text_x2 = text_x-200
     text_y2 = 500
-
-    # time_between_images_seconds = 2 # this is just for testing 
-    img_file_format = 'png' # slow and lossless but smaller 
-    # # img_file_format = 'jpg' # fast but lossy small files
-    # # img_file_format = 'bmp' # fastest and lossess huge files
-
-    # Open the camera0
-    cap = cv2.VideoCapture(int(camera_id))
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH,int(cam_width))
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT,int(cam_height))
-    cap.set(cv2.CAP_PROP_FPS,int(cam_framerate))
-
-    if not cap.isOpened():
-        print("Error: Unable to open camera.")
-        exit()
 
     clear_camera_image_buffer(cap)
 
@@ -237,7 +296,10 @@ def simple_capture_data(camera_settings, plate_parameters = None, testing = Fals
 
     # Release the camera
     # cv2.destroyAllWindows()
-    cap.release()
+    if return_cap:
+        return cap
+    else:
+        cap.release()
 
 def simple_capture_data_single_image(camera_settings, plate_parameters = None, testing = False, output_dir = None, image_file_format = 'png'):
 
@@ -535,6 +597,18 @@ def capture_data_fluor_multi_exposure(camera_settings, plate_parameters = None, 
     cam_exposure_cv2 = math.log(cam_exposure_cv2)/math.log(2)
     cam_exposure_cv2 = int(cam_exposure_cv2) ############################### mathmatically this is worng but program wise this gets -4.0 -> -4
 
+    # open the camera if not given
+    if cap == None:
+        # Open the camera0
+        cap = cv2.VideoCapture(int(camera_id))
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH,int(cam_width))
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT,int(cam_height))
+        cap.set(cv2.CAP_PROP_FPS,int(cam_framerate))
+
+        if not cap.isOpened():
+            print("Error: Unable to open camera.")
+            exit()
+
     # Define the text and font settings
     text = plate_parameters['experiment_name'] + '--' + plate_parameters['plate_name'] + '--' + todays_date
     font = cv2.FONT_HERSHEY_SIMPLEX
@@ -551,18 +625,7 @@ def capture_data_fluor_multi_exposure(camera_settings, plate_parameters = None, 
     text_x2 = text_x-200
     text_y2 = 500
 
-    if cap == None:
-        # Open the camera0
-        cap = cv2.VideoCapture(int(camera_id))
-        cap.set(cv2.CAP_PROP_FRAME_WIDTH,int(cam_width))
-        cap.set(cv2.CAP_PROP_FRAME_HEIGHT,int(cam_height))
-        cap.set(cv2.CAP_PROP_FPS,int(cam_framerate))
-
-        if not cap.isOpened():
-            print("Error: Unable to open camera.")
-            exit()
-
-    current_exposure = cam_exposure_cv2 + 1 # starting exposure should be 1/8 sec -> 1/16 -> 1/32 -> 1/64
+    # current_exposure = cam_exposure_cv2 + 1 # starting exposure should be 1/8 sec -> 1/16 -> 1/32 -> 1/64
     cv2_exposures = [-2,-4,-6,-8]
 
     num_images = int(number_of_images_per_burst)
