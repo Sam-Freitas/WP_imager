@@ -40,10 +40,10 @@ def sq_grad(img,thresh = 50,offset = 10):
     return squared_gradient
 
 def run_calib(s_camera_settings,this_plate_parameters,output_dir, calibration_model, 
-    adjust_with_movement = True, final_measurement = False, delete_prev_data = True):
+    adjust_with_movement = True, final_measurement = False, delete_prev_data = True, cap = None):
     # take image
-    image_filename = camera.camera_control.simple_capture_data_single_image(s_camera_settings, plate_parameters=this_plate_parameters,
-                                output_dir=output_dir, image_file_format = 'jpg', testing = delete_prev_data)
+    cap, image_filename = camera.camera_control.simple_capture_data_single_image(s_camera_settings, plate_parameters=this_plate_parameters,
+                                output_dir=output_dir, image_file_format = 'jpg', testing = delete_prev_data, cap = cap)
     # run yolo model and get the locations of the well and center of the plate
     individual_well_locations,center_location,n_wells = calibration_model.run_yolo_model(img_filename=image_filename, save_results = True, show_results = False, plate_index = this_plate_parameters['plate_index'])
 
@@ -72,11 +72,11 @@ def run_calib(s_camera_settings,this_plate_parameters,output_dir, calibration_mo
         move_down = measured_position.copy()
         move_down['z_pos'] = -106.5
         controller.move_XYZ(position = move_down)
-        image_filename = camera.camera_control.simple_capture_data_single_image(s_camera_settings, plate_parameters=this_plate_parameters,
-                            output_dir=output_dir, image_file_format = 'jpg', testing = delete_prev_data)
+        cap, image_filename = camera.camera_control.simple_capture_data_single_image(s_camera_settings, plate_parameters=this_plate_parameters,
+                            output_dir=output_dir, image_file_format = 'jpg', testing = delete_prev_data, cap = cap)
         individual_well_locations,center_location = calibration_model.run_yolo_model(img_filename=image_filename, plot_results = True, plate_index = this_plate_parameters['plate_index'])
     
-    return adjusted_position
+    return adjusted_position, cap
   
 def quick_autofocus_rerun(controller, starting_location, coolLED_port, 
     this_plate_parameters, autofocus_min_max = [1,-1], autofocus_delta_z = 0.25, cap = None, show_results = False, af_area = 2560, up_or_down = 1):
@@ -482,10 +482,10 @@ if __name__ == "__main__":
         # turn on red for the calibration run
         lights.labjackU3_control.turn_on_red(d)
         # this calibrates the imaging head to the center of the plate
-        adjusted_position = run_calib(s_camera_settings,this_plate_parameters,output_dir,calibration_model)
-        adjusted_position = run_calib(s_camera_settings,this_plate_parameters,output_dir,calibration_model)
+        adjusted_position, Wcap = run_calib(s_camera_settings,this_plate_parameters,output_dir,calibration_model, cap = Wcap)
+        adjusted_position, Wcap = run_calib(s_camera_settings,this_plate_parameters,output_dir,calibration_model, cap = Wcap)
         # capture a single image for calibration
-        image_filename = camera.camera_control.simple_capture_data_single_image(s_camera_settings, plate_parameters=this_plate_parameters, output_dir=output_dir, image_file_format = 'jpg')
+        Wcap, image_filename = camera.camera_control.simple_capture_data_single_image(s_camera_settings, plate_parameters=this_plate_parameters, output_dir=output_dir, image_file_format = 'jpg', cap = Wcap)
         image_filename = correct_barrel_distortion(image_filename, a = 0.0, b = 0.0, c = -0.03, d = 1.05)
         individual_well_locations,center_location,n_wells = calibration_model.run_yolo_model(img_filename=image_filename, save_results = True, show_results = False)
 
@@ -559,22 +559,20 @@ if __name__ == "__main__":
             if well_index == 0:
                 lights.labjackU3_control.turn_off_everything(d)
                 # get first autofocus and return the cap
-                z_pos_found_autofocus_inital, cap = run_autofocus_at_current_position(controller, 
+                z_pos_found_autofocus_inital, Fcap = run_autofocus_at_current_position(controller, 
                     this_well_coords, coolLED_port, this_plate_parameters, autofocus_min_max = [3,-3], 
-                    autofocus_delta_z = 0.1, cap = None, af_area=af_area)
+                    autofocus_delta_z = 0.1, cap = Fcap, af_area=af_area)
                 this_well_coords['z_pos'] = z_pos_found_autofocus_inital
                 found_autofocus_positions.append(z_pos_found_autofocus_inital)
             else:  
-                z_pos_found_autofocus, cap = run_autofocus_at_current_position(controller, 
+                z_pos_found_autofocus, Fcap = run_autofocus_at_current_position(controller, 
                     this_well_coords, coolLED_port, this_plate_parameters, autofocus_min_max = [0.5,-0.5], 
-                    autofocus_delta_z = (1/6), cap = cap, af_area=af_area)
+                    autofocus_delta_z = (1/6), cap = Fcap, af_area=af_area)
                 this_well_coords['z_pos'] = z_pos_found_autofocus
                 found_autofocus_positions.append(z_pos_found_autofocus)
 
-            if well_index == (len(s_positions['x_relative_pos_mm'].values()) - 1): 
-                cap = camera.camera_control.capture_data_fluor_multi_exposure(s_camera_settings, plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir, cap = cap, return_cap = False)
-            else:  
-                cap = camera.camera_control.capture_data_fluor_multi_exposure(s_camera_settings, plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir, cap = cap, return_cap = True)
+            # image the wells
+            Fcap = camera.camera_control.capture_data_fluor_multi_exposure(s_camera_settings, plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir, cap = Fcap, return_cap = True)
             lights.coolLed_control.turn_everything_off(coolLED_port)
         lights.coolLed_control.turn_everything_off(coolLED_port)
 
