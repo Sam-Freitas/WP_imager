@@ -143,7 +143,7 @@ def quick_autofocus_rerun(controller, starting_location, coolLED_port,
 
     # turn on the RGB lights to get a white light for focusing 
     lights.coolLed_control.turn_specified_on(coolLED_port, 
-        uv = False, uv_intensity = 1,
+        uv = True, uv_intensity = 1,
         blue = True, blue_intensity = 10,
         green = True, green_intensity = 10,
         red = True, red_intensity = 0)
@@ -195,7 +195,7 @@ def run_autofocus_at_current_position(controller, starting_location, coolLED_por
 
     # turn on the RGB lights to get a white light for focusing 
     lights.coolLed_control.turn_specified_on(coolLED_port, 
-        uv = False, uv_intensity = 1,
+        uv = True, uv_intensity = 1,
         blue = True, blue_intensity = 10,
         green = True, green_intensity = 10,
         red = True, red_intensity = 0)
@@ -251,7 +251,7 @@ def run_autofocus_at_current_position(controller, starting_location, coolLED_por
 
     z_pos = z_positions[assumed_focus_idx] # for the final output
     this_location = starting_location.copy()
-    this_location['z_pos'] = z_positions[assumed_focus_idx]
+    this_location['z_pos'] = z_positions[assumed_focus_idx] + 0.05
     controller.move_XYZ(position = this_location)
 
     lights.coolLed_control.turn_specified_on(coolLED_port, 
@@ -264,7 +264,7 @@ def run_autofocus_at_current_position(controller, starting_location, coolLED_por
         red = int(this_plate_parameters['fluorescence_RED']) > 0, 
         red_intensity = int(this_plate_parameters['fluorescence_RED']))
 
-    frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, cap = cap,return_cap = True, clear_N_images_from_buffer = 1)
+    frame, cap = camera.camera_control.capture_fluor_img_return_img(s_camera_settings, cap = cap,return_cap = True, clear_N_images_from_buffer = 2)
     camera.camera_control.imshow_resize(frame_name = "stream", frame = frame)
 
     return z_pos, cap

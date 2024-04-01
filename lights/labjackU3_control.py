@@ -90,6 +90,10 @@ if __name__ == "__main__":
     
     turn_off_everything(d)
 
+    turn_on_blue(d)
+  
+    turn_off_everything(d)
+
     # set_DAC(d,0,0)
     # set_DAC(d,1,0)
 

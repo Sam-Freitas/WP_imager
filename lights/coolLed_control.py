@@ -175,7 +175,7 @@ if __name__ == "__main__":
     #     turn_specified_on(port_path, uv = True)
  
     turn_specified_on(port_path, #############
-            uv = False, 
+            uv = True, 
             uv_intensity = 1,
             blue = True, #########################################################
             blue_intensity = 10,
