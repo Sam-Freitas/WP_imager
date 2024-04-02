@@ -42,7 +42,7 @@ def sq_grad(img,thresh = 50,offset = 10):
 def run_calib(s_camera_settings,this_plate_parameters,output_dir, calibration_model, 
     adjust_with_movement = True, final_measurement = False, delete_prev_data = True, cap = None, verbose = True):
     # take image
-    cap = camera.camera_control.clear_camera_image_buffer(cap, N = 4)
+    cap = camera.camera_control.clear_camera_image_buffer(cap, N = 6)
     cap, image_filename = camera.camera_control.simple_capture_data_single_image(s_camera_settings, plate_parameters=this_plate_parameters,
                                 output_dir=output_dir, image_file_format = 'jpg', testing = delete_prev_data, cap = cap)
     # run yolo model and get the locations of the well and center of the plate
@@ -406,6 +406,9 @@ if __name__ == "__main__":
 
     # set up the calibration model (YOLO)
     calibration_model = yolo_model()
+        # set up lifespan red lights
+    lights.labjackU3_control.turn_on_red(d)
+    lights.coolLed_control.turn_everything_off(coolLED_port)
 
     # todo set up both cameras and make sure that they return an image
     print("Opening cameras")
@@ -428,13 +431,15 @@ if __name__ == "__main__":
             if s_plate_names_and_opts['fluorescence'][this_plate_index]:
                 plate_index_fluor.append(this_plate_index)
 
-    # set up lifespan red lights
-    lights.labjackU3_control.turn_on_red(d)
-    lights.coolLed_control.turn_everything_off(coolLED_port)
+
     # make sure that the system beings from home
+    lights.labjackU3_control.turn_on_red(d)
     controller.set_up_grbl(home = home_setting)
+    Wcap.release()
+    Fcap.release()
     # # # run lifespan imaging experiments
     for this_plate_index in plate_index:
+        Fcap, Wcap = camera.camera_control.open_cameras(s_camera_settings)
         # get the experiment options
         this_plate_parameters,this_plate_position = settings.get_settings.get_indexed_dict_parameters(s_plate_names_and_opts,s_plate_positions,this_plate_index)
         print(this_plate_parameters)
@@ -461,6 +466,8 @@ if __name__ == "__main__":
 
         time.sleep(0.05)
         print('')
+        Wcap.release()
+        Fcap.release()
 
     # blink the red light as a confirmation of finish
     lights.labjackU3_control.turn_on_red(d)
@@ -473,9 +480,12 @@ if __name__ == "__main__":
     # reset and home the machine
     if len(plate_index) != 0: # if there are no plate lifespan then no need to home twice
         controller.set_up_grbl(home = home_setting)
+    Wcap.release()
+    Fcap.release()
 
     # # # run fluorescent imaging experiments
     for this_plate_index in plate_index_fluor:
+        Fcap, Wcap = camera.camera_control.open_cameras(s_camera_settings)
         # get the experiment options
         this_plate_parameters,this_plate_position = settings.get_settings.get_indexed_dict_parameters(s_plate_names_and_opts,s_plate_positions,this_plate_index)
         print(this_plate_parameters)
@@ -541,6 +551,7 @@ if __name__ == "__main__":
         # turn off the red and create a variable to help autofocus
         lights.labjackU3_control.turn_off_red(d)
         found_autofocus_positions = []
+        
 
         # fluorescently image each of the wells
         for well_index,this_well_location_xy in enumerate(tqdm.tqdm(zip(s_positions['x_relative_pos_mm'].values(),s_positions['y_relative_pos_mm'].values()), total = n_image_locs)):
@@ -575,7 +586,7 @@ if __name__ == "__main__":
                 lights.labjackU3_control.turn_off_everything(d)
                 # get first autofocus and return the cap
                 z_pos_found_autofocus_inital, Fcap = run_autofocus_at_current_position(controller, 
-                    this_well_coords, coolLED_port, this_plate_parameters, autofocus_min_max = [3,-3], 
+                    this_well_coords, coolLED_port, this_plate_parameters, autofocus_min_max = [1,-3], 
                     autofocus_delta_z = 0.1, cap = Fcap, af_area=af_area)
                 this_well_coords['z_pos'] = z_pos_found_autofocus_inital
                 found_autofocus_positions.append(z_pos_found_autofocus_inital)
@@ -589,7 +600,10 @@ if __name__ == "__main__":
             # image the wells
             Fcap = camera.camera_control.capture_data_fluor_multi_exposure(s_camera_settings, plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir, cap = Fcap, return_cap = True)
             lights.coolLed_control.turn_everything_off(coolLED_port)
+
         lights.coolLed_control.turn_everything_off(coolLED_port)
+        Wcap.release()
+        Fcap.release()
 
     # shut everything down 
     controller.set_up_grbl(home = True)

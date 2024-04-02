@@ -4,10 +4,26 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
+def cap_read_retry(cap):
+
+    ret, frame = cap.read()
+    try:
+        if ret==False or frame.any() == None:
+            ret, frame = cap.read()
+            if ret==False or frame.any() == None:
+                ret, frame = cap.read()
+    except:
+        if ret==False or frame == None:
+            ret, frame = cap.read()
+            if ret==False or frame == None:
+                ret, frame = cap.read()
+
+    return ret,frame
+
 # this captures the first N images to clear the pipeline (sometime just black images)
 def clear_camera_image_buffer(cap,N=2):
     for i in range(N):
-        ret, frame = cap.read()
+        ret, frame = cap_read_retry(cap)
     return cap
 
 # this opens both camera ports
@@ -49,10 +65,12 @@ def open_cameras(camera_settings):
 def test_cameras(Fcap, Wcap):
 
     Wcap = clear_camera_image_buffer(Wcap)
-    ret, Wframe = Wcap.read()
+    ret, Wframe = cap_read_retry(Wcap)
+    imshow_resize("img",Wframe)
 
     Fcap = clear_camera_image_buffer(Fcap)
-    ret, Fframe = Fcap.read()
+    ret, Fframe = cap_read_retry(Fcap)
+    imshow_resize("stream",Fframe)
 
     assert np.sum(Wframe) > 0
     assert np.sum(Fframe) > 0
@@ -105,7 +123,7 @@ def capture_images_for_time(cap,N, show_images = False, move_to = [100,100], res
     if start_time == None:
         start_time = time.time()
     while True:
-        ret, frame = cap.read()
+        ret, frame = cap_read_retry(cap)
         if not ret:
             print("Error: Unable to capture frame.")
             break
@@ -179,7 +197,7 @@ def capture_single_image_wait_N_seconds(camera_settings,timestart = None, excita
     num_images = int(number_of_images_per_burst)
     # Capture a series of images
     for i in tqdm.tqdm(range(num_images)):
-        ret, frame = cap.read()
+        ret, frame = cap_read_retry(cap)
         if not ret:
             print("Error: Unable to capture frame.")
             break
@@ -272,7 +290,7 @@ def simple_capture_data(camera_settings, plate_parameters = None, testing = Fals
     # Capture a series of images
     for i in tqdm.tqdm(range(num_images)):
         start_time = time.time()
-        ret, frame = cap.read()
+        ret, frame = cap_read_retry(cap)
         if not ret:
             print("Error: Unable to capture frame.")
             break
@@ -367,7 +385,7 @@ def simple_capture_data_single_image(camera_settings, plate_parameters = None, t
     num_images = 1
     # Capture a series of images
     start_time = time.time()
-    ret, frame = cap.read()
+    ret, frame = cap_read_retry(cap)
     if not ret:
         print("Error: Unable to capture frame.")
     
@@ -450,7 +468,7 @@ def simple_capture_data_fluor(camera_settings, plate_parameters = None, testing 
     # Capture a series of images
     for i in range(num_images): #tqdm.tqdm(range(num_images)):
         start_time = time.time()
-        ret, frame = cap.read()
+        ret, frame = cap_read_retry(cap)
         if not ret:
             print("Error: Unable to capture frame.")
             break
@@ -539,7 +557,7 @@ def simple_capture_data_fluor_single_image(camera_settings, plate_parameters = N
     num_images = 1
     # Capture a series of images
     start_time = time.time()
-    ret, frame = cap.read()
+    ret, frame = cap_read_retry(cap)
     if not ret:
         print("Error: Unable to capture frame.")
     
@@ -640,7 +658,7 @@ def capture_data_fluor_multi_exposure(camera_settings, plate_parameters = None, 
         capture_images_for_time(cap, N = 0.25)
         
         # read the image from the camera buffer
-        ret, frame = cap.read()
+        ret, frame = cap_read_retry(cap)
 
         # check
         if not ret:
@@ -711,7 +729,7 @@ def capture_fluor_img_return_img(camera_settings, cap = None, return_cap = False
 
     num_images = 1
     # Capture a series of images
-    ret, frame = cap.read()
+    ret, frame = cap_read_retry(cap)
     frame = frame[:,:,-1]
     if not ret:
         print("Error: Unable to capture frame.")
