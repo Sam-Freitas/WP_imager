@@ -75,7 +75,7 @@ class yolo_model:
 
         return out
 
-    def run_yolo_model(self, img_filename = None, save_results = True, show_results = True, plate_index = 0, pause_block = False, n_wells = 96):
+    def run_yolo_model(self, img_filename = None, save_results = True, show_results = True, plate_index = 0, pause_block = False, n_wells = 96, verbose = True):
         # model_path = 'ultralytics_yolov5_master\WPdata_weightsWMterasaki.pt'
         # yolomodel = attempt_load(model_path, map_location='cuda') # load model
 
@@ -97,7 +97,8 @@ class yolo_model:
         temp = out[0][conf>0.6,:].cpu() ############# i think its x,y,w,h,conf,class0,class1
         conf2 = temp[:,4] # get the other confidence intervals
 
-        print('converting output')
+        if verbose:
+            print('converting output')
 
         determining_which_plate_type = torch.sum(out.squeeze()[:,-2::].cpu(),axis = 0).numpy()
 
@@ -138,9 +139,11 @@ class yolo_model:
         input_sized_center_of_plate[1] = input_sized_center_of_plate[1]*IMAGE_H
 
         if save_results:
-            matplotlib.use('TkAgg')
-
-            print("SHOWING:", sorted_centers.shape[0], " ITEMS")
+            
+            if show_results:
+                matplotlib.use('TkAgg')
+                print("SHOWING:", sorted_centers.shape[0], " ITEMS")
+            
             cmap = plt.get_cmap('jet', sorted_centers.shape[0])
             plt.imshow(img)
             # Plot points
