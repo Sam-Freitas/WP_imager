@@ -19,7 +19,6 @@ import matplotlib.pyplot as plt
 
 # you will need a local python environment setup with cuda-torch 
 
-
 def turn_everything_off_at_exit():
     lights.labjackU3_control.turn_off_everything()
     cv2.destroyAllWindows()
@@ -365,6 +364,19 @@ def correct_barrel_distortion(img_path, a = 0.0, b = 0.0, c = 0.0, d = 0.0):
  
     return new_img_path
 
+def find_closest_points(points_array, new_coordinate, num_closest=2):
+    # Calculate the Euclidean distances between each point and the new coordinate
+    distances = np.linalg.norm(points_array - new_coordinate, axis=1)
+    
+    # Sort the distances and get the indices of the closest points
+    closest_indices = np.argsort(distances)[:num_closest]
+    
+    # Get the closest points and their distances
+    closest_points = points_array[closest_indices]
+    closest_distances = distances[closest_indices]
+    
+    return closest_points, closest_indices, closest_distances
+
 def jprint(input):
     print(json.dumps(input,indent=4))
 
@@ -551,7 +563,7 @@ if __name__ == "__main__":
         # turn off the red and create a variable to help autofocus
         lights.labjackU3_control.turn_off_red(d)
         found_autofocus_positions = []
-        
+        z_nearest_pos_array = np.zeros(shape = (n_image_locs,3))
 
         # fluorescently image each of the wells
         for well_index,this_well_location_xy in enumerate(tqdm.tqdm(zip(s_positions['x_relative_pos_mm'].values(),s_positions['y_relative_pos_mm'].values()), total = n_image_locs)):
@@ -567,18 +579,22 @@ if __name__ == "__main__":
 
             # use the previous 5 wells to determine a starting position for the autofocus
             # todo make the autofocus starting point the closest current point(s)
-            if well_index == 0:
-                this_well_coords['z_pos'] = s_terasaki_positions['calib_z_pos_mm'][0]
-            elif well_index == 1:
-                this_well_coords['z_pos'] = z_pos_found_autofocus_inital
-            else:
-                if len(found_autofocus_positions) > 5:
-                    this_well_coords['z_pos'] = np.mean(found_autofocus_positions[-5:])
-                else:
-                    this_well_coords['z_pos'] = np.mean(found_autofocus_positions)
-            # print(well_index, this_well_coords)
 
-            # move the fluorescent imaging head to that specific well  
+            z_nearest_pos_array[well_index,0:2] = this_well_location_xy
+
+            if well_index != 0:    
+                closest_points, closest_indices, closest_distances = find_closest_points(z_nearest_pos_array[0:well_index,0:2], this_well_location_xy)
+                closest_z_position = np.mean(z_nearest_pos_array[closest_indices,-1])
+            else:
+                closest_indices = 0
+                z_nearest_pos_array[well_index,0:2] = this_well_location_xy
+                z_nearest_pos_array[well_index,2] = s_terasaki_positions['calib_z_pos_mm'][0]
+                closest_z_position = s_terasaki_positions['calib_z_pos_mm'][0]
+
+            this_well_coords['z_pos'] = closest_z_position
+
+            # move the fluorescent imaging head to that specific well 
+            # print(well_index, this_well_coords) 
             controller.move_XYZ(position = this_well_coords)
             # lights.labjackU3_control.turn_on_red(d)
             
@@ -589,12 +605,14 @@ if __name__ == "__main__":
                     this_well_coords, coolLED_port, this_plate_parameters, autofocus_min_max = [1,-3], 
                     autofocus_delta_z = 0.1, cap = Fcap, af_area=af_area)
                 this_well_coords['z_pos'] = z_pos_found_autofocus_inital
+                z_nearest_pos_array[well_index,-1] = z_pos_found_autofocus_inital
                 found_autofocus_positions.append(z_pos_found_autofocus_inital)
             else:  
                 z_pos_found_autofocus, Fcap = run_autofocus_at_current_position(controller, 
                     this_well_coords, coolLED_port, this_plate_parameters, autofocus_min_max = [0.5,-0.5], 
                     autofocus_delta_z = (1/6), cap = Fcap, af_area=af_area)
                 this_well_coords['z_pos'] = z_pos_found_autofocus
+                z_nearest_pos_array[well_index,-1] = z_pos_found_autofocus
                 found_autofocus_positions.append(z_pos_found_autofocus)
 
             # image the wells
