@@ -550,7 +550,7 @@ if __name__ == "__main__":
         z_starting_point_array = np.zeros(shape=(n_image_locs,3))
 
         # fluorescently image each of the wells
-        for well_index,this_well_location_xy in enumerate(zip(s_positions['x_relative_pos_mm'].values(),s_positions['y_relative_pos_mm'].values())):
+        for well_index,this_well_location_xy in enumerate(tqdm.tqdm(zip(s_positions['x_relative_pos_mm'].values(),s_positions['y_relative_pos_mm'].values()), total=n_image_locs)):
             # get plate parameters
             this_plate_parameters['well_name'] = s_positions['name'][well_index]
             this_well_coords = dict()
@@ -590,7 +590,7 @@ if __name__ == "__main__":
                     autofocus_delta_z = (1/6), cap = cap, af_area=af_area)
                 this_well_coords['z_pos'] = z_pos_found_autofocus
                 found_autofocus_positions.append(z_pos_found_autofocus)
-            z_starting_point_array[well_index,-1] = z_pos_found_autofocus[-1]
+            z_starting_point_array[well_index,-1] = found_autofocus_positions[-1]
 
             if well_index == (len(s_positions['x_relative_pos_mm'].values()) - 1): 
                 cap = camera.camera_control.capture_data_fluor_multi_exposure(s_camera_settings, plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir, cap = cap, return_cap = False)

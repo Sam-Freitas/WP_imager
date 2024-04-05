@@ -97,7 +97,7 @@ class yolo_model:
         temp = out[0][conf>0.6,:].cpu() ############# i think its x,y,w,h,conf,class0,class1
         conf2 = temp[:,4] # get the other confidence intervals
 
-        print('converting output')
+        # print('converting output')
 
         determining_which_plate_type = torch.sum(out.squeeze()[:,-2::].cpu(),axis = 0).numpy()
 
@@ -138,9 +138,10 @@ class yolo_model:
         input_sized_center_of_plate[1] = input_sized_center_of_plate[1]*IMAGE_H
 
         if save_results:
-            matplotlib.use('TkAgg')
+            if show_results:
+                matplotlib.use('TkAgg')
+                print("SHOWING:", sorted_centers.shape[0], " ITEMS")
 
-            print("SHOWING:", sorted_centers.shape[0], " ITEMS")
             cmap = plt.get_cmap('jet', sorted_centers.shape[0])
             plt.imshow(img)
             # Plot points

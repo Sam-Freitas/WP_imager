@@ -563,7 +563,7 @@ def capture_data_fluor_multi_exposure(camera_settings, plate_parameters = None, 
             exit()
 
     current_exposure = cam_exposure_cv2 + 1 # starting exposure should be 1/8 sec -> 1/16 -> 1/32 -> 1/64
-    cv2_exposures = [-2,-4,-6,-8]
+    cv2_exposures = [-8,-6,-4,-2]#[-2,-4,-6,-8]
 
     num_images = int(number_of_images_per_burst)
     # Capture a series of images
