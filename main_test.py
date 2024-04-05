@@ -33,6 +33,19 @@ def sq_grad(img,thresh = 50,offset = 10):
 
     return squared_gradient
 
+def find_closest_points(points_array, new_coordinate, num_closest=1):
+    # Calculate the Euclidean distances between each point and the new coordinate
+    distances = np.linalg.norm(points_array - new_coordinate, axis=1)
+    
+    # Sort the distances and get the indices of the closest points
+    closest_indices = np.argsort(distances)[:num_closest]
+    
+    # Get the closest points and their distances
+    closest_points = points_array[closest_indices]
+    closest_distances = distances[closest_indices]
+    
+    return closest_points, closest_indices, closest_distances
+
 def run_calib(s_camera_settings,this_plate_parameters,output_dir, calibration_model, 
     adjust_with_movement = True, final_measurement = False, delete_prev_data = True):
     # take image
@@ -71,61 +84,6 @@ def run_calib(s_camera_settings,this_plate_parameters,output_dir, calibration_mo
         individual_well_locations,center_location = calibration_model.run_yolo_model(img_filename=image_filename, plot_results = True, plate_index = this_plate_parameters['plate_index'])
     
     return adjusted_position, n_wells
-
-def run_calib_terasaki(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_positions, calibration_model, adjust_with_movement = True, final_measurement = False, delete_prev_data = True):
-
-    image_filename = camera.camera_control.simple_capture_data_fluor_single_image(s_camera_settings, plate_parameters=this_plate_parameters,
-                                output_dir=output_dir, image_file_format = 'jpg', testing = delete_prev_data)
-
-    img = cv2.imread(image_filename)
-    IMAGE_H,IMAGE_W,_ = img.shape
-    resize_H,resize_W = 704,704 # get image shape and shape to be transformed into
-    small_size = [84,106] 
-
-    base = np.zeros(shape=(resize_H,resize_W,3), dtype='uint8')
-    base[int((resize_H/2)-(small_size[1]/2)):int((resize_H/2)+(small_size[1]/2)),int((resize_W/2)-(small_size[0]/2)):int((resize_W/2)+(small_size[0]/2)),:] = cv2.resize(img,(small_size[0],small_size[1]))
-
-    img_in = base.copy()
-    img_in = cv2.resize(img_in,(resize_H,resize_W))
-    img_in = torch.permute(torch.tensor(img_in),(2,0,1)).to(torch.float32)/255
-    img_in = img_in.to(device).unsqueeze(0) # make the image into the correct form
-
-    out = calibration_model.only_model(img_in) ########## x,y,w,h,conf,class0,class1
-
-    conf = out[0][:,4] # get the confidence values of the detected stuff
-    temp = out[0][conf>0.2,:].cpu() ############# i think its x,y,w,h,conf,class0,class1
-    conf2 = temp[:,4] # get the other confidence intervals
-
-    size_of_detection = (temp[:,2]*temp[:,3]).unsqueeze(1) # get the weighting for the new detections 
-    weighted_size_conf = size_of_detection*conf2.unsqueeze(1)
-    weighted_size_conf = (weighted_size_conf/weighted_size_conf.max()).squeeze()
-    weighted_size_conf = weighted_size_conf*weighted_size_conf # new weighting ------> confidence*((w*h)^2)
-
-    center_of_well = np.array(np.average(temp[:,0:2], axis=0, weights=weighted_size_conf))
-    center_of_image = [resize_H/2,resize_W/2]
-
-    # plt.imshow(base)
-    # plt.plot(center_of_image[0],center_of_image[1],'gx')
-    # plt.plot(center_of_well[0],center_of_well[1],'r+')
-    # plt.show()
-
-    # Calculate pixels per mm based on well location data
-    center_delta = center_of_image - center_of_well
-    pixels_per_mm = [12.5,10.1] # row col
-    center_delta_in_mm = center_delta / pixels_per_mm
-
-    # Adjust position based on calibration
-    measured_position = controller.get_current_position()
-    adjusted_position = measured_position.copy()
-    adjusted_position['x_pos'] += center_delta_in_mm[0]
-    adjusted_position['y_pos'] -= center_delta_in_mm[1]
-
-    if adjust_with_movement:
-        controller.move_XYZ(position = adjusted_position)
-        image_filename = camera.camera_control.simple_capture_data_fluor_single_image(s_camera_settings, plate_parameters=this_plate_parameters,
-                                output_dir=output_dir, image_file_format = 'jpg', testing = delete_prev_data)
-
-    return adjusted_position, center_delta_in_mm
   
 def quick_autofocus_rerun(controller, starting_location, coolLED_port, 
     this_plate_parameters, autofocus_min_max = [1,-1], autofocus_delta_z = 0.25, cap = None, show_results = False, af_area = 2560, up_or_down = 1):
@@ -237,13 +195,13 @@ def run_autofocus_at_current_position(controller, starting_location, coolLED_por
         plt.close('all')
 
     if (assumed_focus_idx == 0):
-        print('rerunning AF Moving UP')
+        # print('rerunning AF Moving UP')
         [assumed_focus_idx, uncalib_fscore, z_positions, controller, starting_location, coolLED_port, this_plate_parameters, 
          autofocus_min_max, autofocus_delta_z, cap , show_results, af_area] = quick_autofocus_rerun(controller, 
             starting_location, coolLED_port, 
             this_plate_parameters, autofocus_min_max, autofocus_delta_z , cap, show_results, af_area, up_or_down=1)
     elif (assumed_focus_idx == len(uncalib_fscore)-1):
-        print('rerunning AF Moving DOWN')
+        # print('rerunning AF Moving DOWN')
         [assumed_focus_idx, uncalib_fscore, z_positions, controller, starting_location, coolLED_port, this_plate_parameters, 
          autofocus_min_max, autofocus_delta_z, cap , show_results, af_area] = quick_autofocus_rerun(controller, 
             starting_location, coolLED_port, 
@@ -540,13 +498,16 @@ if __name__ == "__main__":
         if n_wells==96:
             # pixels_per_mm = well_locations_delta/[69.695,41.845] #[85.5,49.5]
             s_positions = s_terasaki_positions.copy()
+            n_image_locs = 96
             af_area = 650
         elif n_wells==240:
             # pixels_per_mm = well_locations_delta/[84.143,49.227]
             s_positions = s_wm_4pair_positions.copy()
+            n_image_locs = 60
             af_area = 1500
         else:
             s_positions = s_terasaki_positions.copy()
+            n_image_locs = 96
             af_area = 650
             # pixels_per_mm = well_locations_delta/[69.695,41.845] #default to terasaki
         # find the realtion between the measured and where it supposed to be currently
@@ -586,6 +547,7 @@ if __name__ == "__main__":
         #     red_intensity = int(this_plate_parameters['fluorescence_RED']))
 
         found_autofocus_positions = []
+        z_starting_point_array = np.zeros(shape=(n_image_locs,3))
 
         # fluorescently image each of the wells
         for well_index,this_well_location_xy in enumerate(zip(s_positions['x_relative_pos_mm'].values(),s_positions['y_relative_pos_mm'].values())):
@@ -593,42 +555,26 @@ if __name__ == "__main__":
             this_plate_parameters['well_name'] = s_positions['name'][well_index]
             this_well_coords = dict()
 
-            if use_adjusted_centers:
-                pass
-                # # calculate the specific well location
-                # this_well_coords['x_pos'] = adjusted_position['x_pos'] + calibration_coordinates['x_pos'] 
-                # this_well_coords['y_pos'] = adjusted_position['y_pos'] + calibration_coordinates['y_pos'] + s_positions['y_offset_to_fluor_mm'][0]
-
-                # this_well_coords['x_pos'] += centers[well_index,0] #this_well_location_xy[0]
-                # this_well_coords['x_pos'] += -0.15
-                # this_well_coords['y_pos'] += centers[well_index,1] #this_well_location_xy[1]
-                # this_well_coords['y_pos'] += -2.5
-            else:  
-                this_well_coords['x_pos'] = adjusted_position['x_pos']
-                this_well_coords['y_pos'] = adjusted_position['y_pos'] + s_positions['y_offset_to_fluor_mm'][0]
-                this_well_coords['x_pos'] += this_well_location_xy[0] + -0.15
-                this_well_coords['y_pos'] += this_well_location_xy[1] + -2.5
+            this_well_coords['x_pos'] = adjusted_position['x_pos']
+            this_well_coords['y_pos'] = adjusted_position['y_pos'] + s_positions['y_offset_to_fluor_mm'][0]
+            this_well_coords['x_pos'] += this_well_location_xy[0] + -0.15
+            this_well_coords['y_pos'] += this_well_location_xy[1] + -2.5
 
             if well_index == 0:
-                this_well_coords['z_pos'] = calibration_coordinates['z_pos']
-            elif well_index == 1:
-                this_well_coords['z_pos'] = z_pos_found_autofocus_inital
+                closest_indices = 0
+                z_starting_point_array[well_index,0:2] = this_well_location_xy
+                z_starting_point_array[well_index,2] = calibration_coordinates['z_pos']
             else:
-                if len(found_autofocus_positions) > 5:
-                    this_well_coords['z_pos'] = np.mean(found_autofocus_positions[-5:])
-                else:
-                    this_well_coords['z_pos'] = np.mean(found_autofocus_positions)
-            print(well_index, this_well_coords)
-            # move the fluorescent imaging head to that specific well  
+                z_starting_point_array[well_index,0:2] = this_well_location_xy
+                closest_points, closest_indices, closest_distances = find_closest_points(z_starting_point_array[0:well_index,0:2], this_well_location_xy, num_closest=1)
+                z_starting_point_array[well_index,-1] = z_starting_point_array[closest_indices,-1]
+            
+            this_well_coords['z_pos'] = z_starting_point_array[well_index,-1]
 
-            if use_adjusted_centers: # if the fir st one get a bse measurement for all the rest
-                controller.move_XYZ(position = this_well_coords)
-                lights.labjackU3_control.turn_on_red(d)
-                terasaki_adjusted_position, center_delta_in_mm = run_calib_terasaki(s_camera_settings,this_plate_parameters,output_dir,s_terasaki_positions,calibration_model)
-                lights.labjackU3_control.turn_off_everything(d)
-            else: # otherswise measure then report finding and then adjust from the inital base
-                controller.move_XYZ(position = this_well_coords)
-                # lights.labjackU3_control.turn_on_red(d)
+            # print(well_index, this_well_coords)
+            # move the fluorescent imaging head to that specific well  
+            controller.move_XYZ(position = this_well_coords)
+            # lights.labjackU3_control.turn_on_red(d)
             
             if well_index == 0:
                 lights.labjackU3_control.turn_off_everything(d)
@@ -644,6 +590,7 @@ if __name__ == "__main__":
                     autofocus_delta_z = (1/6), cap = cap, af_area=af_area)
                 this_well_coords['z_pos'] = z_pos_found_autofocus
                 found_autofocus_positions.append(z_pos_found_autofocus)
+            z_starting_point_array[well_index,-1] = z_pos_found_autofocus[-1]
 
             if well_index == (len(s_positions['x_relative_pos_mm'].values()) - 1): 
                 cap = camera.camera_control.capture_data_fluor_multi_exposure(s_camera_settings, plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir, cap = cap, return_cap = False)
