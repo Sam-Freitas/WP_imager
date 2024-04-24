@@ -586,7 +586,7 @@ if __name__ == "__main__":
                 found_autofocus_positions.append(z_pos_found_autofocus_inital)
             else:  
                 z_pos_found_autofocus, cap = run_autofocus_at_current_position(controller, 
-                    this_well_coords, coolLED_port, this_plate_parameters, autofocus_min_max = [0.5,-0.5], 
+                    this_well_coords, coolLED_port, this_plate_parameters,    autofocus_min_max = [0.5,-0.5], 
                     autofocus_delta_z = (1/6), cap = cap, af_area=af_area)
                 this_well_coords['z_pos'] = z_pos_found_autofocus
                 found_autofocus_positions.append(z_pos_found_autofocus)

@@ -20,18 +20,33 @@ def convert_to_float(frac_str):
 def imshow_resize(frame_name = "img", frame = 0, resize_size = [640,480], default_ratio = 1.3333, 
                   always_on_top = True, use_waitkey = True, move_to = [1920,1]):
 
-    frame = cv2.resize(frame, dsize=resize_size)
-    cv2.imshow(frame_name, frame)
-    if always_on_top:
-        cv2.setWindowProperty(frame_name, cv2.WND_PROP_TOPMOST, 1)
-    if use_waitkey:
-        cv2.waitKey(1)
-    if frame_name == "stream":
-        move_to = [1920,520]
-        cv2.moveWindow(frame_name,move_to[0]-resize_size[0],move_to[1])
+    if 'uint8' in str(frame.dtype):
+        frame = cv2.resize(frame, dsize=resize_size)
+        cv2.imshow(frame_name, frame)
+        if always_on_top:
+            cv2.setWindowProperty(frame_name, cv2.WND_PROP_TOPMOST, 1)
+        if use_waitkey:
+            cv2.waitKey(1)
+        if frame_name == "stream":
+            move_to = [1920,520]
+            cv2.moveWindow(frame_name,move_to[0]-resize_size[0],move_to[1])
+        else:
+            cv2.moveWindow(frame_name,move_to[0]-resize_size[0],move_to[1])
+        return True
     else:
-        cv2.moveWindow(frame_name,move_to[0]-resize_size[0],move_to[1])
-    return True
+        frame = cv2.resize(frame, dsize=resize_size)
+        frame = norm_to_uint8(frame)
+        cv2.imshow(frame_name, frame)
+        if always_on_top:
+            cv2.setWindowProperty(frame_name, cv2.WND_PROP_TOPMOST, 1)
+        if use_waitkey:
+            cv2.waitKey(1)
+        if frame_name == "stream":
+            move_to = [1920,520]
+            cv2.moveWindow(frame_name,move_to[0]-resize_size[0],move_to[1])
+        else:
+            cv2.moveWindow(frame_name,move_to[0]-resize_size[0],move_to[1])
+        return True
 
 # this deletes all the dir contents, recursive or not 
 def del_dir_contents(path_to_dir, recursive = False): 
@@ -44,6 +59,14 @@ def del_dir_contents(path_to_dir, recursive = False):
         files = glob.glob(os.path.join(path_to_dir,'*'))
         for f in files:
             os.remove(f)
+
+def norm_to_uint8(a, b_max = None):
+    b = a.astype(np.float64)
+    if b_max == None:
+        b_max = b.max()
+    b = 255*(b/b_max)
+    b = b.astype(np.uint8)
+    return b
 
 # this is a buffer that continues to capture images until the the specified time has elapsed 
 # this is because if you use time.sleep() the image taken is buffered and not at the actual elapsed time
@@ -563,9 +586,10 @@ def capture_data_fluor_multi_exposure(camera_settings, plate_parameters = None, 
             exit()
 
     current_exposure = cam_exposure_cv2 + 1 # starting exposure should be 1/8 sec -> 1/16 -> 1/32 -> 1/64
-    cv2_exposures = [-8,-6,-4,-2]#[-2,-4,-6,-8]
+    cv2_exposures = [-8,-6,-4,-2]#,-2]#[-2,-4,-6,-8]
 
     num_images = int(number_of_images_per_burst)
+    frames_array = np.zeros(shape=(int(cam_height),int(cam_width),num_images))
     # Capture a series of images
     for i in range(num_images): #tqdm.tqdm(range(num_images)):
         # start_time = time.time()
@@ -576,27 +600,40 @@ def capture_data_fluor_multi_exposure(camera_settings, plate_parameters = None, 
         
         # read the image from the camera buffer
         ret, frame = cap.read()
+        frames_array[:,:,i] = frame[:,:,-1]
 
         # check
         if not ret:
             print("Error: Unable to capture frame.")
             break
-        
+         
         # current_time_for_filename = datetime.datetime.now().strftime("%Y-%m-%d (%H-%M-%S-%f)")
         image_subtype = plate_parameters['well_name'] + '_00' + str(i+1) + '_' + str(cv2_exposures[i])
         image_name = plate_parameters['well_name'] + '_00' + str(i+1) + '_' + str(cv2_exposures[i]) + '_' + '.' + img_file_format #current_time_for_filename + '.' + img_file_format
         image_filename = os.path.join(output_dir, image_name)
 
-        cv2.imwrite(image_filename, frame[:,:,-1])#, [int(cv2.IMWRITE_PNG_COMPRESSION), 5])
-        # print(f"\nCaptured image {i+1}/{num_images}")
+        if i == num_images-1:
+            sum_array = np.sum(frames_array,axis = -1)
+            out = norm_to_uint8(sum_array, b_max=None)
+            cv2.imwrite(image_filename, out) #frame[:,:,-1])#, [int(cv2.IMWRITE_PNG_COMPRESSION), 5])
+            # print(f"\nCaptured image {i+1}/{num_images}")
 
-        # Put the text on the image white with a black background
-        cv2.putText(frame, text, (int(text_x), int(text_y)), font, font_scale, font_color2, thickness2) # black 
-        cv2.putText(frame, text, (int(text_x), int(text_y)), font, font_scale, font_color1, thickness1) # white
-        cv2.putText(frame, image_subtype, (int(text_x2), int(text_y2)), font, font_scale, font_color2, thickness2) # black 
-        cv2.putText(frame, image_subtype, (int(text_x2), int(text_y2)), font, font_scale, font_color1, thickness1) # white
+        if i != num_images-1:
+                        # Put the text on the image white with a black background
+            cv2.putText(frame, text, (int(text_x), int(text_y)), font, font_scale, font_color2, thickness2) # black 
+            cv2.putText(frame, text, (int(text_x), int(text_y)), font, font_scale, font_color1, thickness1) # white
+            cv2.putText(frame, image_subtype, (int(text_x2), int(text_y2)), font, font_scale, font_color2, thickness2) # black 
+            cv2.putText(frame, image_subtype, (int(text_x2), int(text_y2)), font, font_scale, font_color1, thickness1) # white
 
-        imshow_resize("img", frame, resize_size=[640,480])
+            imshow_resize("img", frame, resize_size=[640,480])
+        else:
+                                    # Put the text on the image white with a black background
+            cv2.putText(out, text, (int(text_x), int(text_y)), font, font_scale, font_color2, thickness2) # black 
+            cv2.putText(out, text, (int(text_x), int(text_y)), font, font_scale, font_color1, thickness1) # white
+            cv2.putText(out, image_subtype, (int(text_x2), int(text_y2)), font, font_scale, font_color2, thickness2) # black 
+            cv2.putText(out, image_subtype, (int(text_x2), int(text_y2)), font, font_scale, font_color1, thickness1) # white
+
+            imshow_resize("img", out, resize_size=[640,480])
 
     cap.set(cv2.CAP_PROP_EXPOSURE,cam_exposure_cv2)
 
