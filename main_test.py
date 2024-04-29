@@ -482,18 +482,11 @@ if __name__ == "__main__":
         adjusted_position, n_wells = run_calib(s_camera_settings,this_plate_parameters,output_dir,calibration_model)
         adjusted_position, n_wells = run_calib(s_camera_settings,this_plate_parameters,output_dir,calibration_model)
         # # capture a single image for calibration
-        # image_filename = camera.camera_control.simple_capture_data_single_image(s_camera_settings, plate_parameters=this_plate_parameters, output_dir=output_dir, image_file_format = 'jpg')
-        # image_filename = correct_barrel_distortion(image_filename, a = 0.0, b = 0.0, c = -0.03, d = 1.05)
-        # individual_well_locations,center_location,n_wells = calibration_model.run_yolo_model(img_filename=image_filename, save_results = True, show_results = False)
 
         # turn off red
         lights.labjackU3_control.turn_off_red(d)
 
         ########### calibration attempt
-        # get the dx dy of the measured well centers
-        # well_locations_delta = individual_well_locations[-1]-individual_well_locations[0]
-        # get measuring stick
-
         # determine if the plate is a terasaki or wm and use the correct settings
         if n_wells==96:
             # pixels_per_mm = well_locations_delta/[69.695,41.845] #[85.5,49.5]
@@ -510,15 +503,9 @@ if __name__ == "__main__":
             n_image_locs = 96
             af_area = 650
             # pixels_per_mm = well_locations_delta/[69.695,41.845] #default to terasaki
-        # find the realtion between the measured and where it supposed to be currently
-        # center = [float(s_camera_settings['widefield'][1])/2,float(s_camera_settings['widefield'][2])/2]
-        # center_delta = center-center_location
-        # center_delta_in_mm = center_delta/pixels_per_mm
 
         # calculate the calibration corner coordinates
         calibration_coordinates = dict()
-        # calibration_coordinates['x_pos'] = center_delta_in_mm[0]
-        # calibration_coordinates['y_pos'] = center_delta_in_mm[1]
         calibration_coordinates['z_pos'] = s_terasaki_positions['calib_z_pos_mm'][0]
 
         # move up the imaging head so it doesnt crash into the plate (very important)
@@ -527,25 +514,9 @@ if __name__ == "__main__":
         controller.move_XYZ(position = z_pos)
 
         lights.labjackU3_control.turn_off_red(d)
-
-        # try: # this is an attempt at finding the wells using the image 
-        #     use_adjusted_centers = True
-        #     centers = (sort_rows(individual_well_locations)-center_location)/pixels_per_mm
-        # except:
-        #     use_adjusted_centers = False
-        #     print('Couldnt find all wells reverting to d efault')  
         use_adjusted_centers = False
 
-        # lights.coolLed_control.turn_specified_on(coolLED_port, 
-        #     uv = int(this_plate_parameters['fluorescence_UV']) > 0, 
-        #     uv_intensity = int(this_plate_parameters['fluorescence_UV']),
-        #     blue = int(this_plate_parameters['fluorescence_BLUE']) > 0, 
-        #     blue_intensity = int(this_plate_parameters['fluorescence_BLUE']),
-        #     green = int(this_plate_parameters['fluorescence_GREEN']) > 0, 
-        #     green_intensity = int(this_plate_parameters['fluorescence_GREEN']),
-        #     red = int(this_plate_parameters['fluorescence_RED']) > 0, 
-        #     red_intensity = int(this_plate_parameters['fluorescence_RED']))
-
+        # set up autofocus array for and other associated variables
         autofocus_starting_array_path = os.path.join(output_dir,this_plate_parameters['experiment_name'],this_plate_parameters['plate_name'],'autofocus_starting_grid.txt')
         found_autofocus_positions = []
         z_starting_point_array = np.zeros(shape=(n_image_locs,3))
@@ -570,6 +541,7 @@ if __name__ == "__main__":
             this_well_coords['x_pos'] += this_well_location_xy[0] + -0.15
             this_well_coords['y_pos'] += this_well_location_xy[1] + -2.5
 
+            # this is to start the autofocus sequence if not then start at best guess
             if full_autofocus_sequence:
                 if well_index == 0:
                     closest_indices = 0
@@ -587,8 +559,8 @@ if __name__ == "__main__":
             # print(well_index, this_well_coords)
             # move the fluorescent imaging head to that specific well  
             controller.move_XYZ(position = this_well_coords)
-            # lights.labjackU3_control.turn_on_red(d)
             
+            # run an autofocus script that also sets up the camera and then turns on the correct color
             if full_autofocus_sequence:
                 if well_index == 0:
                     lights.labjackU3_control.turn_off_everything(d)
@@ -626,12 +598,11 @@ if __name__ == "__main__":
                 cap = camera.camera_control.capture_data_fluor_multi_exposure(s_camera_settings, plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir, cap = cap, return_cap = False)
             else:  
                 cap = camera.camera_control.capture_data_fluor_multi_exposure(s_camera_settings, plate_parameters=this_plate_parameters, testing=False, output_dir=output_dir, cap = cap, return_cap = True)
+            # turn everyting off
             lights.coolLed_control.turn_everything_off(coolLED_port)
         lights.coolLed_control.turn_everything_off(coolLED_port)
-        
-        if full_autofocus_sequence:
-            np.savetxt(autofocus_starting_array_path, z_starting_point_array, delimiter=',',fmt='%1.5f')   # X is an array
-
+        # save the autofocus positions. update every times its been ran
+        np.savetxt(autofocus_starting_array_path, z_starting_point_array, delimiter=',',fmt='%1.5f')   # X is an array
 
     # shut everything down 
     controller.set_up_grbl(home = True)
