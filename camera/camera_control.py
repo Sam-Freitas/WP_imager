@@ -612,11 +612,14 @@ def capture_data_fluor_multi_exposure(camera_settings, plate_parameters = None, 
         image_name = plate_parameters['well_name'] + '_00' + str(i+1) + '_' + str(cv2_exposures[i]) + '_' + '.' + img_file_format #current_time_for_filename + '.' + img_file_format
         image_filename = os.path.join(output_dir, image_name)
 
+        cv2.imwrite(image_filename, frames_array[:,:,i]) #frame[:,:,-1])#, [int(cv2.IMWRITE_PNG_COMPRESSION), 5])
+
         if i == num_images-1:
             sum_array = np.sum(frames_array,axis = -1)
             out = norm_to_uint8(sum_array, b_max=None)
-            cv2.imwrite(image_filename, out) #frame[:,:,-1])#, [int(cv2.IMWRITE_PNG_COMPRESSION), 5])
             # print(f"\nCaptured image {i+1}/{num_images}")
+            # cv2.imwrite(image_filename, out) #frame[:,:,-1])#, [int(cv2.IMWRITE_PNG_COMPRESSION), 5])
+
 
         if i != num_images-1:
                         # Put the text on the image white with a black background
