@@ -390,7 +390,8 @@ if __name__ == "__main__":
     s_camera_settings = settings.get_settings.get_basic_camera_settings()
     s_todays_runs = settings.get_settings.get_todays_runs()
 
-    s_todays_runs = settings.get_settings.update_todays_runs(s_todays_runs, overwrite=True)
+    s_todays_runs = settings.get_settings.update_todays_runs(s_todays_runs, force_default=False)
+    current_run = np.where([p == '1' for p in s_todays_runs[1:]])[0][-1] # can be 0,1,2
 
     # read in settings from machines
     run_as_testing = False
@@ -412,6 +413,7 @@ if __name__ == "__main__":
     calibration_model = yolo_model()
 
     # get all the experiments that are not defunct
+    # for fluorescence check that the correct timing is for the current (todays) run
     plate_index = []
     plate_index_fluor = []
     for this_plate_index in s_plate_names_and_opts['plate_index']:
@@ -419,7 +421,7 @@ if __name__ == "__main__":
         if this_plate_name != 'NONE':
             if s_plate_names_and_opts['lifespan'][this_plate_index]:
                 plate_index.append(this_plate_index)
-            if s_plate_names_and_opts['fluorescence'][this_plate_index]:
+            if s_plate_names_and_opts['fluorescence'][this_plate_index] and s_plate_names_and_opts['fluorescence_times'][this_plate_index][current_run] == '1':
                 plate_index_fluor.append(this_plate_index)
 
     lights.labjackU3_control.turn_on_red(d)
