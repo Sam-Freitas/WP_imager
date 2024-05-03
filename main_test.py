@@ -390,7 +390,7 @@ if __name__ == "__main__":
     s_camera_settings = settings.get_settings.get_basic_camera_settings()
     s_todays_runs = settings.get_settings.get_todays_runs()
 
-    s_todays_runs = settings.get_settings.update_todays_runs(s_todays_runs, force_default=False)
+    s_todays_runs = settings.get_settings.update_todays_runs(s_todays_runs, force_default=True) # change from force default to false in production 
     current_run = np.where([p == '1' for p in s_todays_runs[1:]])[0][-1] # can be 0,1,2
 
     # read in settings from machines
