@@ -28,6 +28,63 @@ POPUP_HEIGHT = 350  # Set the height of the popup window
 
 s_plate_names_and_opts = settings.get_settings.get_plate_names_and_opts()
 
+def convert_timings(timings):
+
+    t_phase1 = 0
+    t_phase2 = 0
+    for t in timings:
+        if t == '000':
+            pass
+        if t == '100':
+            t_phase1 += 1
+        if t == '110':
+            t_phase1 += 1
+            t_phase2 += 1
+        if t == '010':
+            t_phase1 += 1
+
+    return t_phase1, t_phase2
+
+def check_function(s_plate_names_and_opts):
+
+    print('checking timing for total experiments')
+
+    num_alloted_minutes = 60*10
+    min_per_fluor_plate = 13
+    min_per_standard_img = 3
+    setup_time = 5
+
+    plate_index = []
+    plate_index_fluor = []
+    for this_plate_index in s_plate_names_and_opts['plate_index']:
+        this_plate_name = s_plate_names_and_opts['plate_name'][this_plate_index]
+        if this_plate_name != 'NONE':
+            if s_plate_names_and_opts['lifespan'][this_plate_index]:
+                plate_index.append(this_plate_index)
+    num_lifespan_experiments = len(plate_index)
+    
+    for this_plate_index in s_plate_names_and_opts['plate_index']:
+        this_plate_name = s_plate_names_and_opts['plate_name'][this_plate_index]
+        if this_plate_name != 'NONE':
+            if s_plate_names_and_opts['fluorescence'][this_plate_index]:# and s_plate_names_and_opts['fluorescence_times'][this_plate_index][current_run] == '1':
+                plate_index_fluor.append(this_plate_index)
+
+    fluor_timings = [s_plate_names_and_opts['fluorescence_times'][p] for p in plate_index_fluor]
+    
+    fluor_timings_first_half,fluor_timings_second_half = convert_timings(fluor_timings)
+
+    total_time_first_half = setup_time + (num_lifespan_experiments*min_per_standard_img) + (fluor_timings_first_half*min_per_fluor_plate)
+    total_time_second_half = setup_time + (num_lifespan_experiments*min_per_standard_img) + (fluor_timings_second_half*min_per_fluor_plate)
+
+    print("Time 1 ------- ", total_time_first_half, "minutes")
+    print("Time 2 ------- ", total_time_second_half, "minutes")
+    print("Total time --- ", total_time_first_half + total_time_second_half, "minutes")
+
+    time_check1 = (total_time_first_half < num_alloted_minutes)
+    time_check2 = (total_time_second_half < num_alloted_minutes)
+
+    return time_check1, time_check2, total_time_first_half, total_time_second_half
+
 def save_function():
     df = pd.DataFrame(s_plate_names_and_opts)
     print(os.path.join(path_to_settings_folder,'settings_plate_names_and_opts.csv'))
@@ -143,6 +200,26 @@ def convert_bool_list_to_integer_string(boolean_list):
 
     return integer_amount
 
+def show_warning_message(message = "The allocated experiments do not have enough time to run. Either change the timings or remove experiments."):
+    # Create Tkinter window
+    warning_window = tk.Tk()
+    warning_window.title("Warning")
+
+    # Create label with warning message
+    warning_label = tk.Label(warning_window, text=message, font=('Arial', 14), fg='red')
+    warning_label.pack(padx=20, pady=20)
+
+    # Function to close the window
+    def close_window():
+        warning_window.destroy()
+
+    # Button to close the window
+    close_button = tk.Button(warning_window, text="Close", command=close_window)
+    close_button.pack(pady=10)
+
+    # Run the Tkinter event loop
+    warning_window.mainloop()
+
 def button_click(row, col):
     # Create a new tkinter window
     popup = tk.Toplevel(root)
@@ -241,48 +318,59 @@ def numpy_to_photoimage(numpy_array):
 
 if __name__ == "__main__":
     atexit.register(exit_function)
-    # Create the main window
-    root = tk.Tk()
-    root.title("                                                                          WP Imager ------ configurable settings")
 
-    # Get the screen width and height
-    screen_width = root.winfo_screenwidth()
-    screen_height = root.winfo_screenheight()
+    while True:
 
-    # Calculate the x and y coordinates to center the grid
-    x = (screen_width - (8 * BUTTON_W*10)) // 2
-    y = (screen_height - (9 * BUTTON_H*20)) // 2
+        # Create the main window
+        root = tk.Tk()
+        root.title("                                                                          WP Imager ------ configurable settings")
 
-    # Set the dimensions of the main window
-    root.geometry(f"{8 * round(BUTTON_W*8.4)}x{9 * BUTTON_H*18}+{x}+{y}")
+        # Get the screen width and height
+        screen_width = root.winfo_screenwidth()
+        screen_height = root.winfo_screenheight()
 
-    # Create a 9x8 grid of buttons
-    buttons = [[None for _ in range(8)] for _ in range(9)]
+        # Calculate the x and y coordinates to center the grid
+        x = (screen_width - (8 * BUTTON_W*10)) // 2
+        y = (screen_height - (9 * BUTTON_H*20)) // 2
 
-    index = 0
-    for i in range(9):
-        for j in range(8):
+        # Set the dimensions of the main window
+        root.geometry(f"{8 * round(BUTTON_W*8.4)}x{9 * BUTTON_H*18}+{x}+{y}")
 
-            text = s_plate_names_and_opts['plate_name'][index] + '\n' + s_plate_names_and_opts['experiment_name'][index] + '\n' + f'{i}-{j}'
+        # Create a 9x8 grid of buttons
+        buttons = [[None for _ in range(8)] for _ in range(9)]
 
-            fluor_option = bool(s_plate_names_and_opts['fluorescence'][index])
-            bg = zeros(shape= (x,y,3)).astype(uint8)
+        index = 0
+        for i in range(9):
+            for j in range(8):
 
-            if 'NONE' in text:
-                bg = 'White'
-            else:
-                bg = 'Green'
+                text = s_plate_names_and_opts['plate_name'][index] + '\n' + s_plate_names_and_opts['experiment_name'][index] + '\n' + f'{i}-{j}'
 
-            if 'NONE' not in text and fluor_option:
-                bg = 'Purple'
+                fluor_option = bool(s_plate_names_and_opts['fluorescence'][index])
+                bg = zeros(shape= (x,y,3)).astype(uint8)
 
-            buttons[i][j] = tk.Button(root, text=text, 
-                                    command=lambda i=i, j=j: button_click(i, j), 
-                                    width=BUTTON_W, height=BUTTON_H,
-                                    bg = bg)
-                                    # image= bg)
-            buttons[i][j].grid(row=i, column=j, padx=2, pady=2)
-            index += 1
+                if 'NONE' in text:
+                    bg = 'White'
+                else:
+                    bg = 'Green'
 
-    # Start the tkinter event loop
-    root.mainloop()
+                if 'NONE' not in text and fluor_option:
+                    bg = 'Purple'
+
+                buttons[i][j] = tk.Button(root, text=text, 
+                                        command=lambda i=i, j=j: button_click(i, j), 
+                                        width=BUTTON_W, height=BUTTON_H,
+                                        bg = bg)
+                                        # image= bg)
+                buttons[i][j].grid(row=i, column=j, padx=2, pady=2)
+                index += 1
+
+        # Start the tkinter event loop
+        root.mainloop()
+
+        print('checking for timing')
+        time_check1, time_check2, total_time_first_half, total_time_second_half = check_function(s_plate_names_and_opts)
+        if time_check1 and time_check2:
+            break
+        else:
+            show_warning_message()
+    print('break')
