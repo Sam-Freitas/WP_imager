@@ -46,21 +46,21 @@ def write_todays_runs(data):
         f.write('\n' + data[1] + ' ' + data[2] + ' ' + data[3])
         f.close()
 
-def update_todays_runs(s_todays_runs = None, overwrite = False, overwrite_val = ['1','0','0']):
+def update_todays_runs(s_todays_runs = None, force_default = False, default_val = ['1','0','0']):
 
     if s_todays_runs == None:
         s_todays_runs = get_todays_runs()
 
     runs = np.asarray(s_todays_runs[1:])
 
-    if overwrite == False:
+    if force_default == False:
         idx = np.where(runs == '0')
         next_idx = np.min(idx)
         runs[next_idx] = '1'
         s_todays_runs[1:] = runs
 
-    if overwrite == True:
-        runs = overwrite_val
+    if force_default == True:
+        runs = default_val
         s_todays_runs[1:] = runs
 
     print('Run information: ')
