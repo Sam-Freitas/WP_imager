@@ -28,6 +28,21 @@ POPUP_HEIGHT = 350  # Set the height of the popup window
 
 s_plate_names_and_opts = settings.get_settings.get_plate_names_and_opts()
 
+def binary_to_emojis(timings_tuple):
+
+    out = ""
+    if timings_tuple[0]:
+        out = out + "🟢"
+    else:
+        out = out + "⚪"
+    
+    if timings_tuple[1]:
+        out = out + "🟢"
+    else:
+        out = out + "⚪"
+
+    return out
+
 def convert_timings(timings):
 
     t_phase1 = 0
@@ -41,7 +56,7 @@ def convert_timings(timings):
             t_phase1 += 1
             t_phase2 += 1
         if t == '010':
-            t_phase1 += 1
+            t_phase2 += 1
 
     return t_phase1, t_phase2
 
@@ -49,7 +64,7 @@ def check_function(s_plate_names_and_opts):
 
     print('checking timing for total experiments')
 
-    num_alloted_minutes = 60*10
+    num_alloted_minutes = 60*10 # 60 min for 10 hours 
     min_per_fluor_plate = 13
     min_per_standard_img = 3
     setup_time = 5
@@ -152,13 +167,19 @@ def update_button_with_new_preferences(row,col,options):
 
     update_s_plate_names_and_opts(index,options)
 
+    if options[0] != 'NONE':
+        binary_timings_str = binary_to_emojis(convert_timings([s_plate_names_and_opts['fluorescence_times'][index]]))
+    else:
+        binary_timings_str = ""
+
     if options is not None:
-        buttons[row][col]['text'] = options[0] + '\n' + options[1] + '\n' + f'{row}-{col}'
+
+        buttons[row][col]['text'] = options[0] + '\n' + options[1] + '\n' + f'{row}-{col}' + '\n' + binary_timings_str #"❤️❤️"
         buttons[row][col]['bg'] = 'Green'
         if bool(options[3]):
             buttons[row][col]['bg'] = 'Purple'
     if options == None:
-        buttons[row][col]['text'] = DEFAULT_VALUES[0] + '\n' + DEFAULT_VALUES[1] + '\n' + f'{row}-{col}'
+        buttons[row][col]['text'] = DEFAULT_VALUES[0] + '\n' + DEFAULT_VALUES[1] + '\n' + f'{row}-{col}' + '\n' + binary_timings_str #"❤️❤️"
         buttons[row][col]['bg'] = 'White'
 
 def get_index_from_row_col(row,col): # get the row and column as the plate index for ease of use
@@ -343,7 +364,12 @@ if __name__ == "__main__":
         for i in range(9):
             for j in range(8):
 
-                text = s_plate_names_and_opts['plate_name'][index] + '\n' + s_plate_names_and_opts['experiment_name'][index] + '\n' + f'{i}-{j}'
+                if s_plate_names_and_opts['plate_name'][index] != 'NONE':
+                    binary_timings_str = binary_to_emojis(convert_timings([s_plate_names_and_opts['fluorescence_times'][index]]))
+                else:
+                    binary_timings_str = ""
+
+                text = s_plate_names_and_opts['plate_name'][index] + '\n' + s_plate_names_and_opts['experiment_name'][index] + '\n' + f'{i}-{j}' + '\n' + binary_timings_str#"❤️❤️"
 
                 fluor_option = bool(s_plate_names_and_opts['fluorescence'][index])
                 bg = zeros(shape= (x,y,3)).astype(uint8)
