@@ -132,8 +132,12 @@ def quick_autofocus_rerun(controller, starting_location, coolLED_port,
             camera.camera_control.imshow_resize(frame_name = "stream", frame = frame)
     
     lights.coolLed_control.turn_everything_off(coolLED_port) # turn everything off
-
-    assumed_focus_idx = np.argmax(uncalib_fscore)
+    try:
+        assumed_focus_idx = np.argmax(uncalib_fscore)
+    except:
+        print('Focus might not be found, out of range of robot movement')
+        assumed_focus_idx = 0
+        z_positions = [starting_location['z_pos'],starting_location['z_pos'],starting_location['z_pos']]
 
     return assumed_focus_idx, uncalib_fscore, z_positions, controller, starting_location, coolLED_port, this_plate_parameters, autofocus_min_max, autofocus_delta_z, cap , show_results, af_area
 
