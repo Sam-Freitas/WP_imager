@@ -138,7 +138,7 @@ def quick_autofocus_rerun(controller, starting_location, coolLED_port,
     return assumed_focus_idx, uncalib_fscore, z_positions, controller, starting_location, coolLED_port, this_plate_parameters, autofocus_min_max, autofocus_delta_z, cap , show_results, af_area
 
 def run_autofocus_at_current_position(controller, starting_location, coolLED_port, 
-    this_plate_parameters, autofocus_min_max = [1,-1], autofocus_delta_z = 0.25, cap = None, show_results = False, af_area = 2560):
+    this_plate_parameters, autofocus_min_max = [1,-1], autofocus_delta_z = 0.25, cap = None, show_results = False, af_area = 2560, rerun = True):
 
     lights.coolLed_control.turn_everything_off(coolLED_port) # turn everything off
 
@@ -194,18 +194,19 @@ def run_autofocus_at_current_position(controller, starting_location, coolLED_por
         plt.pause(5)
         plt.close('all')
 
-    if (assumed_focus_idx == 0):
-        # print('rerunning AF Moving UP')
-        [assumed_focus_idx, uncalib_fscore, z_positions, controller, starting_location, coolLED_port, this_plate_parameters, 
-         autofocus_min_max, autofocus_delta_z, cap , show_results, af_area] = quick_autofocus_rerun(controller, 
-            starting_location, coolLED_port, 
-            this_plate_parameters, autofocus_min_max, autofocus_delta_z , cap, show_results, af_area, up_or_down=1)
-    elif (assumed_focus_idx == len(uncalib_fscore)-1):
-        # print('rerunning AF Moving DOWN')
-        [assumed_focus_idx, uncalib_fscore, z_positions, controller, starting_location, coolLED_port, this_plate_parameters, 
-         autofocus_min_max, autofocus_delta_z, cap , show_results, af_area] = quick_autofocus_rerun(controller, 
-            starting_location, coolLED_port, 
-            this_plate_parameters, autofocus_min_max, autofocus_delta_z , cap, show_results, af_area, up_or_down=-1)
+    if rerun:
+        if (assumed_focus_idx == 0):
+            # print('rerunning AF Moving UP')
+            [assumed_focus_idx, uncalib_fscore, z_positions, controller, starting_location, coolLED_port, this_plate_parameters, 
+            autofocus_min_max, autofocus_delta_z, cap , show_results, af_area] = quick_autofocus_rerun(controller, 
+                starting_location, coolLED_port, 
+                this_plate_parameters, autofocus_min_max, autofocus_delta_z , cap, show_results, af_area, up_or_down=1)
+        elif (assumed_focus_idx == len(uncalib_fscore)-1):
+            # print('rerunning AF Moving DOWN')
+            [assumed_focus_idx, uncalib_fscore, z_positions, controller, starting_location, coolLED_port, this_plate_parameters, 
+            autofocus_min_max, autofocus_delta_z, cap , show_results, af_area] = quick_autofocus_rerun(controller, 
+                starting_location, coolLED_port, 
+                this_plate_parameters, autofocus_min_max, autofocus_delta_z , cap, show_results, af_area, up_or_down=-1)
 
     z_pos = z_positions[assumed_focus_idx] # for the final output
     this_location = starting_location.copy()
@@ -570,13 +571,13 @@ if __name__ == "__main__":
                     # get first autofocus and return the cap
                     z_pos_found_autofocus_inital, cap = run_autofocus_at_current_position(controller, 
                         this_well_coords, coolLED_port, this_plate_parameters, autofocus_min_max = [3,-3], 
-                        autofocus_delta_z = 0.1, cap = None, af_area=af_area)
+                        autofocus_delta_z = 0.1, cap = None, af_area=af_area, rerun = full_autofocus_sequence)
                     this_well_coords['z_pos'] = z_pos_found_autofocus_inital
                     found_autofocus_positions.append(z_pos_found_autofocus_inital)
                 else:  
                     z_pos_found_autofocus, cap = run_autofocus_at_current_position(controller, 
-                        this_well_coords, coolLED_port, this_plate_parameters,    autofocus_min_max = [0.5,-0.5], 
-                        autofocus_delta_z = (1/6), cap = cap, af_area=af_area)
+                        this_well_coords, coolLED_port, this_plate_parameters,    autofocus_min_max = [(4/6),-(4/6)], 
+                        autofocus_delta_z = (1/6), cap = cap, af_area=af_area, rerun = full_autofocus_sequence)
                     this_well_coords['z_pos'] = z_pos_found_autofocus
                     found_autofocus_positions.append(z_pos_found_autofocus)
                 z_starting_point_array[well_index,-1] = found_autofocus_positions[-1]
@@ -586,13 +587,13 @@ if __name__ == "__main__":
                     # get first autofocus and return the cap
                     z_pos_found_autofocus_inital, cap = run_autofocus_at_current_position(controller, 
                         this_well_coords, coolLED_port, this_plate_parameters, autofocus_min_max = [0.5,-0.5], 
-                        autofocus_delta_z = (1/6), cap = None, af_area=af_area)
+                        autofocus_delta_z = (1/6), cap = None, af_area=af_area, rerun = full_autofocus_sequence)
                     this_well_coords['z_pos'] = z_pos_found_autofocus_inital
                     found_autofocus_positions.append(z_pos_found_autofocus_inital)
                 else:  
                     z_pos_found_autofocus, cap = run_autofocus_at_current_position(controller, 
                         this_well_coords, coolLED_port, this_plate_parameters,    autofocus_min_max = [0.5,-0.5], 
-                        autofocus_delta_z = (1/6), cap = cap, af_area=af_area)
+                        autofocus_delta_z = (1/6), cap = cap, af_area=af_area, rerun = full_autofocus_sequence)
                     this_well_coords['z_pos'] = z_pos_found_autofocus
                     found_autofocus_positions.append(z_pos_found_autofocus)
                 z_starting_point_array[well_index,-1] = found_autofocus_positions[-1]
@@ -605,7 +606,8 @@ if __name__ == "__main__":
             lights.coolLed_control.turn_everything_off(coolLED_port)
         lights.coolLed_control.turn_everything_off(coolLED_port)
         # save the autofocus positions. update every times its been ran
-        np.savetxt(autofocus_starting_array_path, z_starting_point_array, delimiter=',',fmt='%1.5f')   # X is an array
+        if full_autofocus_sequence:
+            np.savetxt(autofocus_starting_array_path, z_starting_point_array, delimiter=',',fmt='%1.5f')   # X is an array
 
     # shut everything down 
     controller.set_up_grbl(home = True)
