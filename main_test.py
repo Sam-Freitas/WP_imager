@@ -395,7 +395,7 @@ if __name__ == "__main__":
     s_camera_settings = settings.get_settings.get_basic_camera_settings()
     s_todays_runs = settings.get_settings.get_todays_runs()
 
-    s_todays_runs = settings.get_settings.update_todays_runs(s_todays_runs, force_default=True) # change from force default to false in production 
+    s_todays_runs = settings.get_settings.update_todays_runs(s_todays_runs, force_default=False) # change from force default to false in production 
     current_run = np.where([p == '1' for p in s_todays_runs[1:]])[0][-1] # can be 0,1,2
 
     # read in settings from machines
@@ -500,7 +500,7 @@ if __name__ == "__main__":
             # pixels_per_mm = well_locations_delta/[69.695,41.845] #[85.5,49.5]
             s_positions = s_terasaki_positions.copy()
             n_image_locs = 96
-            af_area = 650
+            af_area = 1500
         elif n_wells==240:
             # pixels_per_mm = well_locations_delta/[84.143,49.227]
             s_positions = s_wm_4pair_positions.copy()
@@ -509,7 +509,7 @@ if __name__ == "__main__":
         else:
             s_positions = s_terasaki_positions.copy()
             n_image_locs = 96
-            af_area = 650
+            af_area = 1500
             # pixels_per_mm = well_locations_delta/[69.695,41.845] #default to terasaki
 
         # calculate the calibration corner coordinates
@@ -574,7 +574,7 @@ if __name__ == "__main__":
                     lights.labjackU3_control.turn_off_everything(d)
                     # get first autofocus and return the cap
                     z_pos_found_autofocus_inital, cap = run_autofocus_at_current_position(controller, 
-                        this_well_coords, coolLED_port, this_plate_parameters, autofocus_min_max = [3,-3], 
+                        this_well_coords, coolLED_port, this_plate_parameters, autofocus_min_max = [1.5,-3], 
                         autofocus_delta_z = 0.1, cap = None, af_area=af_area, rerun = full_autofocus_sequence)
                     this_well_coords['z_pos'] = z_pos_found_autofocus_inital
                     found_autofocus_positions.append(z_pos_found_autofocus_inital)

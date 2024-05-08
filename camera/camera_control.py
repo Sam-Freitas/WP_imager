@@ -651,6 +651,9 @@ def capture_data_fluor_multi_exposure(camera_settings, plate_parameters = None, 
 def capture_fluor_img_return_img(camera_settings, cap = None, return_cap = False, clear_N_images_from_buffer = 3):
 
     if cap is None:
+
+        cv2_exposures = [-8,-6,-4,-2]#,-2]#[-2,-4,-6,-8]
+
         cap_release = True
 
         camera_id = camera_settings['fluorescence'][0]
@@ -670,6 +673,7 @@ def capture_fluor_img_return_img(camera_settings, cap = None, return_cap = False
         cap.set(cv2.CAP_PROP_FRAME_WIDTH,int(cam_width))
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT,int(cam_height))
         cap.set(cv2.CAP_PROP_FPS,int(cam_framerate))
+        cap.set(cv2.CAP_PROP_EXPOSURE,cv2_exposures[-1])
 
         if not cap.isOpened():
             print("Error: Unable to open camera.")
