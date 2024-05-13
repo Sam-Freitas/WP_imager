@@ -47,12 +47,12 @@ def find_closest_points(points_array, new_coordinate, num_closest=1):
     return closest_points, closest_indices, closest_distances
 
 def run_calib(s_camera_settings,this_plate_parameters,output_dir, calibration_model, 
-    adjust_with_movement = True, final_measurement = False, delete_prev_data = True):
+    adjust_with_movement = True, final_measurement = False, delete_prev_data = True, show_results = False):
     # take image
     image_filename = camera.camera_control.simple_capture_data_single_image(s_camera_settings, plate_parameters=this_plate_parameters,
                                 output_dir=output_dir, image_file_format = 'jpg', testing = delete_prev_data)
     # run yolo model and get the locations of the well and center of the plate
-    individual_well_locations,center_location,n_wells = calibration_model.run_yolo_model(img_filename=image_filename, save_results = True, show_results = False, plate_index = this_plate_parameters['plate_index'])
+    individual_well_locations,center_location,n_wells = calibration_model.run_yolo_model(img_filename=image_filename, save_results = True, show_results = show_results, plate_index = this_plate_parameters['plate_index'])
 
     # Calculate pixels per mm based on well location data
     well_locations_delta = individual_well_locations[-1] - individual_well_locations[0]
@@ -395,7 +395,7 @@ if __name__ == "__main__":
     s_camera_settings = settings.get_settings.get_basic_camera_settings()
     s_todays_runs = settings.get_settings.get_todays_runs()
 
-    s_todays_runs = settings.get_settings.update_todays_runs(s_todays_runs, force_default=False) # change from force default to false in production 
+    s_todays_runs = settings.get_settings.update_todays_runs(s_todays_runs, force_default=True) # change from force default to false in production 
     current_run = np.where([p == '1' for p in s_todays_runs[1:]])[0][-1] # can be 0,1,2
 
     # read in settings from machines
@@ -549,20 +549,24 @@ if __name__ == "__main__":
             this_well_coords['x_pos'] += this_well_location_xy[0] + -0.15
             this_well_coords['y_pos'] += this_well_location_xy[1] + -2.5
 
-            # this is to start the autofocus sequence if not then start at best guess
-            if full_autofocus_sequence:
-                if well_index == 0:
-                    closest_indices = 0
-                    z_starting_point_array[well_index,0:2] = this_well_location_xy
-                    z_starting_point_array[well_index,2] = calibration_coordinates['z_pos']
-                else:
-                    z_starting_point_array[well_index,0:2] = this_well_location_xy
-                    closest_points, closest_indices, closest_distances = find_closest_points(z_starting_point_array[0:well_index,0:2], this_well_location_xy, num_closest=1)
-                    z_starting_point_array[well_index,-1] = z_starting_point_array[closest_indices,-1]
+            # # this is to start the autofocus sequence if not then start at best guess
+            # if full_autofocus_sequence:
+            #     if well_index == 0:
+            #         closest_indices = 0
+            #         z_starting_point_array[well_index,0:2] = this_well_location_xy
+            #         z_starting_point_array[well_index,2] = calibration_coordinates['z_pos']
+            #     else:
+            #         z_starting_point_array[well_index,0:2] = this_well_location_xy
+            #         closest_points, closest_indices, closest_distances = find_closest_points(z_starting_point_array[0:well_index,0:2], this_well_location_xy, num_closest=1)
+            #         z_starting_point_array[well_index,-1] = z_starting_point_array[closest_indices,-1]
                 
-                this_well_coords['z_pos'] = z_starting_point_array[well_index,-1]
+            #     this_well_coords['z_pos'] = z_starting_point_array[well_index,-1]
+            # else:
+            #     this_well_coords['z_pos'] = z_starting_point_array[well_index,-1]
+            if well_index != 0:
+                this_well_coords['z_pos'] = z_pos_found_autofocus_inital
             else:
-                this_well_coords['z_pos'] = z_starting_point_array[well_index,-1]
+                this_well_coords['z_pos'] = calibration_coordinates['z_pos']
 
             # print(well_index, this_well_coords)
             # move the fluorescent imaging head to that specific well  
@@ -574,13 +578,13 @@ if __name__ == "__main__":
                     lights.labjackU3_control.turn_off_everything(d)
                     # get first autofocus and return the cap
                     z_pos_found_autofocus_inital, cap = run_autofocus_at_current_position(controller, 
-                        this_well_coords, coolLED_port, this_plate_parameters, autofocus_min_max = [1.5,-3], 
+                        this_well_coords, coolLED_port, this_plate_parameters, autofocus_min_max = [3,-3], 
                         autofocus_delta_z = 0.1, cap = None, af_area=af_area, rerun = full_autofocus_sequence)
                     this_well_coords['z_pos'] = z_pos_found_autofocus_inital
                     found_autofocus_positions.append(z_pos_found_autofocus_inital)
                 else:  
                     z_pos_found_autofocus, cap = run_autofocus_at_current_position(controller, 
-                        this_well_coords, coolLED_port, this_plate_parameters,    autofocus_min_max = [(4/6),-(4/6)], 
+                        this_well_coords, coolLED_port, this_plate_parameters,    autofocus_min_max = [1,-1], 
                         autofocus_delta_z = (1/6), cap = cap, af_area=af_area, rerun = full_autofocus_sequence)
                     this_well_coords['z_pos'] = z_pos_found_autofocus
                     found_autofocus_positions.append(z_pos_found_autofocus)
@@ -590,13 +594,13 @@ if __name__ == "__main__":
                     lights.labjackU3_control.turn_off_everything(d)
                     # get first autofocus and return the cap
                     z_pos_found_autofocus_inital, cap = run_autofocus_at_current_position(controller, 
-                        this_well_coords, coolLED_port, this_plate_parameters, autofocus_min_max = [0.5,-0.5], 
+                        this_well_coords, coolLED_port, this_plate_parameters, autofocus_min_max = [0.5,-(5/6)], 
                         autofocus_delta_z = (1/6), cap = None, af_area=af_area, rerun = full_autofocus_sequence)
                     this_well_coords['z_pos'] = z_pos_found_autofocus_inital
                     found_autofocus_positions.append(z_pos_found_autofocus_inital)
                 else:  
                     z_pos_found_autofocus, cap = run_autofocus_at_current_position(controller, 
-                        this_well_coords, coolLED_port, this_plate_parameters,    autofocus_min_max = [0.5,-0.5], 
+                        this_well_coords, coolLED_port, this_plate_parameters,    autofocus_min_max = [0.5,-(5/6)], 
                         autofocus_delta_z = (1/6), cap = cap, af_area=af_area, rerun = full_autofocus_sequence)
                     this_well_coords['z_pos'] = z_pos_found_autofocus
                     found_autofocus_positions.append(z_pos_found_autofocus)
