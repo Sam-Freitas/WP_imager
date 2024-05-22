@@ -1,0 +1,4 @@
+# Source Directory
+C:\Users\LabPC2\Desktop\sync_test
+# Destination Directory
+Z:\WormWatcher\sync_testing
