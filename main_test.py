@@ -500,7 +500,7 @@ if __name__ == "__main__":
             # pixels_per_mm = well_locations_delta/[69.695,41.845] #[85.5,49.5]
             s_positions = s_terasaki_positions.copy()
             n_image_locs = 96
-            af_area = 1500
+            af_area = 1000
         elif n_wells==240:
             # pixels_per_mm = well_locations_delta/[84.143,49.227]
             s_positions = s_wm_4pair_positions.copy()
@@ -509,7 +509,7 @@ if __name__ == "__main__":
         else:
             s_positions = s_terasaki_positions.copy()
             n_image_locs = 96
-            af_area = 1500
+            af_area = 1000
             # pixels_per_mm = well_locations_delta/[69.695,41.845] #default to terasaki
 
         # calculate the calibration corner coordinates
@@ -594,16 +594,16 @@ if __name__ == "__main__":
                     lights.labjackU3_control.turn_off_everything(d)
                     # get first autofocus and return the cap
                     z_pos_found_autofocus_inital, cap = run_autofocus_at_current_position(controller, 
-                        this_well_coords, coolLED_port, this_plate_parameters, autofocus_min_max = [0.5,-(5/6)], 
+                        this_well_coords, coolLED_port, this_plate_parameters, autofocus_min_max = [0.5,-1], 
                         autofocus_delta_z = (1/6), cap = None, af_area=af_area, rerun = full_autofocus_sequence)
                     this_well_coords['z_pos'] = z_pos_found_autofocus_inital
                     found_autofocus_positions.append(z_pos_found_autofocus_inital)
                 else:  
                     z_pos_found_autofocus, cap = run_autofocus_at_current_position(controller, 
-                        this_well_coords, coolLED_port, this_plate_parameters,    autofocus_min_max = [0.5,-(5/6)], 
+                        this_well_coords, coolLED_port, this_plate_parameters,    autofocus_min_max = [0.5,-1], 
                         autofocus_delta_z = (1/6), cap = cap, af_area=af_area, rerun = full_autofocus_sequence)
                     this_well_coords['z_pos'] = z_pos_found_autofocus
-                    found_autofocus_positions.append(z_pos_found_autofocus)
+                    found_autofocus_positions.append(z_pos_found_autofocus) 
                 z_starting_point_array[well_index,-1] = found_autofocus_positions[-1]
 
             if well_index == (len(s_positions['x_relative_pos_mm'].values()) - 1): 

@@ -225,7 +225,7 @@ if __name__ == "__main__":
         z_travel_height = s_machines['grbl'][2]
 
         # run setup test to make sure everything works or throw error
-        s_todays_runs = settings.get_settings.update_todays_runs(s_todays_runs, overwrite=True)
+        s_todays_runs = settings.get_settings.update_todays_runs(s_todays_runs, force_default=True)
         d = lights.labjackU3_control.setup_labjack(verbose=True)    # test the blue and red lights
         lights.labjackU3_control.blink_led(d)
 
